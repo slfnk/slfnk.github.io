@@ -174,6 +174,25 @@
   .pincolor input[type=color] { width: 40px; height: 32px; padding: 2px; cursor: pointer; flex-shrink: 0; }
   .pincolor input.hex { width: 100px; height: 32px; font-family: var(--mono); font-size: 12px; }
   .pindot { width: 12px; height: 12px; border-radius: 50%; border: 2px solid #fff; box-shadow: 0 0 0 1px rgba(0,0,0,0.15); display: inline-block; flex-shrink: 0; }
+  .menuwrap { position: relative; }
+  .menu { position: absolute; right: 0; top: 42px; min-width: 250px; background: #fff; border: 1px solid var(--border); border-radius: 10px; box-shadow: 0 10px 30px rgba(0,0,0,0.14); padding: 6px; z-index: 1100; display: flex; flex-direction: column; }
+  .menu button { border: none; background: transparent; text-align: left; font-weight: 500; height: 38px; border-radius: 6px; }
+  .menu button:hover { background: var(--hover); }
+  .menu .danger-item { color: var(--err); }
+  .menusep { height: 1px; background: var(--border); margin: 6px 4px; }
+  .menunote { font-size: 12px; color: var(--text-3); padding: 4px 12px 2px; }
+  .addspot { display: inline-flex; align-items: center; gap: 4px; height: 30px; padding: 0 8px; border: none; background: transparent; color: var(--brand-dark); font-size: 12px; font-weight: 700; white-space: nowrap; flex-shrink: 0; border-radius: 6px; }
+  .addspot:hover { background: var(--hover); }
+  .sechead .sectitle { width: auto; }
+  .explain { font-size: 12px; color: var(--text-3); padding: 6px 4px 0; line-height: 1.5; }
+  .linkrow { display: flex; align-items: center; gap: 8px; }
+  .linkrow .lbl { width: 64px; flex-shrink: 0; font-size: 11px; font-weight: 700; color: var(--text-2); text-transform: uppercase; letter-spacing: 0.04em; }
+  .linkrow input { height: 34px; font-size: 12px; }
+  .textbar { display: flex; justify-content: flex-end; }
+  .textbar button { height: 26px; font-size: 11px; padding: 0 8px; border: none; background: transparent; color: var(--brand-dark); display: inline-flex; align-items: center; gap: 4px; }
+  .textbar button:hover { background: var(--hover); }
+  .ghead .updated-ro { font-size: 11px; font-weight: 600; letter-spacing: 0.13em; text-transform: uppercase; color: #5E7480; cursor: help; }
+  .addlink { height: 28px; font-size: 12px; border: none; background: transparent; color: var(--brand-dark); padding: 0 6px; }
   .toast { position: sticky; bottom: 16px; margin-top: 16px; display: flex; align-items: center; gap: 10px; padding: 0 6px 0 16px; height: 52px; border-radius: 10px; background: #1A1A1A; color: #fff; font-size: 13px; z-index: 5; }
   .toast span { flex: 1 1 auto; }
   .toast button { border: none; }
@@ -181,7 +200,7 @@
   .toast .x { background: transparent; color: #fff; }
 
   /* map overlays */
-  .msearch { position: absolute; left: 14px; top: 14px; width: min(380px, calc(100% - 28px)); z-index: 800; display: flex; flex-direction: column; gap: 6px; }
+  .msearch { position: absolute; left: 50%; transform: translateX(-50%); top: 12px; width: min(400px, calc(100% - 120px)); z-index: 800; display: flex; flex-direction: column; gap: 6px; }
   .msearch label { display: flex; align-items: center; gap: 8px; height: 44px; padding: 0 12px; background: #fff; border: 1px solid var(--border); border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.08); }
   .msearch input { border: none; padding: 0; height: 40px; font-size: 14px; }
   .results { background: #fff; border: 1px solid var(--border); border-radius: 10px; box-shadow: 0 8px 24px rgba(0,0,0,0.12); overflow: hidden; }
@@ -229,10 +248,17 @@
     <div class="grow"></div>
     <span id="saveState"></span>
     <a id="viewLive" href="#" target="_blank" rel="noopener" style="text-decoration:none"><button>View live ↗</button></a>
-    <button id="reloadBtn" class="ghost">Reload</button>
     <button class="primary" id="saveBtn" disabled>Save</button>
-    <span class="who" id="whoText"></span>
-    <button id="signOut" class="ghost">Sign out</button>
+    <div class="menuwrap">
+      <button id="moreBtn" class="icon" aria-label="More options" aria-haspopup="true" aria-expanded="false"><svg class="i" viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.3"/><circle cx="12" cy="12" r="1.3"/><circle cx="19" cy="12" r="1.3"/></svg></button>
+      <div class="menu hidden" id="moreMenu" role="menu">
+        <button id="reloadBtn" role="menuitem">Reload latest from GitHub</button>
+        <button id="deleteGuideBtn" role="menuitem" class="danger-item">Delete this guide…</button>
+        <div class="menusep"></div>
+        <div class="menunote">Signed in to <span id="whoText"></span></div>
+        <button id="signOut" role="menuitem">Sign out</button>
+      </div>
+    </div>
   </div>
 </header>
 
@@ -292,6 +318,21 @@
     </div>
   </div>
 
+  <div id="deleteView" class="hidden">
+    <div class="panel">
+      <h2>Delete this guide?</h2>
+      <p style="margin-top:8px;color:var(--text-2)"><b id="delTitle"></b> will come off the site at <b id="delAddr"></b>, along with every file in its folder. Links people have shared will stop working.</p>
+      <p class="hint" style="margin-top:6px">GitHub keeps the history, so it can be recovered from an earlier commit if you change your mind.</p>
+      <label class="f" for="delConfirm">Type <b id="delSlug"></b> to confirm</label>
+      <input id="delConfirm" autocomplete="off" spellcheck="false">
+      <div class="row" style="margin-top:1rem">
+        <button class="primary" id="delGo" style="background:var(--err);border-color:var(--err)">Delete guide</button>
+        <button id="delCancel" class="ghost">Cancel</button>
+      </div>
+      <div class="status" id="delStatus" style="margin-top:0.6rem"></div>
+    </div>
+  </div>
+
   <div id="newGuideView" class="hidden">
     <div class="panel">
       <h2>New guide</h2>
@@ -304,7 +345,7 @@
       <input id="ngSubtitle" placeholder="Swinging doors, cold beers, and free botanas">
       <div class="grid2">
         <div><label class="f" for="ngAuthor">Author</label><input id="ngAuthor" placeholder="SL FNK"></div>
-        <div><label class="f" for="ngCity">City</label><input id="ngCity" placeholder="Mexico City"></div>
+        <div><label class="f" for="ngCity">Where <span class="hint">(optional)</span></label><input id="ngCity" placeholder="A city, state, country…"></div>
       </div>
       <div class="row" style="margin-top:0.8rem"><label><input type="checkbox" id="ngCats" checked> Use categories <span class="hint">(turn off for a simple list where you pick each pin's color)</span></label></div>
       <label class="f" for="ngCenter">Map center</label>
@@ -557,7 +598,7 @@ const state = {
 const V = {             // visual-editor UI state
   selectedId: null, expandedId: null, catPanel: false,
   dragId: null, overId: null, overZone: null,
-  toast: null, catNotes: {}, hexDrafts: {}, moveTargets: {}
+  toast: null, catNotes: {}, hexDrafts: {}, moveTargets: {}, showAuthorLink: false
 };
 const draftKey = slug => 'gg-draft:' + slug;
 
@@ -667,7 +708,7 @@ function afterEdit({ now = false } = {}) {
 
 async function openGuide(slug, { force = false } = {}) {
   if (!force && isDirty() && !confirm('You have unsaved changes to this guide. Switch anyway? (Your draft stays saved on this device.)')) { renderPicker(); return; }
-  show($('emptyState'), false); show($('newGuideView'), false); show($('editorView'));
+  show($('emptyState'), false); show($('newGuideView'), false); show($('deleteView'), false); show($('editorView'));
   flashSaveState('Loading…', 'clean');
   try {
     const f = await getFile(slug + '/places.md');
@@ -679,7 +720,7 @@ async function openGuide(slug, { force = false } = {}) {
       baseline: M.serializeGuideModel(state.model),
       originalSpots: check.parsed ? check.parsed.places.length : 0
     };
-    Object.assign(V, { selectedId: null, expandedId: null, toast: null, catPanel: false, catNotes: {}, hexDrafts: {}, moveTargets: {} });
+    Object.assign(V, { selectedId: null, expandedId: null, toast: null, catPanel: false, catNotes: {}, hexDrafts: {}, moveTargets: {}, showAuthorLink: false });
     $('editor').value = f.text;
     $('viewLive').href = SITE + '/' + slug + '/';
     history.replaceState(null, '', '#guide=' + slug);
@@ -717,8 +758,17 @@ $('discardDraft').addEventListener('click', () => {
   localStorage.removeItem(draftKey(state.current.slug)); show($('draftNote'), false); layoutStrip();
 });
 
+// "Updated: Month YYYY" follows the last saved edit
+function stampUpdated() {
+  const stamp = monthYear();
+  if (state.mode === 'visual') { M.setMeta(state.model, 'Updated', stamp, M.getMeta(state.model, 'Author Link') ? 'Author Link' : 'Author'); return; }
+  const ed = $('editor');
+  if (/^Updated:.*$/m.test(ed.value)) ed.value = ed.value.replace(/^Updated:.*$/m, 'Updated: ' + stamp);
+  else ed.value = ed.value.replace(/^(Author(?: Link)?:.*)$/m, '$1\nUpdated: ' + stamp);
+}
 async function save() {
   if (!state.current || !isDirty()) return;
+  stampUpdated();
   const text = currentText();
   const check = checkGuide(text);
   state.lastCheck = check; renderChecks(check); layoutStrip();
@@ -736,6 +786,7 @@ async function save() {
     localStorage.removeItem(draftKey(slug));
     const synced = await syncGuideMeta(slug, check.parsed.guide);
     flashSaveState('Saved' + (synced ? ' · page title updated' : '') + ' · live in about a minute', 'clean');
+    if (state.mode === 'visual') renderVisual();
   } catch (e) {
     if (e.status === 409) {
       flashSaveState('Not saved — changed on GitHub', 'err');
@@ -776,6 +827,80 @@ $('reloadBtn').addEventListener('click', () => {
   openGuide(state.current.slug, { force: true });
 });
 window.addEventListener('beforeunload', e => { if (isDirty()) { e.preventDefault(); e.returnValue = ''; } });
+
+// ============================================================
+// MORE MENU + DELETE GUIDE
+// ============================================================
+function toggleMenu(open) {
+  const on = open != null ? open : $('moreMenu').classList.contains('hidden');
+  show($('moreMenu'), on);
+  $('moreBtn').setAttribute('aria-expanded', on ? 'true' : 'false');
+  $('deleteGuideBtn').disabled = !state.current;
+  $('reloadBtn').disabled = !state.current;
+}
+$('moreBtn').addEventListener('click', e => { e.stopPropagation(); toggleMenu(); });
+document.addEventListener('click', e => { if (!e.target.closest('.menuwrap')) toggleMenu(false); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape') toggleMenu(false); });
+$('moreMenu').addEventListener('click', e => { if (e.target.closest('button')) toggleMenu(false); });
+
+$('deleteGuideBtn').addEventListener('click', () => {
+  if (!state.current) return;
+  const g = state.guides.find(x => x.slug === state.current.slug);
+  $('delTitle').textContent = (g && g.title) || state.current.slug;
+  $('delAddr').textContent = 'guiides.com/' + state.current.slug + '/';
+  $('delSlug').textContent = state.current.slug;
+  $('delConfirm').value = ''; setStatus($('delStatus'), '');
+  show($('editorView'), false); show($('deleteView'));
+  $('delConfirm').focus();
+});
+$('delCancel').addEventListener('click', () => { show($('deleteView'), false); show($('editorView')); if (map) setTimeout(() => map.invalidateSize(), 0); });
+$('delConfirm').addEventListener('input', () => setStatus($('delStatus'), ''));
+
+async function listDir(path) {
+  const res = await gh(contentsUrl(path) + '?ref=' + REPO.branch);
+  if (res.status === 404) return [];
+  const j = await res.json();
+  return Array.isArray(j) ? j : [];
+}
+async function deleteFile(path, sha, message) {
+  await gh(contentsUrl(path), { method: 'DELETE', body: JSON.stringify({ message, sha, branch: REPO.branch }) });
+}
+$('delGo').addEventListener('click', async () => {
+  const slug = state.current && state.current.slug;
+  if (!slug) return;
+  if ($('delConfirm').value.trim() !== slug) { setStatus($('delStatus'), 'Type ' + slug + ' exactly to confirm.', 'err'); return; }
+  $('delGo').disabled = true;
+  const step = m => setStatus($('delStatus'), m, 'busy');
+  try {
+    // 1. Take it off the guide list first, so it disappears from listings even if a later step fails
+    step('Removing it from the guide list…');
+    const f = await getFile('guides.json');
+    if (f) {
+      const idx = JSON.parse(f.text);
+      idx.guides = (idx.guides || []).filter(g => g.slug !== slug);
+      state.guidesSha = await putFile('guides.json', JSON.stringify(idx, null, 2) + '\n', f.sha, 'Remove ' + slug + ' from guide list (editor)');
+      state.guides = idx.guides;
+    }
+    // 2. Delete every file in the folder (and one level of subfolders, e.g. images/)
+    const items = await listDir(slug);
+    const files = [];
+    for (const it of items) {
+      if (it.type === 'file') files.push(it);
+      else if (it.type === 'dir') (await listDir(it.path)).forEach(x => { if (x.type === 'file') files.push(x); });
+    }
+    let n = 0;
+    for (const it of files) { step('Deleting files… ' + (++n) + ' of ' + files.length); await deleteFile(it.path, it.sha, 'Delete ' + it.path + ' (editor)'); }
+    localStorage.removeItem(draftKey(slug));
+    state.current = null; state.model = null;
+    history.replaceState(null, '', location.pathname);
+    show($('deleteView'), false); show($('emptyState'));
+    setStatus($('appStatus'), 'Deleted ' + slug + '. It will disappear from the site in about a minute.', 'ok');
+    renderPicker(); setSaveState();
+  } catch (e) {
+    setStatus($('delStatus'), 'Stopped: ' + e.message + ' Reload the editor to see what is left.', 'err');
+  }
+  $('delGo').disabled = false;
+});
 
 // ============================================================
 // VISUAL ⇄ MARKDOWN
@@ -905,8 +1030,36 @@ const ICON = {
   up: '<svg class="i" viewBox="0 0 24 24"><path d="M6 15l6-6 6 6"/></svg>',
   down: '<svg class="i" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg>',
   plus: '<svg class="i" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>',
+  link: '<svg class="i" viewBox="0 0 24 24" style="width:12px;height:12px"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>',
   palette: '<svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="8.5" cy="10" r="1.2"/><circle cx="12" cy="7.5" r="1.2"/><circle cx="15.5" cy="10" r="1.2"/><path d="M12 21a2.5 2.5 0 0 1 0-5h1.5a2.5 2.5 0 0 0 0-5"/></svg>'
 };
+// Links on a spot: Instagram / Facebook fields plus any number of "Link:" lines
+const LINK_KEYS = ['instagram', 'facebook', 'link', 'website'];
+const isLinkField = f => LINK_KEYS.includes(f.key.trim().toLowerCase());
+function linkLabel(u) {
+  let h = '';
+  try { h = new URL(u).hostname.replace(/^www\./, '').toLowerCase(); } catch (e) { return 'Link'; }
+  const is = d => h === d || h.endsWith('.' + d);
+  if (is('instagram.com')) return 'IG';
+  if (is('facebook.com')) return 'FB';
+  if (is('tiktok.com')) return 'TikTok';
+  if (is('x.com') || is('twitter.com')) return 'X';
+  if (is('youtube.com') || is('youtu.be')) return 'YouTube';
+  if (is('threads.net')) return 'Threads';
+  if (is('substack.com')) return 'Substack';
+  return 'Website';
+}
+function renderLinks(b) {
+  const rows = b.fields.filter(isLinkField).map(f => {
+    f._id = f._id || M.newId();
+    const bad = f.value && !/^https?:\/\/\S+$/i.test(f.value.trim());
+    return '<div class="linkrow"><span class="lbl">' + val(f.value ? linkLabel(f.value) : 'New') + '</span>' +
+      '<input data-link="' + b.id + '" data-fid="' + f._id + '" value="' + val(f.value) + '" placeholder="https://… website, Instagram, TikTok, X…" spellcheck="false" style="border-color:' + (bad ? '#C0392B' : 'var(--field)') + '">' +
+      '<button class="icon ghost" data-act="link-del" data-id="' + b.id + '" data-fid="' + f._id + '" aria-label="Remove link" style="width:32px;height:32px"><svg class="i" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>';
+  }).join('');
+  return '<div style="display:flex;flex-direction:column;gap:6px"><div style="font-size:11px;font-weight:600;color:var(--text-2)">Links <span class="hint" style="font-weight:400">— shown as buttons under the write-up</span></div>' + rows +
+    '<div><button class="addlink" data-act="link-add" data-id="' + b.id + '">＋ Add link</button></div></div>';
+}
 const isPlaceholder = t => !t || /^\[write-up coming soon\]$/i.test(t.trim());
 const val = s => esc(s == null ? '' : s);
 
@@ -921,13 +1074,17 @@ function renderVisual() {
 
   // ---- guide header
   h += '<div class="ghead">' +
-    '<input class="ie updated" data-meta="Updated" value="' + val(M.getMeta(m, 'Updated')) + '" placeholder="Updated…" aria-label="Updated">' +
+    '<div class="updated-ro" title="Set automatically each time you save">Updated ' + val(M.getMeta(m, 'Updated') || monthYear()) + '</div>' +
     '<textarea class="ie title" data-meta="Title" rows="1" placeholder="Guide title" aria-label="Guide title">' + val(M.getMeta(m, 'Title')) + '</textarea>' +
     '<input class="ie subtitle" data-meta="Subtitle" value="' + val(M.getMeta(m, 'Subtitle')) + '" placeholder="Add an italic subtitle…" aria-label="Subtitle">' +
     '<div class="byline">By <input class="ie author" data-meta="Author" value="' + val(M.getMeta(m, 'Author')) + '" placeholder="Your name" aria-label="Author">' +
-    '<input class="ie authorlink" data-meta="Author Link" value="' + val(link) + '" placeholder="Link your name (website, Instagram, X…)" aria-label="Author link" spellcheck="false"></div>' +
+    (link || V.showAuthorLink
+      ? '<input class="ie authorlink" data-meta="Author Link" value="' + val(link) + '" placeholder="https://… website, Instagram, X" aria-label="Link for your name" spellcheck="false">' +
+        '<button class="icon ghost" data-act="authorlink-x" aria-label="Remove link" title="Remove link" style="width:28px;height:28px"><svg class="i" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button>'
+      : '<button class="addlink" data-act="authorlink-add">＋ Add link</button>') + '</div>' +
     (linkBad ? '<div class="field-note">Links need to start with https://</div>' : '') +
-    '<textarea class="ie intro" data-intro rows="4" placeholder="Write an intro that sets the scene… (blank line = new paragraph)" aria-label="Intro">' + val(m.intro.join('\n\n')) + '</textarea>' +
+    '<div style="width:100%"><div class="textbar"><button data-act="insert-link" data-target="[data-intro]">' + ICON.link + 'Link</button></div>' +
+    '<textarea class="ie intro" data-intro rows="4" placeholder="Write an intro that sets the scene… (blank line = new paragraph)" aria-label="Intro">' + val(m.intro.join('\n\n')) + '</textarea></div>' +
     '</div>';
 
   // ---- categories
@@ -941,6 +1098,7 @@ function renderVisual() {
   } else {
   h += '<div class="catbar"><div class="seg small"><button class="on" disabled style="opacity:1">Categories</button><button data-act="cats-off">No categories</button></div>' + catList().map(c => '<span class="catchip"><span class="dot" style="background:' + val(c.color) + '"></span>' + val(c.name) + '</span>').join('') +
     '<span class="grow"></span><button data-act="toggle-cats" style="display:inline-flex;align-items:center;gap:6px;height:32px;font-size:12px' + (V.catPanel ? ';background:#EFECE6' : '') + '">' + ICON.palette + 'Edit categories</button></div>';
+  h += '<div class="explain">Categories tag each spot, color its pin, and become the filter buttons. Sections are the headings that order the list — they usually share a category\'s name, but they don\'t have to.</div>';
   if (V.catPanel) h += renderCatPanel();
   }
 
@@ -957,11 +1115,12 @@ function renderVisual() {
         '<button class="icon ghost" data-act="sec-up" data-id="' + g.section.id + '" aria-label="Move section up"' + (gi === 0 || !all[gi - 1].section ? ' disabled' : '') + '>' + ICON.up + '</button>' +
         '<button class="icon ghost" data-act="sec-down" data-id="' + g.section.id + '" aria-label="Move section down"' + (gi === all.length - 1 ? ' disabled' : '') + '>' + ICON.down + '</button>' +
         (g.items.length ? '' : '<button class="icon ghost" data-act="sec-del" data-id="' + g.section.id + '" aria-label="Delete section" title="Delete empty section">' + ICON.trash + '</button>') +
-        '<button data-act="add-spot" data-group="' + gkey + '" style="display:inline-flex;align-items:center;gap:4px;height:32px;font-size:12px;color:var(--brand-dark)">' + ICON.plus + 'Add spot</button></div>' +
-        '<input class="ie secblurb" data-sec-blurb="' + g.section.id + '" value="' + val(g.section.blurb) + '" placeholder="Add a line introducing ' + val(g.section.title) + '…" aria-label="Section intro">';
+        '<button class="addspot" data-act="add-spot" data-group="' + gkey + '">' + ICON.plus + 'Add spot</button></div>' +
+        '<div style="display:flex;align-items:center;gap:4px"><input class="ie secblurb" data-sec-blurb="' + g.section.id + '" value="' + val(g.section.blurb) + '" placeholder="Add a line introducing ' + val(g.section.title) + '…" aria-label="Section intro" style="flex:1 1 auto">' +
+        '<div class="textbar"><button data-act="insert-link" data-target="[data-sec-blurb=&quot;' + g.section.id + '&quot;]" title="Add a link">' + ICON.link + '</button></div></div>';
     } else {
       h += '<div class="sechead"><span class="sectitle" style="font-size:15px;color:var(--text-3)">Before the first section</span>' +
-        '<button data-act="add-spot" data-group="lead" style="display:inline-flex;align-items:center;gap:4px;height:32px;font-size:12px;color:var(--brand-dark)">' + ICON.plus + 'Add spot</button></div>';
+        '<button class="addspot" data-act="add-spot" data-group="lead">' + ICON.plus + 'Add spot</button></div>';
     }
     h += '<div class="cards">';
     g.items.forEach(b => {
@@ -999,7 +1158,7 @@ function renderCard(b) {
     '<span class="loc" style="color:' + (ll ? 'var(--ok)' : 'var(--warn)') + '">' + ICON.pin + (ll ? 'On map' : 'Needs location') + '</span></div>' +
     '<button class="cname" data-act="select" data-id="' + b.id + '">' + val(b.name) + '</button>';
   if (!exp) {
-    h += '<div class="preview' + (isPlaceholder(writeup) ? ' placeholder' : '') + '">' + val(isPlaceholder(writeup) ? '[Write-Up Coming Soon]' : writeup) + '</div>';
+    h += '<div class="preview' + (isPlaceholder(writeup) ? ' placeholder' : '') + '">' + val(isPlaceholder(writeup) ? '[Write-Up Coming Soon]' : writeup.replace(/\[([^\]\n]+)\]\((https?:[^)\s]+)\)/g, '$1')) + '</div>';
   } else {
     const opts = catList().map(c => '<option' + (c.name === cat ? ' selected' : '') + '>' + val(c.name) + '</option>').join('') +
       (cat && !catByName(cat) ? '<option selected>' + val(cat) + '</option>' : '');
@@ -1013,11 +1172,11 @@ function renderCard(b) {
           (HEX.test(M.getField(b, 'color')) ? '<button class="ghost" data-act="spot-color-reset" data-id="' + b.id + '" style="height:32px;font-size:12px">Use default</button>' : '<span class="hint">Default</span>') +
           '</div></div>'
         : '<label class="f">Category<select data-spot-cat="' + b.id + '">' + opts + '</select></label>') +
-      '<label class="f">Write-up<textarea class="writeup" data-spot-writeup="' + b.id + '" placeholder="What makes this spot worth the trip? (blank line = new paragraph)">' + val(writeup) + '</textarea></label>' +
+      '<div class="f" style="display:flex;flex-direction:column;gap:2px;font-size:11px;font-weight:600;color:var(--text-2)"><div style="display:flex;align-items:center">Write-up<span class="grow"></span><span class="textbar"><button data-act="insert-link" data-target="[data-spot-writeup=&quot;' + b.id + '&quot;]">' + ICON.link + 'Link</button></span></div>' +
+      '<textarea class="writeup" data-spot-writeup="' + b.id + '" aria-label="Write-up" placeholder="What makes this spot worth the trip? (blank line = new paragraph)">' + val(writeup) + '</textarea></div>' +
       '<div class="g2"><label class="f">Google Maps link<input data-spot-field="Google Maps" data-id="' + b.id + '" value="' + val(M.getField(b, 'google maps')) + '" spellcheck="false"></label>' +
-      '<label class="f">Instagram<input data-spot-field="Instagram" data-id="' + b.id + '" value="' + val(M.getField(b, 'instagram')) + '" placeholder="https://instagram.com/…" spellcheck="false"></label>' +
-      '<label class="f">Facebook<input data-spot-field="Facebook" data-id="' + b.id + '" value="' + val(M.getField(b, 'facebook')) + '" placeholder="https://facebook.com/…" spellcheck="false"></label>' +
       '<label class="f">Image<input data-spot-field="Image" data-id="' + b.id + '" value="' + val(M.getField(b, 'image')) + '" placeholder="images/photo.jpg" spellcheck="false"></label></div>' +
+      renderLinks(b) +
       '<div class="locbox">' + ICON.pin +
       '<input data-spot-loc="' + b.id + '" value="' + (ll ? ll.lat.toFixed(6) + ', ' + ll.lng.toFixed(6) : '') + '" placeholder="lat, lng" aria-label="Coordinates" spellcheck="false">' +
       '<span class="grow">' + (ll ? 'Drag its pin to adjust' : 'Click the map, search, or paste coordinates') + '</span>' +
@@ -1180,6 +1339,40 @@ $('vlist').addEventListener('click', e => {
       V.catPanel = true;
       break;
     }
+    case 'authorlink-add': {
+      V.showAuthorLink = true; renderVisual();
+      const inp = $('vlist').querySelector('[data-meta="Author Link"]'); if (inp) inp.focus();
+      return;
+    }
+    case 'authorlink-x': M.setMeta(state.model, 'Author Link', ''); V.showAuthorLink = false; break;
+    case 'link-add': {
+      const f = M.addField(findBlock(id), 'Link', '');
+      f._id = M.newId();
+      renderVisual();
+      const inp = $('vlist').querySelector('[data-fid="' + f._id + '"]'); if (inp) inp.focus();
+      return;
+    }
+    case 'link-del': {
+      const b = findBlock(id), i = b.fields.findIndex(f => f._id === btn.dataset.fid);
+      if (i >= 0) b.fields.splice(i, 1);
+      break;
+    }
+    case 'insert-link': {
+      const ta = $('vlist').querySelector(btn.dataset.target);
+      if (!ta) return;
+      const s0 = ta.selectionStart || 0, s1 = ta.selectionEnd || 0;
+      const picked = ta.value.slice(s0, s1);
+      let url = prompt(picked ? 'Link "' + picked + '" to:' : 'Link address:', 'https://');
+      if (!url) return;
+      url = url.trim();
+      if (!/^https?:\/\//i.test(url)) url = 'https://' + url.replace(/^\/+/, '');
+      const label = picked || prompt('Text to show for the link:', '') || url;
+      const md = '[' + label.replace(/[\[\]]/g, '') + '](' + url.replace(/[\s)]/g, '') + ')';
+      ta.value = ta.value.slice(0, s0) + md + ta.value.slice(s1);
+      ta.focus(); ta.selectionStart = ta.selectionEnd = s0 + md.length;
+      ta.dispatchEvent(new Event('input', { bubbles: true }));
+      return;
+    }
     case 'spot-color-reset': M.setField(findBlock(id), 'Color', ''); break;
     case 'cat-move-cancel': delete V.moveTargets[id]; renderVisual(); return;
     case 'cat-move-del': {
@@ -1218,6 +1411,16 @@ $('vlist').addEventListener('input', e => {
     syncMarkers();
   } else if (d.spotField) { M.setField(findBlock(d.id), d.spotField, t.value); if (d.spotField === 'Price') { const p = t.closest('.card').querySelector('.price'); if (p) p.textContent = t.value; } }
   else if (d.spotWriteup) { findBlock(d.spotWriteup).paragraphs = t.value.split(/\n\s*\n/).map(p => p.trim()).filter(Boolean); }
+  else if (d.link) {
+    const f = findBlock(d.link).fields.find(x => x._id === d.fid);
+    if (f) {
+      f.value = t.value.trim();
+      // An Instagram/Facebook line pasted over with some other site becomes a plain link
+      const k = f.key.trim().toLowerCase(), lab = f.value ? linkLabel(f.value) : '';
+      if ((k === 'instagram' && lab && lab !== 'IG') || (k === 'facebook' && lab && lab !== 'FB')) f.key = 'Link';
+    }
+    const lbl = t.parentNode.querySelector('.lbl'); if (lbl) lbl.textContent = t.value.trim() ? linkLabel(t.value.trim()) : 'New';
+  }
   else if (d.spotColor) {
     M.setField(findBlock(d.spotColor), 'Color', t.value);
     const hx = t.closest('.pincolor').querySelector('[data-spot-hex]'); if (hx) hx.value = t.value.toUpperCase();
@@ -1500,7 +1703,7 @@ $('results').addEventListener('click', e => {
 function startNewGuide() {
   if (isDirty() && !confirm('You have unsaved changes. Leave this guide? (Your draft stays saved on this device.)')) { renderPicker(); return; }
   state.current = null; state.model = null;
-  show($('editorView'), false); show($('emptyState'), false); show($('newGuideView'));
+  show($('editorView'), false); show($('emptyState'), false); show($('deleteView'), false); show($('newGuideView'));
   setStatus($('ngStatus'), ''); setSaveState();
   $('ngSlug').focus();
 }

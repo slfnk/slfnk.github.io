@@ -72,7 +72,7 @@ function parsePlacesMd(text) {
       return;
     }
 
-    const place = { gmaps: null, instagram: null, facebook: null, image: null, price: null };
+    const place = { gmaps: null, instagram: null, facebook: null, image: null, price: null, links: [] };
     const descLines = [];
     let foundName = false;
 
@@ -103,6 +103,7 @@ function parsePlacesMd(text) {
         else if (key === 'instagram') place.instagram = val;
         else if (key === 'facebook') place.facebook = val;
         else if (key === 'color' && /^#[0-9a-fA-F]{3,8}$/.test(val)) place.color = val;
+        else if ((key === 'link' || key === 'website') && /^https?:\/\//i.test(val)) place.links.push(val);
         return;
       }
 

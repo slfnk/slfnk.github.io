@@ -537,8 +537,20 @@ introSection.innerHTML =
 document.title = guide.title;
 loadBanner();
 
+// Links in write-ups: [text](https://…) or a bare https:// address; always open in a new tab
+function richText(s) {
+  if (!s) return '';
+  s = String(s).replace(/\[([^\]\n]+)\]\((https?:\/\/[^\s)"'<>]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>');
+  return s.replace(/(^|[\s(])(https?:\/\/[^\s<>"']+?)([.,;:!?)]*)(?=\s|$|<)/g, '$1<a href="$2" target="_blank" rel="noopener">$2</a>$3');
+}
+function newTabLinks(root) {
+  (root || document).querySelectorAll('.intro-body a, .section-break a, .desc a, .card-desc a').forEach(a => {
+    a.target = '_blank'; a.rel = 'noopener';
+  });
+}
+
 document.getElementById('introBody').innerHTML = guide.intro.map((p, i) =>
-  '<p' + (i === 0 ? ' class="drop-cap"' : '') + '>' + p + '</p>'
+  '<p' + (i === 0 ? ' class="drop-cap"' : '') + '>' + richText(p) + '</p>'
 ).join('');
 
 // ============================================
@@ -550,14 +562,31 @@ const I = {
   fb: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg>',
   share: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>',
   bookmark: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>',
+  web: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.7 3.8 5.7 3.8 9s-1.3 6.3-3.8 9c-2.5-2.7-3.8-5.7-3.8-9S9.5 5.7 12 3z"/></svg>',
   bookmarkFill: '<svg viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>'
 };
+
+// Short button label for a link, from its web address
+function linkLabel(u) {
+  let h = '';
+  try { h = new URL(u).hostname.replace(/^www\./, '').toLowerCase(); } catch (e) { return 'Link'; }
+  const is = d => h === d || h.endsWith('.' + d);
+  if (is('instagram.com')) return 'IG';
+  if (is('facebook.com')) return 'FB';
+  if (is('tiktok.com')) return 'TikTok';
+  if (is('x.com') || is('twitter.com')) return 'X';
+  if (is('youtube.com') || is('youtu.be')) return 'YouTube';
+  if (is('threads.net')) return 'Threads';
+  if (is('substack.com')) return 'Substack';
+  return 'Website';
+}
 
 function linkRow(p) {
   const a = [];
   if (p.gmaps)     a.push('<a href="' + p.gmaps + '" target="_blank" rel="noopener">' + I.gmaps + ' G.Maps</a>');
   if (p.instagram) a.push('<a href="' + p.instagram + '" target="_blank" rel="noopener">' + I.ig + ' IG</a>');
   if (p.facebook)  a.push('<a href="' + p.facebook + '" target="_blank" rel="noopener">' + I.fb + ' FB</a>');
+  (p.links || []).forEach(u => { const l = linkLabel(u); a.push('<a href="' + u + '" target="_blank" rel="noopener">' + (l === 'IG' ? I.ig : l === 'FB' ? I.fb : I.web) + ' ' + l + '</a>'); });
   return a.length ? '<div class="entry-links">' + a.join('') + '</div>' : '';
 }
 
@@ -566,6 +595,7 @@ function cardLinks(p) {
   if (p.gmaps)     a.push('<a href="' + p.gmaps + '" target="_blank">G.Maps</a>');
   if (p.instagram) a.push('<a href="' + p.instagram + '" target="_blank">IG</a>');
   if (p.facebook)  a.push('<a href="' + p.facebook + '" target="_blank">FB</a>');
+  (p.links || []).forEach(u => a.push('<a href="' + u + '" target="_blank" rel="noopener">' + linkLabel(u) + '</a>'));
   return a.length ? '<div class="card-action-links">' + a.join(' &#8226; ') + '</div>' : '';
 }
 
@@ -736,7 +766,7 @@ places.forEach((p, i) => {
     sbDiv.className = 'section-break';
     sbDiv.dataset.cat = p.category; // tag with the category of entries that follow
     sbDiv.innerHTML = '<h3>' + sb.title + '</h3>' +
-      (sb.content ? '<p>' + sb.content + '</p>' : '');
+      (sb.content ? '<p>' + richText(sb.content) + '</p>' : '');
     entriesEl.appendChild(sbDiv);
   }
 
@@ -762,7 +792,7 @@ places.forEach((p, i) => {
     '<button class="share-link" onclick="copyShareLink(\'' + p.slug + '\',this)" title="Copy link">' +
     I.share + '<span class="copied-tip">Copied!</span></button></div>' +
     thumbHtml +
-    '<p class="desc">' + p.description + '</p>' +
+    '<p class="desc">' + richText(p.description) + '</p>' +
     '<div style="clear:both"></div>' +
     linkRow(p);
 
@@ -789,7 +819,7 @@ places.forEach((p, i) => {
     thumb +
     (function () { const bits = [CATS_OFF ? '' : (p.category || ''), p.price || ''].filter(Boolean); return bits.length ? '<div class="card-cat">' + bits.join(' &middot; ') + '</div>' : ''; })() +
     '<h3>' + p.name + '</h3>' +
-    '<p class="card-desc">' + p.description + '</p>' +
+    '<p class="card-desc">' + richText(p.description) + '</p>' +
     '<div class="card-action-row"><button class="card-expand-btn">Read more ▾</button>' +
     cardLinks(p) + '</div></div>';
 
@@ -804,6 +834,8 @@ places.forEach((p, i) => {
   });
   carousel.appendChild(card);
 });
+
+newTabLinks();
 
 // ============================================
 // MAP

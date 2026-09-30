@@ -8,6 +8,8 @@
 (function () {
   let uid = 0;
   const newId = () => 'b' + (++uid);
+  const FIELD_ORDER = ['category', 'price', 'color', 'location', 'image', 'google maps', 'instagram', 'facebook', 'link', 'website'];
+  const fieldRank = k => { const r = FIELD_ORDER.indexOf(String(k).trim().toLowerCase()); return r < 0 ? 99 : r; };
 
   // ---------- fields (the "- Key: value" lines on a spot) ----------
   function getField(spot, key) {
@@ -22,12 +24,20 @@
     if (!v) { if (i >= 0) spot.fields.splice(i, 1); return; }
     if (i >= 0) { spot.fields[i].value = v; return; }
     // Keep a tidy, familiar order for new fields
-    const order = ['category', 'price', 'color', 'location', 'image', 'google maps', 'instagram', 'facebook'];
-    const rank = x => { const r = order.indexOf(x.trim().toLowerCase()); return r < 0 ? 99 : r; };
-    const mine = rank(key);
-    let at = spot.fields.findIndex(x => rank(x.key) > mine);
+    const order = FIELD_ORDER;
+    const mine = fieldRank(key);
+    let at = spot.fields.findIndex(x => fieldRank(x.key) > mine);
     if (at < 0) at = spot.fields.length;
     spot.fields.splice(at, 0, { key, value: v });
+  }
+  // Add a field even if one with that key exists (links can repeat)
+  function addField(spot, key, value) {
+    const mine = fieldRank(key);
+    let at = -1;
+    spot.fields.forEach((x, i) => { if (fieldRank(x.key) <= mine) at = i; });
+    const f = { key, value: value == null ? '' : String(value) };
+    spot.fields.splice(at + 1, 0, f);
+    return f;
   }
   function getLatLng(spot) {
     const v = getField(spot, 'location');
@@ -122,7 +132,7 @@
         if (b.blurb.trim()) o.push('', b.blurb.trim());
       } else if (b.type === 'spot') {
         o.push('# ' + b.name.trim(), '');
-        b.fields.forEach(f => o.push('- ' + f.key + ': ' + f.value));
+        b.fields.forEach(f => { const v = String(f.value).replace(/\s*\n\s*/g, ' ').trim(); if (v) o.push('- ' + f.key + ': ' + v); });
         if (b.paragraphs.length) o.push(b.paragraphs.join('\n\n'));
       } else {
         o.push(b.text);
@@ -149,7 +159,7 @@
     model.header.splice(at, 0, { key, value: v });
   }
 
-  const api = { parseGuideModel, serializeGuideModel, getField, setField, getLatLng, setLatLng, getMeta, setMeta, newId };
+  const api = { parseGuideModel, serializeGuideModel, getField, setField, addField, getLatLng, setLatLng, getMeta, setMeta, newId };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else window.GuideModel = api;
 })();
