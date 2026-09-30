@@ -22,6 +22,8 @@ function parsePlacesMd(text) {
         else if (key === 'Subtitle') guide.deck = val;
         else if (key === 'Author') guide.byline = val;
         else if (key === 'Author Link') guide.authorLink = val;
+        else if (key === 'Categories') guide.categoriesOff = /^(off|no|none|false)$/i.test(val);
+        else if (key === 'Pin Color') guide.pinColor = val;
         else if (key === 'Updated') guide.updated = val;
         else if (key === 'Center') {
           const c = val.split(',').map(x => parseFloat(x.trim()));
@@ -100,6 +102,7 @@ function parsePlacesMd(text) {
         else if (key === 'google maps') place.gmaps = val;
         else if (key === 'instagram') place.instagram = val;
         else if (key === 'facebook') place.facebook = val;
+        else if (key === 'color' && /^#[0-9a-fA-F]{3,8}$/.test(val)) place.color = val;
         return;
       }
 

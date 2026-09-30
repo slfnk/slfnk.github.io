@@ -22,7 +22,7 @@
     if (!v) { if (i >= 0) spot.fields.splice(i, 1); return; }
     if (i >= 0) { spot.fields[i].value = v; return; }
     // Keep a tidy, familiar order for new fields
-    const order = ['category', 'price', 'location', 'image', 'google maps', 'instagram', 'facebook'];
+    const order = ['category', 'price', 'color', 'location', 'image', 'google maps', 'instagram', 'facebook'];
     const rank = x => { const r = order.indexOf(x.trim().toLowerCase()); return r < 0 ? 99 : r; };
     const mine = rank(key);
     let at = spot.fields.findIndex(x => rank(x.key) > mine);

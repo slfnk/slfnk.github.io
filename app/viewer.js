@@ -498,6 +498,13 @@ Object.entries(data.categories).forEach(([k, v]) => {
   CATEGORIES[k] = { color: v.color, label: k };
 });
 function catColor(cat) { return CATEGORIES[cat]?.color || '#888'; }
+// "Categories: off" guides: no tags or category filters, and each pin can have its own color
+const CATS_OFF = !!guide.categoriesOff;
+const DEFAULT_PIN = /^#[0-9a-fA-F]{3,8}$/.test(guide.pinColor || '') ? guide.pinColor : '#038f9e';
+function spotColor(p) {
+  if (CATS_OFF) return p.color || CATEGORIES[p.category]?.color || DEFAULT_PIN;
+  return catColor(p.category);
+}
 const places = data.places;
 const sectionBreaks = data.sectionBreaks || [];
 
@@ -618,7 +625,7 @@ window.toggleHeart = function(btn) {
 // FILTER BUTTONS
 // ============================================
 const filterBar = document.getElementById('filterBar');
-const usedCats = [...new Set(places.map(p => p.category))];
+const usedCats = CATS_OFF ? [] : [...new Set(places.map(p => p.category).filter(Boolean))];
 usedCats.forEach(cat => {
   const btn = document.createElement('button');
   btn.className = 'filter-btn';
@@ -720,7 +727,7 @@ if (savedSlugs.size > 0) {
 }
 
 places.forEach((p, i) => {
-  const col = catColor(p.category);
+  const col = spotColor(p);
 
   // Insert section break if one exists before this index
   if (sectionMap[i]) {
@@ -750,7 +757,7 @@ places.forEach((p, i) => {
   const isHearted = savedSlugs.has(p.slug);
   entry.innerHTML =
     '<button class="entry-heart' + (isHearted ? ' hearted' : '') + '" data-slug="' + p.slug + '" onclick="toggleHeart(this)">' + (isHearted ? I.bookmarkFill : I.bookmark) + '</button>' +
-    '<div class="entry-head"><span class="entry-tag" style="background:' + col + ';--tag-color:' + col + '">' + p.category + '</span>' + price + '</div>' +
+    '<div class="entry-head">' + (CATS_OFF || !p.category ? '' : '<span class="entry-tag" style="background:' + col + ';--tag-color:' + col + '">' + p.category + '</span>') + price + '</div>' +
     '<div class="entry-title-row"><h2>' + p.name + '</h2>' +
     '<button class="share-link" onclick="copyShareLink(\'' + p.slug + '\',this)" title="Copy link">' +
     I.share + '<span class="copied-tip">Copied!</span></button></div>' +
@@ -780,7 +787,7 @@ places.forEach((p, i) => {
     '<button class="entry-heart card-heart' + (isHearted ? ' hearted' : '') + '" data-slug="' + p.slug + '" onclick="toggleHeart(this)">' + (isHearted ? I.bookmarkFill : I.bookmark) + '</button>' +
     '<div class="card-body">' +
     thumb +
-    '<div class="card-cat">' + p.category + (p.price ? ' &middot; ' + p.price : '') + '</div>' +
+    (function () { const bits = [CATS_OFF ? '' : (p.category || ''), p.price || ''].filter(Boolean); return bits.length ? '<div class="card-cat">' + bits.join(' &middot; ') + '</div>' : ''; })() +
     '<h3>' + p.name + '</h3>' +
     '<p class="card-desc">' + p.description + '</p>' +
     '<div class="card-action-row"><button class="card-expand-btn">Read more ▾</button>' +
@@ -856,7 +863,7 @@ const markerLayer = L.layerGroup().addTo(map);
 const markerRefs = [];
 
 places.forEach((p, i) => {
-  const col = catColor(p.category);
+  const col = spotColor(p);
   const icon = L.divIcon({
     className: '',
     html: '<div class="pin-wrap">' +
@@ -892,7 +899,7 @@ function setActive(index, source) {
   // Highlight entries
   document.querySelectorAll('.entry').forEach((el, i) => {
     el.classList.toggle('active', i === index);
-    if (i === index) el.style.setProperty('--c-active', catColor(places[i].category));
+    if (i === index) el.style.setProperty('--c-active', spotColor(places[i]));
   });
 
   // Highlight pins (by ID, not DOM position — Leaflet reorders DOM on filter)
@@ -1042,7 +1049,7 @@ function updateFilter() {
     document.querySelectorAll('.entry.active').forEach(el => el.classList.remove('active'));
     document.querySelectorAll('.pin.active').forEach(el => el.classList.remove('active'));
     midEl.classList.add('active');
-    midEl.style.setProperty('--c-active', catColor(places[midIdx].category));
+    midEl.style.setProperty('--c-active', spotColor(places[midIdx]));
     const pin = document.getElementById('pin-' + midIdx);
     if (pin) pin.classList.add('active');
 
@@ -1149,7 +1156,7 @@ window.setView = function(mode) {
         el.scrollIntoView({ behavior: 'auto', block: 'center' });
         document.querySelectorAll('.entry.active').forEach(e => e.classList.remove('active'));
         el.classList.add('active');
-        el.style.setProperty('--c-active', catColor(places[savedIdx].category));
+        el.style.setProperty('--c-active', spotColor(places[savedIdx]));
       }
       // Re-center desktop split-pane map on active pin
       setTimeout(() => {
