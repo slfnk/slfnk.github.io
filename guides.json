@@ -11,6 +11,12 @@
       "title": "Chinatown Staff Picks from On Waverly",
       "city": "San Francisco",
       "published": true
+    },
+    {
+      "slug": "southern-marin",
+      "title": "A tour of Southern Marin",
+      "city": "Mill Valley",
+      "published": true
     }
   ]
 }
