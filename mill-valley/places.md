@@ -1,6 +1,6 @@
 Guide: The Best of Mill Valley, California
 Title: The Best of Mill Valley, California
-Subtitle: Good grub, better nature, and some curveballs
+Subtitle: Good grub, better nature, and some curveballs.
 Author: SL FNK
 Updated: September 2026
 Center: 37.90656287516964, -122.54627954085258, 15
