@@ -21,6 +21,7 @@ function parsePlacesMd(text) {
         else if (key === 'Title') guide.title = val;
         else if (key === 'Subtitle') guide.deck = val;
         else if (key === 'Author') guide.byline = val;
+        else if (key === 'Author Link') guide.authorLink = val;
         else if (key === 'Updated') guide.updated = val;
         else if (key === 'Center') {
           const c = val.split(',').map(x => parseFloat(x.trim()));

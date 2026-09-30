@@ -453,7 +453,9 @@ function loadBanner() {
 }
 
 function loadGuideText() {
-  return fetch('/' + GUIDE_SLUG + '/places.md').then(r => {
+  // no-cache: always ask the server whether places.md changed (cheap when it hasn't),
+  // so edits show up as soon as GitHub finishes publishing
+  return fetch('/' + GUIDE_SLUG + '/places.md', { cache: 'no-cache' }).then(r => {
     if (r.ok) return r.text();
     throw new Error('No guide found at /' + GUIDE_SLUG + '/places.md');
   });
@@ -466,7 +468,7 @@ function showGuideNotFound(err) {
     '<p class="deck">' + err.message + '</p>' +
     '<div id="guideList" class="byline"></div>';
   // List available guides from the index, if it exists
-  fetch('/guides.json')
+  fetch('/guides.json', { cache: 'no-cache' })
     .then(r => r.ok ? r.json() : null)
     .then(idx => {
       if (!idx || !idx.guides) return;
@@ -508,13 +510,21 @@ sectionBreaks.forEach(sb => { sectionMap[sb.beforeIndex] = sb; });
 // ============================================
 // Guide branding handled in HTML
 
+// Byline, linked when the guide has an "Author Link:" (website, Instagram, X…)
+function bylineHtml(g) {
+  const name = g.byline || '';
+  const link = (g.authorLink || '').trim();
+  if (!/^https?:\/\/[^\s"'<>]+$/i.test(link)) return name;
+  return '<a class="byline-link" href="' + link + '" target="_blank" rel="noopener">' + name + '</a>';
+}
+
 const introSection = document.getElementById('introSection');
 
 introSection.innerHTML =
   '<p class="updated-inline">' + 'Updated ' + guide.updated + '</p>' +
   '<h1>' + guide.title + '</h1>' +
   '<p class="deck">' + guide.deck + '</p>' +
-  '<p class="byline">By <strong>' + guide.byline + '</strong></p>' +
+  '<p class="byline">By <strong>' + bylineHtml(guide) + '</strong></p>' +
   '<div class="guide-banner" id="guideBanner" role="presentation"></div>';
 
 document.title = guide.title;

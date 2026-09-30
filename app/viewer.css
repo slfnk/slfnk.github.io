@@ -248,6 +248,14 @@
     color: var(--text);
     font-weight: 600;
   }
+  .intro-section .byline-link {
+    color: inherit;
+    text-decoration: underline;
+    text-decoration-color: var(--progress);
+    text-decoration-thickness: 1.5px;
+    text-underline-offset: 3px;
+  }
+  .intro-section .byline-link:hover { color: var(--progress); }
 
   /* =================== BANNER DIVIDER =================== */
   /* Files are plain rectangles; the pointed shape comes from clip-path */

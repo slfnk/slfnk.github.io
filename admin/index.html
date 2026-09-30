@@ -8,119 +8,226 @@
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&family=DM+Sans:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;0,8..60,700;1,8..60,400&family=DM+Sans:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script src="/app/parser.js"></script>
+<script src="/app/model.js"></script>
 <style>
   :root {
-    --bg: #FAF9F6; --panel: #FFFFFF; --text: #1A1A1A; --text-2: #5C5C5C; --text-3: #8A8A8A;
-    --border: #E0DDD8; --hover: #F3F1ED; --brand: #038f9e; --brand-dark: #026f7b;
-    --ok: #2E7D4F; --warn: #A66A00; --err: #B3261E;
+    --bg: #FAF9F6; --panel: #FFFFFF; --text: #1A1A1A; --text-2: #5C5C5C; --text-3: #6B6B6B;
+    --border: #E0DDD8; --field: #D8D3CB; --hover: #F3F1ED; --brand: #038f9e; --brand-dark: #026f7b;
+    --ok: #2E6B45; --warn: #9A5B00; --err: #A12A1E;
     --sans: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
     --serif: 'Source Serif 4', Georgia, serif;
     --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    --top: 56px;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; }
   body { font-family: var(--sans); background: var(--bg); color: var(--text); font-size: 14px; line-height: 1.5; }
-  a { color: var(--brand); }
+  a { color: var(--brand-dark); }
   button {
     font: inherit; font-weight: 600; font-size: 13px; cursor: pointer;
     border: 1px solid var(--border); background: var(--panel); color: var(--text);
-    border-radius: 6px; padding: 0.4rem 0.8rem;
+    border-radius: 7px; padding: 0 0.8rem; height: 36px;
   }
-  button:hover { border-color: var(--text-3); }
+  button:hover { border-color: #B9B3A9; }
   button.primary { background: var(--brand); border-color: var(--brand); color: #fff; }
   button.primary:hover { background: var(--brand-dark); }
-  button:disabled { opacity: 0.5; cursor: default; }
-  input, textarea {
-    font: inherit; width: 100%; padding: 0.45rem 0.6rem; border: 1px solid var(--border);
-    border-radius: 6px; background: var(--panel); color: var(--text);
+  button.primary:disabled { background: #8FBFC4; border-color: #8FBFC4; }
+  button.ghost { border-color: transparent; background: transparent; }
+  button.ghost:hover { background: var(--hover); }
+  button.icon { width: 36px; padding: 0; display: inline-flex; align-items: center; justify-content: center; }
+  button.danger { color: var(--err); border-color: #E8C4BF; }
+  button:disabled { cursor: default; opacity: 0.45; }
+  input, textarea, select {
+    font: inherit; width: 100%; padding: 0.45rem 0.6rem; border: 1px solid var(--field);
+    border-radius: 7px; background: var(--panel); color: var(--text);
   }
-  input:focus, textarea:focus { outline: none; border-color: var(--brand); }
-  label { display: block; font-size: 12px; font-weight: 600; color: var(--text-2); margin: 0.8rem 0 0.25rem; }
-  .hint { font-size: 12px; color: var(--text-3); margin-top: 0.25rem; }
+  input:focus, textarea:focus, select:focus { outline: none; border-color: var(--brand); }
+  label.f { display: flex; flex-direction: column; gap: 4px; font-size: 11px; font-weight: 600; color: var(--text-2); }
+  .hint { font-size: 12px; color: var(--text-3); }
   .hidden { display: none !important; }
+  .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+  svg.i { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0; }
 
+  /* ---------- top bar ---------- */
   header {
-    display: flex; align-items: center; justify-content: space-between; gap: 1rem;
-    padding: 0.7rem 1.25rem; border-bottom: 1px solid var(--border); background: var(--bg);
-    position: sticky; top: 0; z-index: 5;
+    height: var(--top); display: flex; align-items: center; gap: 12px; padding: 0 16px;
+    border-bottom: 1px solid var(--border); background: var(--bg); position: sticky; top: 0; z-index: 1000;
   }
-  .brand { color: var(--brand); font-weight: 500; letter-spacing: 0.04em; text-decoration: none; }
+  .brand { display: flex; align-items: center; gap: 7px; color: var(--brand); font-weight: 500; letter-spacing: 0.04em; text-decoration: none; white-space: nowrap; }
   .brand strong { font-weight: 700; letter-spacing: 0.08em; }
-  .brand span { color: var(--text-3); font-weight: 500; letter-spacing: 0; margin-left: 0.4rem; }
-  .who { font-size: 12px; color: var(--text-3); display: flex; align-items: center; gap: 0.6rem; }
+  .brand span { color: var(--text-3); letter-spacing: 0; font-size: 13px; }
+  #guidePicker { width: auto; max-width: 280px; height: 36px; font-weight: 600; font-size: 13px; }
+  .seg { display: flex; padding: 3px; background: #EFECE6; border-radius: 9px; gap: 2px; }
+  .seg button { height: 30px; border: none; background: transparent; color: var(--text-2); border-radius: 7px; padding: 0 12px; }
+  .seg button.on { background: #fff; color: var(--text); }
+  .grow { flex-grow: 1; }
+  #saveState { font-size: 12px; font-weight: 600; white-space: nowrap; }
+  #saveState.dirty { color: var(--warn); }
+  #saveState.clean { color: var(--ok); }
+  #saveState.err { color: var(--err); }
+  .who { font-size: 12px; color: var(--text-3); }
 
-  /* Login */
+  /* ---------- login + panels ---------- */
   .login { max-width: 520px; margin: 3rem auto; padding: 0 1.25rem; }
-  .login h1 { font-family: var(--serif); font-size: 1.6rem; margin-bottom: 0.5rem; }
+  .login h1, .panel h2 { font-family: var(--serif); }
+  .login h1 { font-size: 1.6rem; margin-bottom: 0.5rem; }
   .login p { color: var(--text-2); margin-bottom: 0.6rem; }
   .login ol { color: var(--text-2); margin: 0.4rem 0 1rem 1.2rem; }
   .login li { margin-bottom: 0.25rem; }
-  .login .row { display: flex; gap: 0.5rem; align-items: center; margin-top: 0.6rem; }
-  .login .row label { margin: 0; font-weight: 500; display: flex; gap: 0.35rem; align-items: center; }
-  .login .row input[type=checkbox] { width: auto; }
-
-  /* App layout */
-  .app { display: grid; grid-template-columns: 240px minmax(0, 1fr); min-height: calc(100vh - 49px); }
-  .sidebar { border-right: 1px solid var(--border); padding: 1rem; }
-  .sidebar h2 { font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-3); margin-bottom: 0.5rem; }
-  .guide-list { list-style: none; margin-bottom: 1rem; }
-  .guide-list button {
-    width: 100%; text-align: left; border: none; background: none; padding: 0.5rem 0.6rem;
-    border-radius: 6px; font-weight: 500;
-  }
-  .guide-list button:hover { background: var(--hover); }
-  .guide-list button.active { background: var(--hover); color: var(--brand); font-weight: 700; }
-  .guide-list small { display: block; color: var(--text-3); font-weight: 400; font-size: 11px; }
-
-  .main { padding: 1rem 1.25rem; min-width: 0; display: flex; flex-direction: column; gap: 0.75rem; }
-  .toolbar { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
-  .toolbar h1 { font-family: var(--serif); font-size: 1.25rem; margin-right: auto; }
-  .toolbar .path { font-family: var(--mono); font-size: 12px; color: var(--text-3); display: block; font-weight: 400; }
-  .empty { color: var(--text-3); padding: 3rem 0; text-align: center; font-family: var(--serif); font-style: italic; }
-
-  .editor {
-    font-family: var(--mono); font-size: 13px; line-height: 1.55; min-height: 60vh; flex: 1;
-    resize: vertical; tab-size: 2; white-space: pre; overflow-wrap: normal; overflow-x: auto;
-  }
-  .checks { display: flex; flex-wrap: wrap; gap: 0.4rem 1rem; font-size: 12px; color: var(--text-2); }
-  .checks .ok { color: var(--ok); }
-  .checks .warn { color: var(--warn); }
-  .checks .err { color: var(--err); font-weight: 600; }
-  .issues { font-size: 12px; color: var(--warn); }
-  .issues li { margin-left: 1.1rem; }
-
+  .row { display: flex; gap: 0.5rem; align-items: center; margin-top: 0.6rem; }
+  .row label { display: flex; gap: 0.35rem; align-items: center; font-weight: 500; }
+  .row input[type=checkbox] { width: auto; }
   .status { font-size: 12px; min-height: 1.2em; }
-  .status.ok { color: var(--ok); }
-  .status.err { color: var(--err); font-weight: 600; }
-  .status.busy { color: var(--text-2); }
-  .dirty-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--warn); display: inline-block; margin-left: 0.4rem; vertical-align: middle; }
-
-  .banner-note {
-    background: #FFF6E5; border: 1px solid #F0D9A8; color: #6B4A00; border-radius: 6px;
-    padding: 0.6rem 0.8rem; font-size: 13px; display: flex; gap: 0.6rem; align-items: center; flex-wrap: wrap;
-  }
-
-  /* New guide panel */
-  .panel { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 1rem 1.25rem; max-width: 560px; }
-  .panel h2 { font-family: var(--serif); font-size: 1.2rem; }
+  .status.ok { color: var(--ok); } .status.err { color: var(--err); font-weight: 600; } .status.busy { color: var(--text-2); }
+  .panel { background: var(--panel); border: 1px solid var(--border); border-radius: 12px; padding: 1.1rem 1.25rem; max-width: 560px; margin: 2rem auto; }
+  .panel h2 { font-size: 1.25rem; }
+  .panel label.f { margin-top: 0.8rem; }
   .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0 0.75rem; }
-  .actions { display: flex; gap: 0.5rem; margin-top: 1rem; }
 
-  @media (max-width: 760px) {
-    .app { grid-template-columns: 1fr; }
-    .sidebar { border-right: none; border-bottom: 1px solid var(--border); }
-    .editor { min-height: 50vh; }
+  /* ---------- checks strip ---------- */
+  .checks { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 14px; font-size: 12px; color: var(--text-2); padding: 8px 16px; border-bottom: 1px solid var(--border); background: #F6F4EF; }
+  .checks .ok { color: var(--ok); } .checks .warn { color: var(--warn); } .checks .err { color: var(--err); font-weight: 700; }
+  .issues { list-style: none; font-size: 12px; color: var(--warn); padding: 0 16px; background: #F6F4EF; }
+  .issues:not(:empty) { padding: 0 16px 8px; border-bottom: 1px solid var(--border); }
+  .draft-note { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; font-size: 13px; background: #FFF6E5; border-bottom: 1px solid #F0D9A8; color: #6B4A00; padding: 8px 16px; }
+
+  /* ---------- text mode ---------- */
+  #textView { padding: 12px 16px 16px; }
+  #editor { font-family: var(--mono); font-size: 13px; line-height: 1.55; height: calc(100vh - 170px); resize: none; white-space: pre; overflow: auto; tab-size: 2; }
+
+  /* ---------- visual mode ---------- */
+  #visualView { display: grid; grid-template-columns: minmax(420px, 560px) minmax(0, 1fr); height: calc(100vh - var(--top) - var(--strip, 34px)); }
+  #vlist { overflow-y: auto; border-right: 1px solid var(--border); padding: 0 18px 110px; position: relative; }
+  #mapWrap { position: relative; min-height: 300px; }
+  #map { position: absolute; inset: 0; background: #F2EFE9; }
+  .ie { border: 1px dashed transparent; background: transparent; border-radius: 6px; }
+  .ie:hover { border-color: #CFCAC2; }
+  .ie:focus { border-style: solid; border-color: var(--brand); background: #fff; }
+
+  .ghead { padding: 24px 4px 14px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 6px; }
+  .ghead .updated { font-size: 11px; font-weight: 600; letter-spacing: 0.13em; text-transform: uppercase; color: #5E7480; text-align: center; width: 220px; padding: 3px 6px; }
+  .ghead .title { font-family: var(--serif); font-size: 28px; font-weight: 700; line-height: 1.18; text-align: center; resize: none; overflow: hidden; padding: 4px 8px; }
+  .ghead .subtitle { font-family: var(--serif); font-size: 16px; font-style: italic; color: var(--text-2); text-align: center; padding: 5px 8px; }
+  .ghead .byline { display: flex; align-items: center; justify-content: center; gap: 4px; font-size: 13px; color: var(--text-2); flex-wrap: wrap; }
+  .ghead .author { width: 150px; font-weight: 700; color: var(--text); padding: 4px 6px; font-size: 13px; }
+  .ghead .authorlink { width: 250px; font-size: 12px; padding: 4px 6px; color: var(--brand-dark); }
+  .ghead .intro { font-family: var(--serif); font-size: 14px; line-height: 1.7; color: var(--text-2); min-height: 84px; margin-top: 8px; border: 1px dashed #CFCAC2; padding: 10px 12px; resize: vertical; }
+  .field-note { font-size: 11px; color: var(--err); }
+
+  .catbar { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; padding: 6px 4px 0; }
+  .catchip { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 600; color: #4A4A4A; }
+  .dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; flex-shrink: 0; }
+  .catpanel { margin-top: 12px; padding: 14px; background: #fff; border: 1px solid var(--border); border-radius: 12px; display: flex; flex-direction: column; gap: 8px; }
+  .catrow { display: grid; grid-template-columns: 44px 100px minmax(0, 1fr) 62px 36px; gap: 8px; align-items: center; }
+  .catrow input[type=color] { width: 44px; height: 36px; padding: 2px; cursor: pointer; }
+  .catrow .hex { font-family: var(--mono); font-size: 13px; }
+  .catmove { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--text-2); padding: 4px 0 4px 152px; flex-wrap: wrap; }
+  .catmove select { width: auto; height: 32px; padding: 0 6px; font-size: 12px; }
+  .catmove button { height: 32px; font-size: 12px; }
+
+  .sechead { display: flex; align-items: center; gap: 6px; padding: 12px 0 4px; margin-top: 18px; border-top: 2px solid var(--border); }
+  .sechead .sectitle { font-family: var(--serif); font-size: 20px; font-weight: 700; padding: 3px 6px; flex: 1 1 auto; min-width: 80px; }
+  .sechead .count { font-size: 12px; color: var(--text-3); white-space: nowrap; }
+  .secblurb { font-family: var(--serif); font-size: 13px; font-style: italic; color: var(--text-2); padding: 4px 6px; margin-bottom: 8px; }
+  .cards { display: flex; flex-direction: column; gap: 9px; }
+  .card { display: flex; gap: 6px; padding: 12px 10px 12px 4px; background: #fff; border: 1px solid #E6E2DB; border-radius: 10px; }
+  .card.sel { border-color: var(--brand); box-shadow: 0 0 0 3px rgba(3,143,158,0.16); }
+  .card.dragging { opacity: 0.45; }
+  .dropline { height: 3px; border-radius: 2px; background: var(--brand); }
+  .grip { width: 28px; height: 40px; border: none; background: transparent; cursor: grab; padding: 0; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .grip svg { width: 12px; height: 18px; }
+  .cbody { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+  .cmeta { display: flex; align-items: center; gap: 8px; }
+  .chip { font-size: 10px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; padding: 3px 7px; border-radius: 4px; }
+  .price { font-size: 12px; color: var(--text-3); }
+  .loc { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 600; margin-left: auto; white-space: nowrap; }
+  .loc svg.i { width: 12px; height: 12px; }
+  .cname { border: none; background: transparent; padding: 0; height: auto; text-align: left; font-family: var(--serif); font-size: 17px; font-weight: 600; line-height: 1.3; color: var(--text); }
+  .cname:hover { color: var(--brand-dark); }
+  .preview { font-family: var(--serif); font-size: 13.5px; line-height: 1.55; color: #4A4A4A; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .preview.placeholder { color: var(--text-3); font-style: italic; }
+  .cform { display: flex; flex-direction: column; gap: 10px; padding-top: 6px; }
+  .g3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+  .g2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+  .span2 { grid-column: span 2; }
+  .cform input, .cform select { height: 36px; }
+  .cform textarea.writeup { min-height: 120px; font-family: var(--serif); font-size: 14px; line-height: 1.6; resize: vertical; }
+  .locbox { display: flex; align-items: center; gap: 8px; background: var(--hover); border-radius: 8px; padding: 8px 10px; font-size: 12px; color: var(--text-2); flex-wrap: wrap; }
+  .locbox input { width: 220px; height: 32px; font-family: var(--mono); font-size: 12px; }
+  .locbox button { height: 32px; font-size: 12px; }
+  .cactions { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+  .dropzone { height: 0; border-radius: 10px; border: 1px dashed transparent; display: flex; align-items: center; justify-content: center; font-size: 12px; color: var(--text-3); overflow: hidden; }
+  .dragging-any .dropzone, .dropzone.empty { height: 46px; border-color: #CFCAC2; }
+  .dragging-any .dropzone span { display: none; }
+  .dragging-any .dropzone::after { content: attr(data-label); }
+  .dropzone.over { border-color: var(--brand); color: var(--brand-dark); background: rgba(3,143,158,0.05); }
+  .card.drop-before { box-shadow: 0 -5px 0 -2px var(--brand); }
+  .addsec { margin-top: 22px; width: 100%; border-style: dashed; color: var(--brand-dark); }
+  .rawnote { font-size: 12px; color: var(--text-3); background: var(--hover); border-radius: 8px; padding: 8px 10px; }
+
+  .toast { position: sticky; bottom: 16px; margin-top: 16px; display: flex; align-items: center; gap: 10px; padding: 0 6px 0 16px; height: 52px; border-radius: 10px; background: #1A1A1A; color: #fff; font-size: 13px; z-index: 5; }
+  .toast span { flex: 1 1 auto; }
+  .toast button { border: none; }
+  .toast .undo { background: #fff; color: #1A1A1A; }
+  .toast .x { background: transparent; color: #fff; }
+
+  /* map overlays */
+  .msearch { position: absolute; left: 14px; top: 14px; width: min(380px, calc(100% - 28px)); z-index: 800; display: flex; flex-direction: column; gap: 6px; }
+  .msearch label { display: flex; align-items: center; gap: 8px; height: 44px; padding: 0 12px; background: #fff; border: 1px solid var(--border); border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.08); }
+  .msearch input { border: none; padding: 0; height: 40px; font-size: 14px; }
+  .results { background: #fff; border: 1px solid var(--border); border-radius: 10px; box-shadow: 0 8px 24px rgba(0,0,0,0.12); overflow: hidden; }
+  .results button { display: flex; align-items: center; gap: 10px; width: 100%; height: auto; min-height: 50px; padding: 8px 12px; border: none; border-bottom: 1px solid #F0EDE8; border-radius: 0; text-align: left; font-weight: 400; background: #fff; }
+  .results button:hover { background: var(--hover); }
+  .results .rn { font-size: 14px; font-weight: 600; }
+  .results .ra { font-size: 12px; color: var(--text-3); }
+  .results .rt { margin-left: auto; font-size: 11px; font-weight: 700; white-space: nowrap; }
+  .results .foot { padding: 7px 12px; font-size: 11px; color: var(--text-3); background: var(--bg); }
+  .mbanner { position: absolute; left: 50%; top: 70px; transform: translateX(-50%); z-index: 790; display: flex; align-items: center; gap: 10px; padding: 6px 6px 6px 16px; border-radius: 999px; background: #1A1A1A; color: #fff; font-size: 13px; font-weight: 600; white-space: nowrap; }
+  .mbanner button { height: 30px; border: none; border-radius: 999px; font-size: 12px; }
+  .mtools { position: absolute; right: 12px; bottom: 26px; z-index: 790; display: flex; gap: 6px; }
+  .mhint { position: absolute; left: 12px; bottom: 26px; z-index: 790; padding: 7px 11px; border-radius: 8px; background: rgba(255,255,255,0.93); font-size: 12px; color: var(--text-2); pointer-events: none; }
+  .vpin { border-radius: 50%; border: 2.5px solid #fff; box-shadow: 0 2px 7px rgba(0,0,0,0.28); box-sizing: border-box; }
+  .vpin.sel { box-shadow: 0 3px 14px rgba(0,0,0,0.4); }
+  .addpop { display: flex; flex-direction: column; gap: 8px; min-width: 210px; font-family: var(--sans); }
+  .addpop .coords { font-size: 11px; color: var(--text-3); font-family: var(--mono); }
+  .addpop select { height: 34px; font-size: 13px; padding: 0 6px; }
+  .leaflet-tooltip.vtip { font-family: var(--sans); font-weight: 600; font-size: 12px; background: #1C1C1E; color: #fff; border: none; box-shadow: none; }
+  .leaflet-tooltip.vtip::before { border-top-color: #1C1C1E; }
+
+  @media (max-width: 860px) {
+    #visualView { grid-template-columns: 1fr; grid-template-rows: 42vh minmax(0, 1fr); height: auto; }
+    #mapWrap { order: -1; position: sticky; top: var(--top); z-index: 900; height: 42vh; }
+    #vlist { border-right: none; overflow: visible; padding-bottom: 60px; }
+    header { gap: 8px; padding: 0 10px; flex-wrap: nowrap; overflow-x: auto; }
+    .brand span, .who { display: none; }
+    .catrow { grid-template-columns: 44px 90px minmax(0, 1fr) 36px; }
+    .catrow .cnt { display: none; }
+    .catmove { padding-left: 0; }
   }
 </style>
 </head>
 <body>
 
 <header>
-  <a class="brand" href="/">⛺︎ <strong>GUIIDES</strong><span>editor</span></a>
-  <div class="who hidden" id="who">
-    <span id="whoText"></span>
-    <button id="signOut">Sign out</button>
+  <a class="brand" href="/"><svg width="16" height="16" viewBox="0 0 64 64" aria-hidden="true"><path fill="#038f9e" fill-rule="evenodd" d="M32 5 L61 58 L3 58 Z M32 27 L42.5 58 L21.5 58 Z"/></svg><strong>GUIIDES</strong><span>editor</span></a>
+  <div id="topControls" class="hidden" style="display:flex;align-items:center;gap:10px;flex:1 1 auto;min-width:0">
+    <label class="sr" for="guidePicker">Guide</label>
+    <select id="guidePicker"></select>
+    <div class="seg" id="modeSeg">
+      <button data-mode="visual" class="on">Visual</button>
+      <button data-mode="text">Markdown</button>
+    </div>
+    <div class="grow"></div>
+    <span id="saveState"></span>
+    <a id="viewLive" href="#" target="_blank" rel="noopener" style="text-decoration:none"><button>View live ↗</button></a>
+    <button id="reloadBtn" class="ghost">Reload</button>
+    <button class="primary" id="saveBtn" disabled>Save</button>
+    <span class="who" id="whoText"></span>
+    <button id="signOut" class="ghost">Sign out</button>
   </div>
 </header>
 
@@ -135,74 +242,75 @@
     <li>Under <b>Permissions → Repository permissions</b>, set <b>Contents</b> to <b>Read and write</b>.</li>
     <li>Generate, copy it, and paste it below. Don't paste it anywhere else.</li>
   </ol>
-  <label for="tokenInput">Token</label>
+  <label class="f" for="tokenInput">Token</label>
   <input id="tokenInput" type="password" autocomplete="off" spellcheck="false" placeholder="github_pat_…">
-  <div class="row">
-    <label><input type="checkbox" id="rememberToken" checked> Remember on this device</label>
-  </div>
-  <div class="row">
-    <button class="primary" id="signIn">Sign in</button>
-    <span class="status" id="loginStatus"></span>
-  </div>
+  <div class="row"><label><input type="checkbox" id="rememberToken" checked> Remember on this device</label></div>
+  <div class="row"><button class="primary" id="signIn">Sign in</button><span class="status" id="loginStatus"></span></div>
 </section>
 
 <!-- ============ APP ============ -->
-<div class="app hidden" id="appView">
-  <aside class="sidebar">
-    <h2>Guides</h2>
-    <ul class="guide-list" id="guideList"></ul>
-    <button id="newGuideBtn">+ New guide</button>
-  </aside>
+<div id="appView" class="hidden">
+  <div id="emptyState" class="panel" style="text-align:center">
+    <h2>Pick a guide</h2>
+    <p class="hint" style="margin-top:6px">Choose one from the menu at the top, or start a new one there.</p>
+    <p class="status" id="appStatus" style="margin-top:8px"></p>
+  </div>
 
-  <main class="main">
-    <div id="emptyState" class="empty">Pick a guide on the left, or start a new one.</div>
+  <div id="editorView" class="hidden">
+    <div class="draft-note hidden" id="draftNote">
+      <span id="draftText"></span>
+      <button id="restoreDraft">Restore draft</button>
+      <button id="discardDraft" class="ghost">Discard</button>
+    </div>
+    <div class="checks" id="checks"></div>
+    <ul class="issues" id="issues"></ul>
 
-    <!-- Guide editor -->
-    <div id="editorView" class="hidden" style="display:flex;flex-direction:column;gap:0.75rem;flex:1">
-      <div class="toolbar">
-        <h1><span id="edTitle"></span><span id="dirtyDot" class="dirty-dot hidden" title="Unsaved changes"></span>
-          <span class="path" id="edPath"></span></h1>
-        <a id="viewLive" href="#" target="_blank" rel="noopener"><button>View live ↗</button></a>
-        <button id="reloadBtn">Reload</button>
-        <button class="primary" id="saveBtn" disabled>Save</button>
+    <div id="visualView">
+      <div id="vlist"></div>
+      <div id="mapWrap">
+        <div id="map"></div>
+        <div class="msearch" id="msearch">
+          <label><svg class="i" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg>
+            <span class="sr">Search for a place</span>
+            <input id="searchInput" placeholder="Search a place or address…" autocomplete="off" spellcheck="false">
+          </label>
+          <div class="results hidden" id="results"></div>
+        </div>
+        <div class="mbanner hidden" id="placeBanner"><span id="placeText"></span><button id="placeCancel">Cancel</button></div>
+        <div class="mhint">Click the map to add a spot · drag a pin to move it</div>
+        <div class="mtools"><button id="fitBtn">Show all</button></div>
       </div>
-      <div class="banner-note hidden" id="draftNote">
-        <span id="draftText"></span>
-        <button id="restoreDraft">Restore draft</button>
-        <button id="discardDraft">Discard</button>
-      </div>
-      <div class="checks" id="checks"></div>
-      <ul class="issues" id="issues"></ul>
-      <textarea class="editor" id="editor" spellcheck="true"></textarea>
-      <div class="status" id="status"></div>
     </div>
 
-    <!-- New guide -->
-    <div id="newGuideView" class="hidden">
-      <div class="panel">
-        <h2>New guide</h2>
-        <label for="ngSlug">Web address</label>
-        <input id="ngSlug" placeholder="cdmx-cantinas" spellcheck="false">
-        <div class="hint">guiides.com/<b id="ngSlugPreview">…</b>/ · lowercase letters, numbers and dashes</div>
-        <label for="ngTitle">Title</label>
-        <input id="ngTitle" placeholder="Cantinas of Mexico City">
-        <label for="ngSubtitle">Subtitle</label>
-        <input id="ngSubtitle" placeholder="Swinging doors, cold beers, and free botanas">
-        <div class="grid2">
-          <div><label for="ngAuthor">Author</label><input id="ngAuthor" placeholder="SL FNK"></div>
-          <div><label for="ngCity">City</label><input id="ngCity" placeholder="Mexico City"></div>
-        </div>
-        <label for="ngCenter">Map center</label>
-        <input id="ngCenter" placeholder="19.4326, -99.1332" spellcheck="false">
-        <div class="hint">Right-click a spot in Google Maps and click the numbers at the top to copy them.</div>
-        <div class="actions">
-          <button class="primary" id="ngCreate">Create guide</button>
-          <button id="ngCancel">Cancel</button>
-        </div>
-        <div class="status" id="ngStatus" style="margin-top:0.6rem"></div>
-      </div>
+    <div id="textView" class="hidden">
+      <textarea id="editor" spellcheck="true" aria-label="Guide file"></textarea>
     </div>
-  </main>
+  </div>
+
+  <div id="newGuideView" class="hidden">
+    <div class="panel">
+      <h2>New guide</h2>
+      <label class="f" for="ngSlug">Web address</label>
+      <input id="ngSlug" placeholder="cdmx-cantinas" spellcheck="false">
+      <div class="hint">guiides.com/<b id="ngSlugPreview">…</b>/ · lowercase letters, numbers and dashes</div>
+      <label class="f" for="ngTitle">Title</label>
+      <input id="ngTitle" placeholder="Cantinas of Mexico City">
+      <label class="f" for="ngSubtitle">Subtitle</label>
+      <input id="ngSubtitle" placeholder="Swinging doors, cold beers, and free botanas">
+      <div class="grid2">
+        <div><label class="f" for="ngAuthor">Author</label><input id="ngAuthor" placeholder="SL FNK"></div>
+        <div><label class="f" for="ngCity">City</label><input id="ngCity" placeholder="Mexico City"></div>
+      </div>
+      <label class="f" for="ngCenter">Map center</label>
+      <input id="ngCenter" placeholder="19.4326, -99.1332" spellcheck="false">
+      <div class="hint">Right-click a spot in Google Maps and click the numbers at the top to copy them.</div>
+      <div class="row" style="margin-top:1rem">
+        <button class="primary" id="ngCreate">Create guide</button>
+        <button id="ngCancel" class="ghost">Cancel</button>
+      </div>
+      <div class="status" id="ngStatus" style="margin-top:0.6rem"></div>
+    </div>
+  </div>
 </div>
 
 <script>
@@ -398,21 +506,38 @@ function renderChecks(result) {
   $('issues').innerHTML = result.issues.map(i => '<li>' + esc(i) + '</li>').join('');
 }
 
+
 // ============================================================
 // STATE
 // ============================================================
+const M = window.GuideModel;
+const PALETTE = ['#E07A3A', '#D95B43', '#8B5DAD', '#3D6B5E', '#C4A035', '#4A7FB5', '#2AAA8A', '#C96B8B', '#6B8291'];
+const TILE_URL = 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png?key=cb1_2thp_1_6ffbb574555fa573f30768f0';
+const PHOTON = 'https://photon.komoot.io/api/';
+
 const state = {
   guides: [], guidesSha: null,
-  current: null,          // { slug, sha, original, originalSpots }
+  current: null,        // { slug, sha, original, baseline, originalSpots }
+  mode: 'visual',
+  model: null,
   lastCheck: null
+};
+const V = {             // visual-editor UI state
+  selectedId: null, expandedId: null, catPanel: false,
+  dragId: null, overId: null, overZone: null,
+  toast: null, catNotes: {}, hexDrafts: {}, moveTargets: {}
 };
 const draftKey = slug => 'gg-draft:' + slug;
 
-function isDirty() { return !!state.current && $('editor').value !== state.current.original; }
-function updateDirty() {
-  const d = isDirty();
-  show($('dirtyDot'), d);
-  $('saveBtn').disabled = !d || !(state.lastCheck && state.lastCheck.ok);
+function currentText() {
+  if (!state.current) return '';
+  return state.mode === 'visual' ? M.serializeGuideModel(state.model) : $('editor').value;
+}
+function isDirty() {
+  if (!state.current) return false;
+  return state.mode === 'visual'
+    ? M.serializeGuideModel(state.model) !== state.current.baseline
+    : $('editor').value !== state.current.original && $('editor').value !== state.current.baseline;
 }
 
 // ============================================================
@@ -424,18 +549,16 @@ async function signIn(t, remember) {
   if (res.status === 404) throw new ApiError(404, "This token can't see " + REPO.owner + '/' + REPO.name + '. Make sure you picked that repository under "Repository access".');
   (remember ? localStorage : sessionStorage).setItem('gg-token', t);
   $('whoText').textContent = REPO.owner + '/' + REPO.name;
-  show($('who'));
   show($('loginView'), false);
+  show($('topControls'));
   show($('appView'));
   await loadGuideIndex();
 }
-
 function signOut() {
   if (isDirty() && !confirm('You have unsaved changes. Sign out anyway? (Your draft stays saved on this device.)')) return;
   localStorage.removeItem('gg-token'); sessionStorage.removeItem('gg-token');
   location.reload();
 }
-
 $('signIn').addEventListener('click', async () => {
   const t = $('tokenInput').value.trim();
   if (!t) { setStatus($('loginStatus'), 'Paste your token first.', 'err'); return; }
@@ -448,124 +571,151 @@ $('tokenInput').addEventListener('input', () => setStatus($('loginStatus'), ''))
 $('signOut').addEventListener('click', signOut);
 
 // ============================================================
-// GUIDE LIST
+// GUIDE PICKER
 // ============================================================
 async function loadGuideIndex() {
   const f = await getFile('guides.json');
-  if (!f) { state.guides = []; state.guidesSha = null; }
-  else { state.guides = (JSON.parse(f.text).guides || []); state.guidesSha = f.sha; }
-  renderGuideList();
+  state.guides = f ? (JSON.parse(f.text).guides || []) : [];
+  state.guidesSha = f ? f.sha : null;
+  renderPicker();
+  const want = new URLSearchParams(location.hash.slice(1)).get('guide');
+  if (want && state.guides.some(g => g.slug === want)) openGuide(want, { force: true });
 }
-
-function renderGuideList() {
-  $('guideList').innerHTML = state.guides.map(g =>
-    '<li><button data-slug="' + esc(g.slug) + '"' + (state.current && state.current.slug === g.slug ? ' class="active"' : '') + '>' +
-    esc(g.title) + '<small>' + esc(g.city || '') + ' · /' + esc(g.slug) + '/' + (g.published === false ? ' · hidden' : '') + '</small></button></li>'
-  ).join('') || '<li class="hint">No guides yet.</li>';
+function renderPicker() {
+  const cur = state.current ? state.current.slug : '';
+  $('guidePicker').innerHTML = (cur ? '' : '<option value="">Choose a guide…</option>') +
+    state.guides.map(g => '<option value="' + esc(g.slug) + '"' + (g.slug === cur ? ' selected' : '') + '>' + esc(g.title) + '</option>').join('') +
+    '<option value="__new">＋ New guide…</option>';
 }
-
-$('guideList').addEventListener('click', e => {
-  const b = e.target.closest('button[data-slug]');
-  if (b) openGuide(b.dataset.slug);
+$('guidePicker').addEventListener('change', () => {
+  const v = $('guidePicker').value;
+  if (v === '__new') { startNewGuide(); return; }
+  if (v) openGuide(v);
 });
 
 // ============================================================
-// EDIT A GUIDE
+// OPEN / SAVE
 // ============================================================
+function setSaveState() {
+  const el = $('saveState');
+  if (!state.current) { el.textContent = ''; $('saveBtn').disabled = true; return; }
+  const d = isDirty();
+  el.className = d ? 'dirty' : 'clean';
+  if (d) el.textContent = 'Unsaved changes';
+  else if (!el.dataset.msg) el.textContent = 'All changes saved';
+  else el.textContent = el.dataset.msg;
+  $('saveBtn').disabled = !d || !(state.lastCheck && state.lastCheck.ok);
+}
+function flashSaveState(msg, kind) {
+  const el = $('saveState');
+  el.dataset.msg = msg; el.textContent = msg; el.className = kind || 'clean';
+}
+
+function layoutStrip() {
+  const h = ['draftNote', 'checks', 'issues'].reduce((a, id) => a + ($(id).offsetHeight || 0), 0);
+  document.documentElement.style.setProperty('--strip', h + 'px');
+  if (map) setTimeout(() => map.invalidateSize(), 0);
+}
+
+let checkTimer = null;
+function afterEdit({ now = false } = {}) {
+  if (!state.current) return;
+  const text = currentText();
+  if (isDirty()) {
+    try { localStorage.setItem(draftKey(state.current.slug), JSON.stringify({ text, baseSha: state.current.sha, savedAt: Date.now() })); } catch (e) {}
+    $('saveState').dataset.msg = '';
+  } else {
+    localStorage.removeItem(draftKey(state.current.slug));
+  }
+  setSaveState();
+  clearTimeout(checkTimer);
+  const run = () => { state.lastCheck = checkGuide(currentText()); renderChecks(state.lastCheck); layoutStrip(); setSaveState(); };
+  if (now) run(); else checkTimer = setTimeout(run, 350);
+}
+
 async function openGuide(slug, { force = false } = {}) {
-  if (!force && isDirty() && !confirm('You have unsaved changes to this guide. Switch anyway? (Your draft stays saved on this device.)')) return;
+  if (!force && isDirty() && !confirm('You have unsaved changes to this guide. Switch anyway? (Your draft stays saved on this device.)')) { renderPicker(); return; }
   show($('emptyState'), false); show($('newGuideView'), false); show($('editorView'));
-  $('editorView').style.display = 'flex';
-  setStatus($('status'), 'Loading…', 'busy');
-  $('editor').value = ''; $('editor').disabled = true;
+  flashSaveState('Loading…', 'clean');
   try {
     const f = await getFile(slug + '/places.md');
     if (!f) throw new ApiError(404, 'No file at /' + slug + '/places.md');
     const check = checkGuide(f.text);
-    state.current = { slug, sha: f.sha, original: f.text, originalSpots: check.parsed ? check.parsed.places.length : 0 };
-    const g = state.guides.find(x => x.slug === slug);
-    $('edTitle').textContent = (check.parsed && check.parsed.guide.title) || (g && g.title) || slug;
-    $('edPath').textContent = slug + '/places.md';
+    state.model = M.parseGuideModel(f.text);
+    state.current = {
+      slug, sha: f.sha, original: f.text,
+      baseline: M.serializeGuideModel(state.model),
+      originalSpots: check.parsed ? check.parsed.places.length : 0
+    };
+    Object.assign(V, { selectedId: null, expandedId: null, toast: null, catPanel: false, catNotes: {}, hexDrafts: {}, moveTargets: {} });
+    $('editor').value = f.text;
     $('viewLive').href = SITE + '/' + slug + '/';
-    $('editor').value = f.text; $('editor').disabled = false;
+    history.replaceState(null, '', '#guide=' + slug);
     state.lastCheck = check; renderChecks(check);
-    setStatus($('status'), '');
+    $('saveState').dataset.msg = '';
+    setMode(check.ok ? 'visual' : 'text', { convert: false });
+    renderPicker();
     offerDraft(slug, f);
-    renderGuideList(); updateDirty();
+    setSaveState(); layoutStrip();
+    if (state.mode === 'visual') fitAll();
   } catch (e) {
     state.current = null;
-    setStatus($('status'), e.message, 'err');
+    flashSaveState(e.message, 'err');
   }
 }
 
-// Drafts: every keystroke is kept on this device, so a closed tab or failed save loses nothing
 function offerDraft(slug, file) {
   let d = null;
   try { d = JSON.parse(localStorage.getItem(draftKey(slug)) || 'null'); } catch (e) {}
-  if (!d || d.text === file.text) { localStorage.removeItem(draftKey(slug)); show($('draftNote'), false); return; }
-  const when = new Date(d.savedAt).toLocaleString();
-  $('draftText').textContent = 'You have unsaved edits from ' + when + (d.baseSha !== file.sha ? '. The guide has changed on GitHub since then — restoring would undo those changes.' : '.');
+  if (!d || d.text === file.text || d.text === state.current.baseline) { localStorage.removeItem(draftKey(slug)); show($('draftNote'), false); return; }
+  $('draftText').textContent = 'You have unsaved edits from ' + new Date(d.savedAt).toLocaleString() +
+    (d.baseSha !== file.sha ? '. The guide has changed on GitHub since then — restoring would undo those changes.' : '.');
   show($('draftNote'));
 }
 $('restoreDraft').addEventListener('click', () => {
   const d = JSON.parse(localStorage.getItem(draftKey(state.current.slug)) || 'null');
-  if (d) { $('editor').value = d.text; onEdit(); }
   show($('draftNote'), false);
+  if (!d) return;
+  const check = checkGuide(d.text);
+  if (state.mode === 'visual' && check.ok) { state.model = M.parseGuideModel(d.text); renderVisual(); }
+  else { setMode('text', { convert: false }); $('editor').value = d.text; }
+  afterEdit({ now: true });
 });
 $('discardDraft').addEventListener('click', () => {
-  localStorage.removeItem(draftKey(state.current.slug)); show($('draftNote'), false);
-});
-
-let checkTimer = null;
-function onEdit() {
-  if (!state.current) return;
-  const text = $('editor').value;
-  if (text !== state.current.original) {
-    try { localStorage.setItem(draftKey(state.current.slug), JSON.stringify({ text, baseSha: state.current.sha, savedAt: Date.now() })); } catch (e) {}
-  } else {
-    localStorage.removeItem(draftKey(state.current.slug));
-  }
-  updateDirty();
-  clearTimeout(checkTimer);
-  checkTimer = setTimeout(() => { state.lastCheck = checkGuide(text); renderChecks(state.lastCheck); updateDirty(); }, 300);
-}
-$('editor').addEventListener('input', onEdit);
-$('editor').addEventListener('keydown', e => {
-  if (e.key === 'Tab') { e.preventDefault(); document.execCommand('insertText', false, '  '); }
+  localStorage.removeItem(draftKey(state.current.slug)); show($('draftNote'), false); layoutStrip();
 });
 
 async function save() {
   if (!state.current || !isDirty()) return;
-  const text = $('editor').value;
+  const text = currentText();
   const check = checkGuide(text);
-  state.lastCheck = check; renderChecks(check);
-  if (!check.ok) { setStatus($('status'), 'Fix the problems above before saving.', 'err'); return; }
+  state.lastCheck = check; renderChecks(check); layoutStrip();
+  if (!check.ok) { flashSaveState('Fix the problems above first', 'err'); return; }
   const before = state.current.originalSpots, after = check.parsed.places.length;
-  if (after < before && !confirm('This save removes ' + (before - after) + ' spot' + (before - after === 1 ? '' : 's') + ' from the map (' + before + ' → ' + after + '). Save anyway?')) return;
-
+  if (after < before && !confirm('This save leaves ' + (before - after) + ' fewer spot' + (before - after === 1 ? '' : 's') + ' on the map (' + before + ' → ' + after + '). Save anyway?')) return;
   const slug = state.current.slug;
   $('saveBtn').disabled = true;
-  setStatus($('status'), 'Saving…', 'busy');
+  flashSaveState('Saving…', 'clean');
   try {
     const newSha = await putFile(slug + '/places.md', text, state.current.sha, 'Update ' + slug + ' guide (editor)');
-    state.current.sha = newSha; state.current.original = text; state.current.originalSpots = after;
+    Object.assign(state.current, { sha: newSha, original: text, originalSpots: after });
+    state.current.baseline = state.mode === 'visual' ? text : M.serializeGuideModel(M.parseGuideModel(text));
+    if (state.mode === 'text') state.model = M.parseGuideModel(text);
     localStorage.removeItem(draftKey(slug));
-    $('edTitle').textContent = check.parsed.guide.title || slug;
     const synced = await syncGuideMeta(slug, check.parsed.guide);
-    setStatus($('status'), 'Saved' + (synced ? ' (also updated the page title and guide list)' : '') + '. Live on the site in about a minute.', 'ok');
+    flashSaveState('Saved' + (synced ? ' · page title updated' : '') + ' · live in about a minute', 'clean');
   } catch (e) {
     if (e.status === 409) {
-      setStatus($('status'), "Not saved: this guide changed on GitHub after you opened it, and saving would overwrite that. Your edits are kept as a draft. Click Reload, then Restore draft only if you're sure your version should win.", 'err');
+      flashSaveState('Not saved — changed on GitHub', 'err');
+      alert("Not saved: this guide changed on GitHub after you opened it, and saving would overwrite that.\n\nYour edits are kept as a draft on this device. Click Reload to get the latest version, then Restore draft only if your version should win.");
     } else {
-      setStatus($('status'), 'Not saved: ' + e.message + ' Your edits are kept as a draft on this device.', 'err');
+      flashSaveState('Not saved: ' + e.message, 'err');
     }
   }
-  updateDirty();
+  setSaveState();
 }
 $('saveBtn').addEventListener('click', save);
-document.addEventListener('keydown', e => {
-  if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 's') { e.preventDefault(); save(); }
-});
+document.addEventListener('keydown', e => { if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 's') { e.preventDefault(); save(); } });
 
 // Keep the guide page's <title>/preview text and guides.json in step with places.md
 async function syncGuideMeta(slug, guide) {
@@ -573,10 +723,7 @@ async function syncGuideMeta(slug, guide) {
   const title = guide.title || slug, subtitle = guide.deck || '';
   const page = await getFile(slug + '/index.html');
   const want = guidePageHtml(slug, title, subtitle);
-  if (page && page.text !== want) {
-    await putFile(slug + '/index.html', want, page.sha, 'Sync ' + slug + ' page title (editor)');
-    changed = true;
-  }
+  if (page && page.text !== want) { await putFile(slug + '/index.html', want, page.sha, 'Sync ' + slug + ' page title (editor)'); changed = true; }
   const entry = state.guides.find(g => g.slug === slug);
   if (entry && entry.title !== title) {
     const f = await getFile('guides.json');
@@ -585,8 +732,7 @@ async function syncGuideMeta(slug, guide) {
     if (e) {
       e.title = title;
       state.guidesSha = await putFile('guides.json', JSON.stringify(idx, null, 2) + '\n', f.sha, 'Update ' + slug + ' title in guide list (editor)');
-      state.guides = idx.guides; renderGuideList();
-      changed = true;
+      state.guides = idx.guides; renderPicker(); changed = true;
     }
   }
   return changed;
@@ -597,21 +743,658 @@ $('reloadBtn').addEventListener('click', () => {
   if (isDirty() && !confirm('Reload the latest version from GitHub? Your current edits stay saved as a draft you can restore.')) return;
   openGuide(state.current.slug, { force: true });
 });
-
 window.addEventListener('beforeunload', e => { if (isDirty()) { e.preventDefault(); e.returnValue = ''; } });
+
+// ============================================================
+// VISUAL ⇄ MARKDOWN
+// ============================================================
+function setMode(mode, { convert = true } = {}) {
+  if (convert && state.current && mode !== state.mode) {
+    if (mode === 'text') {
+      // Show the untouched file when nothing changed, so a first look never shows reformatting
+      const t = M.serializeGuideModel(state.model);
+      $('editor').value = t === state.current.baseline ? state.current.original : t;
+    } else {
+      const check = checkGuide($('editor').value);
+      if (!check.ok) { alert("The Markdown has problems the visual editor can't read yet:\n\n• " + check.issues.join('\n• ')); return; }
+      state.model = M.parseGuideModel($('editor').value);
+    }
+  }
+  state.mode = mode;
+  document.querySelectorAll('#modeSeg button').forEach(b => b.classList.toggle('on', b.dataset.mode === mode));
+  show($('visualView'), mode === 'visual');
+  show($('textView'), mode === 'text');
+  if (mode === 'visual' && state.model) { ensureMap(); renderVisual(); setTimeout(() => map.invalidateSize(), 0); }
+  setSaveState();
+}
+document.querySelectorAll('#modeSeg button').forEach(b => b.addEventListener('click', () => setMode(b.dataset.mode)));
+$('editor').addEventListener('input', () => afterEdit());
+$('editor').addEventListener('keydown', e => { if (e.key === 'Tab') { e.preventDefault(); document.execCommand('insertText', false, '  '); } });
+
+// ============================================================
+// VISUAL MODEL HELPERS
+// ============================================================
+const blocks = () => state.model.blocks;
+const findBlock = id => blocks().find(b => b.id === id);
+const catList = () => state.model.categories;
+const catByName = n => catList().find(c => c.name === n);
+const catColor = n => (catByName(n) || {}).color || '#888888';
+function rgb(hex) {
+  let h = hex.replace('#', '');
+  if (h.length === 3) h = h.split('').map(c => c + c).join('');
+  const n = parseInt(h.slice(0, 6), 16);
+  return isNaN(n) ? [136, 136, 136] : [n >> 16 & 255, n >> 8 & 255, n & 255];
+}
+const mix = (hex, to, t) => 'rgb(' + rgb(hex).map((v, i) => Math.round(v + (to[i] - v) * t)).join(',') + ')';
+const chipStyle = n => 'background:' + mix(catColor(n), [255, 255, 255], 0.84) + ';color:' + mix(catColor(n), [0, 0, 0], 0.5);
+
+// Sections with the spots that follow them (the file keeps them interleaved)
+function groups() {
+  const gs = [];
+  let cur = { section: null, items: [] };
+  blocks().forEach(b => {
+    if (b.type === 'section') { gs.push(cur); cur = { section: b, items: [] }; }
+    else cur.items.push(b);
+  });
+  gs.push(cur);
+  return gs.filter((g, i) => i > 0 || g.items.length);
+}
+function groupOf(id) { return groups().find(g => g.items.some(b => b.id === id)) || null; }
+// Which category a spot dropped into a section should take
+function sectionCategory(g) {
+  const names = catList().map(c => c.name);
+  if (g && g.section) {
+    const t = g.section.title.trim().toLowerCase();
+    const m = names.find(n => { const c = n.toLowerCase(); return c === t || t.startsWith(c) || c.startsWith(t); });
+    if (m) return m;
+  }
+  const first = g && g.items.find(b => b.type === 'spot');
+  return first ? M.getField(first, 'category') : (names[0] || '');
+}
+function groupEndIndex(g) {
+  const bs = blocks();
+  if (!g.section) { const i = bs.findIndex(b => b.type === 'section'); return i < 0 ? bs.length : i; }
+  const si = bs.indexOf(g.section);
+  const next = bs.findIndex((b, i) => i > si && b.type === 'section');
+  return next < 0 ? bs.length : next;
+}
+function moveSpot(id, beforeId, targetGroup) {
+  const bs = blocks();
+  const from = bs.findIndex(b => b.id === id);
+  if (from < 0) return;
+  const spot = bs[from];
+  const fromGroup = groupOf(id);
+  bs.splice(from, 1);
+  let to;
+  if (beforeId) { to = bs.findIndex(b => b.id === beforeId); targetGroup = groupOf(beforeId); }
+  if (to == null || to < 0) to = groupEndIndex(targetGroup);
+  bs.splice(to, 0, spot);
+  if (targetGroup && fromGroup && targetGroup.section !== fromGroup.section) {
+    const cat = sectionCategory(targetGroup);
+    if (cat) M.setField(spot, 'Category', cat);
+  }
+}
+function newSpot(g, { name, lat, lng, gmaps } = {}) {
+  const cat = sectionCategory(g) || (catList()[0] || {}).name || '';
+  const spot = { type: 'spot', id: M.newId(), name: name || 'New spot', fields: [], paragraphs: ['[Write-Up Coming Soon]'] };
+  if (cat) M.setField(spot, 'Category', cat);
+  if (lat != null) M.setLatLng(spot, lat, lng);
+  if (gmaps) M.setField(spot, 'Google Maps', gmaps);
+  blocks().splice(groupEndIndex(g), 0, spot);
+  V.selectedId = spot.id; V.expandedId = spot.id;
+  return spot;
+}
+function gmapsLink(name, extra) {
+  const q = [name, extra].filter(Boolean).join(' ');
+  return 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(q).replace(/%20/g, '+');
+}
+function toastUndo(text, undo) { V.toast = { text, undo }; }
+
+// ============================================================
+// VISUAL LIST — rendering
+// ============================================================
+const ICON = {
+  grip: '<svg viewBox="0 0 12 18" aria-hidden="true"><g fill="#A8A39A"><circle cx="3" cy="3" r="1.6"/><circle cx="9" cy="3" r="1.6"/><circle cx="3" cy="9" r="1.6"/><circle cx="9" cy="9" r="1.6"/><circle cx="3" cy="15" r="1.6"/><circle cx="9" cy="15" r="1.6"/></g></svg>',
+  trash: '<svg class="i" viewBox="0 0 24 24"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg>',
+  pin: '<svg class="i" viewBox="0 0 24 24"><path d="M12 21s7-6.2 7-11.5A7 7 0 0 0 5 9.5C5 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg>',
+  up: '<svg class="i" viewBox="0 0 24 24"><path d="M6 15l6-6 6 6"/></svg>',
+  down: '<svg class="i" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg>',
+  plus: '<svg class="i" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>',
+  palette: '<svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="8.5" cy="10" r="1.2"/><circle cx="12" cy="7.5" r="1.2"/><circle cx="15.5" cy="10" r="1.2"/><path d="M12 21a2.5 2.5 0 0 1 0-5h1.5a2.5 2.5 0 0 0 0-5"/></svg>'
+};
+const isPlaceholder = t => !t || /^\[write-up coming soon\]$/i.test(t.trim());
+const val = s => esc(s == null ? '' : s);
+
+function renderVisual() {
+  clearTimeout(renderTimer);
+  if (!state.model) return;
+  const scroll = $('vlist').scrollTop;
+  const m = state.model;
+  const link = M.getMeta(m, 'Author Link');
+  const linkBad = link && !/^https?:\/\/\S+$/i.test(link.trim());
+  let h = '';
+
+  // ---- guide header
+  h += '<div class="ghead">' +
+    '<input class="ie updated" data-meta="Updated" value="' + val(M.getMeta(m, 'Updated')) + '" placeholder="Updated…" aria-label="Updated">' +
+    '<textarea class="ie title" data-meta="Title" rows="1" placeholder="Guide title" aria-label="Guide title">' + val(M.getMeta(m, 'Title')) + '</textarea>' +
+    '<input class="ie subtitle" data-meta="Subtitle" value="' + val(M.getMeta(m, 'Subtitle')) + '" placeholder="Add an italic subtitle…" aria-label="Subtitle">' +
+    '<div class="byline">By <input class="ie author" data-meta="Author" value="' + val(M.getMeta(m, 'Author')) + '" placeholder="Your name" aria-label="Author">' +
+    '<input class="ie authorlink" data-meta="Author Link" value="' + val(link) + '" placeholder="Link your name (website, Instagram, X…)" aria-label="Author link" spellcheck="false"></div>' +
+    (linkBad ? '<div class="field-note">Links need to start with https://</div>' : '') +
+    '<textarea class="ie intro" data-intro rows="4" placeholder="Write an intro that sets the scene… (blank line = new paragraph)" aria-label="Intro">' + val(m.intro.join('\n\n')) + '</textarea>' +
+    '</div>';
+
+  // ---- categories
+  h += '<div class="catbar">' + catList().map(c => '<span class="catchip"><span class="dot" style="background:' + val(c.color) + '"></span>' + val(c.name) + '</span>').join('') +
+    '<span class="grow"></span><button data-act="toggle-cats" style="display:inline-flex;align-items:center;gap:6px;height:32px;font-size:12px' + (V.catPanel ? ';background:#EFECE6' : '') + '">' + ICON.palette + 'Edit categories</button></div>';
+  if (V.catPanel) h += renderCatPanel();
+
+  // ---- sections + cards
+  const dragging = !!V.dragId;
+  groups().forEach((g, gi, all) => {
+    const gkey = g.section ? g.section.id : 'lead';
+    const spots = g.items.filter(b => b.type === 'spot');
+    h += '<div class="group" data-group="' + gkey + '">';
+    if (g.section) {
+      h += '<div class="sechead"><span class="dot" style="background:' + val(catColor(sectionCategory(g))) + '"></span>' +
+        '<input class="ie sectitle" data-sec-title="' + g.section.id + '" value="' + val(g.section.title) + '" aria-label="Section title">' +
+        '<span class="count">' + spots.length + (spots.length === 1 ? ' spot' : ' spots') + '</span>' +
+        '<button class="icon ghost" data-act="sec-up" data-id="' + g.section.id + '" aria-label="Move section up"' + (gi === 0 || !all[gi - 1].section ? ' disabled' : '') + '>' + ICON.up + '</button>' +
+        '<button class="icon ghost" data-act="sec-down" data-id="' + g.section.id + '" aria-label="Move section down"' + (gi === all.length - 1 ? ' disabled' : '') + '>' + ICON.down + '</button>' +
+        (g.items.length ? '' : '<button class="icon ghost" data-act="sec-del" data-id="' + g.section.id + '" aria-label="Delete section" title="Delete empty section">' + ICON.trash + '</button>') +
+        '<button data-act="add-spot" data-group="' + gkey + '" style="display:inline-flex;align-items:center;gap:4px;height:32px;font-size:12px;color:var(--brand-dark)">' + ICON.plus + 'Add spot</button></div>' +
+        '<input class="ie secblurb" data-sec-blurb="' + g.section.id + '" value="' + val(g.section.blurb) + '" placeholder="Add a line introducing ' + val(g.section.title) + '…" aria-label="Section intro">';
+    } else {
+      h += '<div class="sechead"><span class="sectitle" style="font-size:15px;color:var(--text-3)">Before the first section</span>' +
+        '<button data-act="add-spot" data-group="lead" style="display:inline-flex;align-items:center;gap:4px;height:32px;font-size:12px;color:var(--brand-dark)">' + ICON.plus + 'Add spot</button></div>';
+    }
+    h += '<div class="cards">';
+    g.items.forEach(b => {
+      if (b.type === 'raw') { h += '<div class="rawnote">A block of text the guide can\'t show as a spot. Edit it in the Markdown view.</div>'; return; }
+      h += renderCard(b);
+    });
+    h += '<div class="dropzone' + (!g.items.length ? ' empty' : '') + '" data-zone="' + gkey + '" data-label="Drop here to move to ' + val(g.section ? g.section.title : 'the top') + '">' +
+      (!g.items.length ? '<span>No spots yet</span>' : '') + '</div>';
+    h += '</div></div>';
+  });
+  h += '<button class="addsec" data-act="add-section">' + '＋ Add section</button>';
+
+  if (V.toast) h += '<div class="toast"><span>' + val(V.toast.text) + '</span><button class="undo" data-act="undo">Undo</button><button class="x icon" data-act="toast-x" aria-label="Dismiss"><svg class="i" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>';
+
+  $('vlist').innerHTML = h;
+  $('vlist').classList.toggle('dragging-any', dragging);
+  $('vlist').scrollTop = scroll;
+  autosize($('vlist').querySelector('.title'));
+  syncMarkers();
+  updatePlaceBanner();
+}
+
+function renderCard(b) {
+  const cat = M.getField(b, 'category');
+  const ll = M.getLatLng(b);
+  const sel = b.id === V.selectedId, exp = b.id === V.expandedId;
+  const writeup = b.paragraphs.join('\n\n');
+  let h = '';
+  h += '<div class="card' + (sel ? ' sel' : '') + (V.dragId === b.id ? ' dragging' : '') + '" data-card="' + b.id + '" draggable="' + (exp ? 'false' : 'true') + '">' +
+    '<button class="grip" aria-label="Drag to reorder ' + val(b.name) + '" title="Drag to reorder">' + ICON.grip + '</button>' +
+    '<div class="cbody"><div class="cmeta">' +
+    (cat ? '<span class="chip" style="' + chipStyle(cat) + '">' + val(cat) + '</span>' : '<span class="chip" style="background:#EEE;color:#555">No category</span>') +
+    '<span class="price">' + val(M.getField(b, 'price')) + '</span>' +
+    '<span class="loc" style="color:' + (ll ? 'var(--ok)' : 'var(--warn)') + '">' + ICON.pin + (ll ? 'On map' : 'Needs location') + '</span></div>' +
+    '<button class="cname" data-act="select" data-id="' + b.id + '">' + val(b.name) + '</button>';
+  if (!exp) {
+    h += '<div class="preview' + (isPlaceholder(writeup) ? ' placeholder' : '') + '">' + val(isPlaceholder(writeup) ? '[Write-Up Coming Soon]' : writeup) + '</div>';
+  } else {
+    const opts = catList().map(c => '<option' + (c.name === cat ? ' selected' : '') + '>' + val(c.name) + '</option>').join('') +
+      (cat && !catByName(cat) ? '<option selected>' + val(cat) + '</option>' : '');
+    h += '<div class="cform">' +
+      '<div class="g3"><label class="f span2">Name<input data-spot-name="' + b.id + '" value="' + val(b.name) + '"></label>' +
+      '<label class="f">Price<input data-spot-field="Price" data-id="' + b.id + '" value="' + val(M.getField(b, 'price')) + '" placeholder="$"></label></div>' +
+      '<label class="f">Category<select data-spot-cat="' + b.id + '">' + opts + '</select></label>' +
+      '<label class="f">Write-up<textarea class="writeup" data-spot-writeup="' + b.id + '" placeholder="What makes this spot worth the trip? (blank line = new paragraph)">' + val(writeup) + '</textarea></label>' +
+      '<div class="g2"><label class="f">Google Maps link<input data-spot-field="Google Maps" data-id="' + b.id + '" value="' + val(M.getField(b, 'google maps')) + '" spellcheck="false"></label>' +
+      '<label class="f">Instagram<input data-spot-field="Instagram" data-id="' + b.id + '" value="' + val(M.getField(b, 'instagram')) + '" placeholder="https://instagram.com/…" spellcheck="false"></label>' +
+      '<label class="f">Facebook<input data-spot-field="Facebook" data-id="' + b.id + '" value="' + val(M.getField(b, 'facebook')) + '" placeholder="https://facebook.com/…" spellcheck="false"></label>' +
+      '<label class="f">Image<input data-spot-field="Image" data-id="' + b.id + '" value="' + val(M.getField(b, 'image')) + '" placeholder="images/photo.jpg" spellcheck="false"></label></div>' +
+      '<div class="locbox">' + ICON.pin +
+      '<input data-spot-loc="' + b.id + '" value="' + (ll ? ll.lat.toFixed(6) + ', ' + ll.lng.toFixed(6) : '') + '" placeholder="lat, lng" aria-label="Coordinates" spellcheck="false">' +
+      '<span class="grow">' + (ll ? 'Drag its pin to adjust' : 'Click the map, search, or paste coordinates') + '</span>' +
+      (ll ? '<button class="ghost" data-act="unplace" data-id="' + b.id + '">Remove from map</button>' : '') + '</div>' +
+      '<div class="cactions"><button class="danger" data-act="del-spot" data-id="' + b.id + '">Delete spot</button>' +
+      '<button class="icon ghost" data-act="spot-up" data-id="' + b.id + '" aria-label="Move up">' + ICON.up + '</button>' +
+      '<button class="icon ghost" data-act="spot-down" data-id="' + b.id + '" aria-label="Move down">' + ICON.down + '</button>' +
+      '<span class="grow"></span><button data-act="done" style="background:#1A1A1A;color:#fff;border-color:#1A1A1A">Done</button></div></div>';
+  }
+  h += '</div><button class="icon ghost" data-act="del-spot" data-id="' + b.id + '" aria-label="Delete ' + val(b.name) + '" title="Delete">' + ICON.trash + '</button></div>';
+  return h;
+}
+
+function renderCatPanel() {
+  const spots = blocks().filter(b => b.type === 'spot');
+  let h = '<div class="catpanel"><div style="display:flex;align-items:baseline;gap:10px"><b style="font-family:var(--serif);font-size:17px">Categories</b>' +
+    '<span class="hint">Colors set the pins, tags and filter buttons.</span></div>' +
+    '<div class="catrow hint" style="font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase"><span>Color</span><span>Hex</span><span>Name</span><span class="cnt">Spots</span><span></span></div>';
+  catList().forEach(c => {
+    const n = spots.filter(s => M.getField(s, 'category') === c.name).length;
+    const draft = V.hexDrafts[c.id];
+    const hexBad = draft != null && !/^#[0-9a-fA-F]{6}$/.test(draft);
+    const dupe = catList().some(o => o !== c && o.name.trim().toLowerCase() === c.name.trim().toLowerCase());
+    const colorVal = /^#[0-9a-fA-F]{6}$/.test(c.color) ? c.color : '#' + rgb(c.color).map(v => v.toString(16).padStart(2, '0')).join('');
+    h += '<div class="catrow">' +
+      '<input type="color" data-cat-color="' + c.id + '" value="' + val(colorVal.toLowerCase()) + '" aria-label="' + val(c.name) + ' color">' +
+      '<input class="hex" data-cat-hex="' + c.id + '" value="' + val(draft != null ? draft : c.color.toUpperCase()) + '" aria-label="' + val(c.name) + ' hex code" spellcheck="false" style="border-color:' + (hexBad ? '#C0392B' : 'var(--field)') + '">' +
+      '<input data-cat-name="' + c.id + '" value="' + val(c.name) + '" aria-label="Category name" style="font-weight:600;border-color:' + (dupe ? '#C0392B' : 'var(--field)') + '">' +
+      '<span class="cnt hint">' + n + (n === 1 ? ' spot' : ' spots') + '</span>' +
+      '<button class="icon ghost" data-act="cat-del" data-id="' + c.id + '" aria-label="Delete ' + val(c.name) + ' category">' + ICON.trash + '</button></div>';
+    if (V.moveTargets[c.id] != null && n) {
+      const others = catList().filter(o => o !== c);
+      h += '<div class="catmove">Move its ' + n + ' spot' + (n === 1 ? '' : 's') + ' to <select data-cat-move="' + c.id + '">' +
+        others.map(o => '<option value="' + o.id + '"' + (o.id === V.moveTargets[c.id] ? ' selected' : '') + '>' + val(o.name) + '</option>').join('') +
+        '</select><button class="danger" data-act="cat-move-del" data-id="' + c.id + '">Move and delete</button><button class="ghost" data-act="cat-move-cancel" data-id="' + c.id + '">Cancel</button></div>';
+    }
+    const note = V.catNotes[c.id] || (dupe ? "Two categories can't share a name." : (hexBad ? 'Use a 6-digit hex code, like #038F9E.' : ''));
+    if (note) h += '<div class="field-note" style="padding-left:152px">' + val(note) + '</div>';
+  });
+  h += '<div style="display:flex;gap:8px;padding-top:4px"><button data-act="cat-add" style="border-style:dashed;color:var(--brand-dark)">＋ Add category</button><span class="grow"></span>' +
+    '<button data-act="toggle-cats" style="background:#1A1A1A;color:#fff;border-color:#1A1A1A">Done</button></div></div>';
+  return h;
+}
+
+function autosize(el) { if (!el) return; el.style.height = 'auto'; el.style.height = el.scrollHeight + 'px'; }
+
+// ============================================================
+// VISUAL LIST — events
+// ============================================================
+function select(id, { expand = true, fly = true } = {}) {
+  V.selectedId = id;
+  V.expandedId = expand ? id : V.expandedId;
+  renderVisual();
+  const card = $('vlist').querySelector('[data-card="' + id + '"]');
+  if (card) card.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+  const b = findBlock(id), ll = b && M.getLatLng(b);
+  if (fly && ll && map) map.flyTo([ll.lat, ll.lng], Math.max(map.getZoom(), 16), { duration: 0.5 });
+}
+
+$('vlist').addEventListener('click', e => {
+  const btn = e.target.closest('[data-act]');
+  if (!btn) return;
+  const act = btn.dataset.act, id = btn.dataset.id;
+  const bs = blocks();
+  switch (act) {
+    case 'select': {
+      if (V.expandedId === id) { V.expandedId = null; V.selectedId = id; renderVisual(); }
+      else select(id);
+      return;
+    }
+    case 'done': V.expandedId = null; renderVisual(); return;
+    case 'del-spot': {
+      const i = bs.findIndex(b => b.id === id), b = bs[i];
+      bs.splice(i, 1);
+      if (V.selectedId === id) V.selectedId = null;
+      if (V.expandedId === id) V.expandedId = null;
+      toastUndo('Deleted ' + b.name, () => { blocks().splice(i, 0, b); V.selectedId = b.id; });
+      break;
+    }
+    case 'spot-up': case 'spot-down': {
+      const g = groupOf(id), idx = g.items.findIndex(b => b.id === id);
+      const j = act === 'spot-up' ? idx - 1 : idx + 1;
+      if (j < 0 || j >= g.items.length) return;
+      const a = bs.indexOf(g.items[idx]), c = bs.indexOf(g.items[j]);
+      [bs[a], bs[c]] = [bs[c], bs[a]];
+      break;
+    }
+    case 'unplace': M.setLatLng(findBlock(id), null); break;
+    case 'add-spot': {
+      const key = btn.dataset.group;
+      const g = groups().find(x => (x.section ? x.section.id : 'lead') === key);
+      newSpot(g);
+      break;
+    }
+    case 'add-section': {
+      const s = { type: 'section', id: M.newId(), title: 'New section', blurb: '' };
+      bs.push(s);
+      renderVisual(); afterEdit();
+      const inp = $('vlist').querySelector('[data-sec-title="' + s.id + '"]');
+      if (inp) { inp.scrollIntoView({ block: 'center' }); inp.select(); }
+      return;
+    }
+    case 'sec-del': {
+      const i = bs.findIndex(b => b.id === id), s = bs[i];
+      bs.splice(i, 1);
+      toastUndo('Deleted section ' + s.title, () => blocks().splice(i, 0, s));
+      break;
+    }
+    case 'sec-up': case 'sec-down': {
+      const gs = groups(), gi = gs.findIndex(g => g.section && g.section.id === id);
+      const other = gs[act === 'sec-up' ? gi - 1 : gi + 1];
+      if (!other || !other.section) return;
+      const chunk = g => [g.section].concat(g.items);
+      const a = act === 'sec-up' ? other : gs[gi], b2 = act === 'sec-up' ? gs[gi] : other;
+      const start = bs.indexOf(a.section);
+      const merged = chunk(b2).concat(chunk(a));
+      bs.splice(start, merged.length, ...merged);
+      break;
+    }
+    case 'undo': if (V.toast) { V.toast.undo(); V.toast = null; } break;
+    case 'toast-x': V.toast = null; renderVisual(); return;
+    case 'toggle-cats': V.catPanel = !V.catPanel; V.catNotes = {}; V.hexDrafts = {}; V.moveTargets = {}; renderVisual(); return;
+    case 'cat-add': {
+      let n = 'New category', k = 2;
+      while (catByName(n)) n = 'New category ' + k++;
+      const used = catList().map(c => c.color.toLowerCase());
+      const color = PALETTE.find(p => !used.includes(p.toLowerCase())) || PALETTE[catList().length % PALETTE.length];
+      catList().push({ id: M.newId(), name: n, color });
+      break;
+    }
+    case 'cat-del': {
+      const c = catList().find(x => x.id === id);
+      const n = blocks().filter(b => b.type === 'spot' && M.getField(b, 'category') === c.name).length;
+      if (catList().length === 1) { V.catNotes[id] = 'A guide needs at least one category.'; renderVisual(); return; }
+      if (n) { V.moveTargets[id] = catList().find(o => o !== c).id; renderVisual(); return; }
+      const i = catList().indexOf(c);
+      catList().splice(i, 1);
+      toastUndo('Deleted category ' + c.name, () => catList().splice(i, 0, c));
+      break;
+    }
+    case 'cat-move-cancel': delete V.moveTargets[id]; renderVisual(); return;
+    case 'cat-move-del': {
+      const c = catList().find(x => x.id === id), to = catList().find(x => x.id === V.moveTargets[id]);
+      if (!to) return;
+      const moved = blocks().filter(b => b.type === 'spot' && M.getField(b, 'category') === c.name);
+      moved.forEach(b => M.setField(b, 'Category', to.name));
+      const i = catList().indexOf(c);
+      catList().splice(i, 1);
+      delete V.moveTargets[id];
+      toastUndo('Moved ' + moved.length + ' to ' + to.name + ' and deleted ' + c.name, () => {
+        catList().splice(i, 0, c); moved.forEach(b => M.setField(b, 'Category', c.name));
+      });
+      break;
+    }
+    default: return;
+  }
+  renderVisual(); afterEdit();
+});
+
+// Text-ish edits update the model without redrawing (keeps the cursor where it is)
+$('vlist').addEventListener('input', e => {
+  const t = e.target, d = t.dataset, m = state.model;
+  if (d.meta) {
+    const v = d.meta === 'Title' ? t.value.replace(/\n/g, ' ') : t.value;
+    M.setMeta(m, d.meta, v, d.meta === 'Author Link' ? 'Author' : null);
+    if (d.meta === 'Title') autosize(t);
+  } else if (d.intro != null) {
+    m.intro = t.value.split(/\n\s*\n/).map(p => p.trim()).filter(Boolean);
+  } else if (d.secTitle) { findBlock(d.secTitle).title = t.value; }
+  else if (d.secBlurb) { findBlock(d.secBlurb).blurb = t.value; }
+  else if (d.spotName) {
+    findBlock(d.spotName).name = t.value;
+    const nb = $('vlist').querySelector('[data-card="' + d.spotName + '"] .cname');
+    if (nb) nb.textContent = t.value;
+    syncMarkers();
+  } else if (d.spotField) { M.setField(findBlock(d.id), d.spotField, t.value); if (d.spotField === 'Price') { const p = t.closest('.card').querySelector('.price'); if (p) p.textContent = t.value; } }
+  else if (d.spotWriteup) { findBlock(d.spotWriteup).paragraphs = t.value.split(/\n\s*\n/).map(p => p.trim()).filter(Boolean); }
+  else if (d.catColor) {
+    const c = catList().find(x => x.id === d.catColor);
+    c.color = t.value; delete V.hexDrafts[c.id];
+    const hex = $('vlist').querySelector('[data-cat-hex="' + c.id + '"]'); if (hex) hex.value = t.value.toUpperCase();
+    syncMarkers();
+  } else if (d.catHex) {
+    let v = t.value.trim(); if (v && v[0] !== '#') v = '#' + v;
+    V.hexDrafts[d.catHex] = v;
+    if (/^#[0-9a-fA-F]{6}$/.test(v)) {
+      const c = catList().find(x => x.id === d.catHex); c.color = v;
+      const sw = $('vlist').querySelector('[data-cat-color="' + c.id + '"]'); if (sw) sw.value = v.toLowerCase();
+      syncMarkers();
+    }
+  } else if (d.catName) {
+    const c = catList().find(x => x.id === d.catName), old = c.name;
+    c.name = t.value;
+    blocks().forEach(b => {
+      if (b.type === 'spot' && M.getField(b, 'category') === old) M.setField(b, 'Category', t.value);
+      // A section named exactly like the category follows the rename
+      if (b.type === 'section' && b.title === old) b.title = t.value;
+    });
+  } else return;
+  afterEdit();
+});
+$('vlist').addEventListener('change', e => {
+  const t = e.target, d = t.dataset;
+  if (d.spotCat) { M.setField(findBlock(d.spotCat), 'Category', t.value); }
+  else if (d.spotLoc) {
+    const c = t.value.split(',').map(x => parseFloat(x.trim()));
+    const b = findBlock(d.spotLoc);
+    if (!t.value.trim()) M.setLatLng(b, null);
+    else if (c.length >= 2 && !isNaN(c[0]) && !isNaN(c[1]) && Math.abs(c[0]) <= 90 && Math.abs(c[1]) <= 180) { M.setLatLng(b, c[0], c[1]); if (map) map.flyTo([c[0], c[1]], 16, { duration: 0.5 }); }
+    else { alert('Enter coordinates as two numbers, like 37.9053, -122.5494'); return; }
+  } else if (d.catMove) { V.moveTargets[d.catMove] = t.value; return; }
+  else if (d.catColor || d.catHex || d.catName || d.meta === 'Author Link' || d.secTitle) { /* redraw below */ }
+  else return;
+  afterEdit(); scheduleRender();
+});
+let renderTimer = null;
+function scheduleRender() { clearTimeout(renderTimer); renderTimer = setTimeout(renderVisual, 250); }
+
+// Drag to reorder (and to move between sections). No redraws mid-drag:
+// replacing the dragged card would cancel the drag in some browsers.
+function markDropTarget() {
+  $('vlist').querySelectorAll('.drop-before').forEach(el => el.classList.remove('drop-before'));
+  $('vlist').querySelectorAll('.dropzone.over').forEach(el => el.classList.remove('over'));
+  if (V.overId && V.overId !== V.dragId) { const c = $('vlist').querySelector('[data-card="' + V.overId + '"]'); if (c) c.classList.add('drop-before'); }
+  if (V.overZone) { const z = $('vlist').querySelector('[data-zone="' + V.overZone + '"]'); if (z) z.classList.add('over'); }
+}
+$('vlist').addEventListener('dragstart', e => {
+  const card = e.target.closest && e.target.closest('[data-card]');
+  if (!card) return;
+  V.dragId = card.dataset.card;
+  try { e.dataTransfer.setData('text/plain', V.dragId); e.dataTransfer.effectAllowed = 'move'; } catch (err) {}
+  card.classList.add('dragging');
+  $('vlist').classList.add('dragging-any');
+});
+$('vlist').addEventListener('dragover', e => {
+  if (!V.dragId) return;
+  const card = e.target.closest('[data-card]'), zone = e.target.closest('[data-zone]');
+  if (!card && !zone) return;
+  e.preventDefault();
+  const oId = card ? card.dataset.card : null, oZ = zone ? zone.dataset.zone : null;
+  if (oId !== V.overId || oZ !== V.overZone) { V.overId = oId; V.overZone = oZ; markDropTarget(); }
+});
+$('vlist').addEventListener('drop', e => {
+  if (!V.dragId) return;
+  e.preventDefault();
+  const id = V.dragId;
+  if (V.overId && V.overId !== id) moveSpot(id, V.overId, null);
+  else if (V.overZone) moveSpot(id, null, groups().find(g => (g.section ? g.section.id : 'lead') === V.overZone));
+  V.dragId = V.overId = V.overZone = null;
+  renderVisual(); afterEdit();
+});
+$('vlist').addEventListener('dragend', () => {
+  if (!V.dragId) return;
+  V.dragId = V.overId = V.overZone = null; renderVisual();
+});
+
+// ============================================================
+// MAP
+// ============================================================
+let map = null, addPopup = null;
+const markers = {};
+function ensureMap() {
+  if (map) return;
+  map = L.map('map', { zoomControl: true }).setView([20, 0], 2);
+  L.tileLayer(TILE_URL, { maxZoom: 19, attribution: '&copy; <a href="https://openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/">CARTO</a>' }).addTo(map);
+  map.on('click', onMapClick);
+}
+function pinIcon(color, sel) {
+  const s = sel ? 22 : 16;
+  return L.divIcon({ className: '', html: '<div class="vpin' + (sel ? ' sel' : '') + '" style="width:' + s + 'px;height:' + s + 'px;background:' + esc(color) + '"></div>', iconSize: [s, s], iconAnchor: [s / 2, s / 2] });
+}
+function syncMarkers() {
+  if (!map || !state.model) return;
+  const seen = new Set();
+  blocks().forEach(b => {
+    if (b.type !== 'spot') return;
+    const ll = M.getLatLng(b);
+    if (!ll) return;
+    seen.add(b.id);
+    const sel = b.id === V.selectedId;
+    let mk = markers[b.id];
+    if (!mk) {
+      mk = L.marker([ll.lat, ll.lng], { draggable: true, autoPan: true, keyboard: true, title: b.name }).addTo(map);
+      mk.on('click', () => select(b.id, { fly: false }));
+      mk.on('dragstart', () => { V.selectedId = b.id; });
+      mk.on('dragend', ev => {
+        const p = ev.target.getLatLng();
+        M.setLatLng(findBlock(b.id), p.lat, p.lng);
+        V.selectedId = b.id;
+        renderVisual(); afterEdit();
+      });
+      markers[b.id] = mk;
+    } else {
+      const p = mk.getLatLng();
+      if (Math.abs(p.lat - ll.lat) > 1e-9 || Math.abs(p.lng - ll.lng) > 1e-9) mk.setLatLng([ll.lat, ll.lng]);
+    }
+    mk.setIcon(pinIcon(catColor(M.getField(b, 'category')), sel));
+    mk.setZIndexOffset(sel ? 1000 : 0);
+    mk.unbindTooltip();
+    mk.bindTooltip(esc(b.name), { direction: 'top', offset: [0, sel ? -12 : -9], className: 'vtip', permanent: sel });
+  });
+  Object.keys(markers).forEach(id => { if (!seen.has(id)) { map.removeLayer(markers[id]); delete markers[id]; } });
+}
+function fitAll() {
+  if (!map || !state.model) return;
+  const pts = blocks().filter(b => b.type === 'spot').map(M.getLatLng).filter(Boolean).map(p => [p.lat, p.lng]);
+  const c = (M.getMeta(state.model, 'Center') || '').split(',').map(x => parseFloat(x));
+  setTimeout(() => {
+    map.invalidateSize();
+    if (pts.length) map.fitBounds(pts, { padding: [50, 50], maxZoom: 16 });
+    else if (!isNaN(c[0]) && !isNaN(c[1])) map.setView([c[0], c[1]], c[2] || 15);
+  }, 30);
+}
+$('fitBtn').addEventListener('click', fitAll);
+
+function pendingSpot() {
+  const b = V.selectedId && findBlock(V.selectedId);
+  return b && b.type === 'spot' && !M.getLatLng(b) ? b : null;
+}
+function updatePlaceBanner() {
+  const p = pendingSpot();
+  show($('placeBanner'), !!p);
+  if (p) $('placeText').textContent = 'Click the map to place “' + p.name + '”';
+  $('map').style.cursor = p ? 'crosshair' : '';
+}
+$('placeCancel').addEventListener('click', () => { V.selectedId = null; renderVisual(); });
+
+function onMapClick(e) {
+  if (!state.model) return;
+  const p = pendingSpot();
+  if (p) { M.setLatLng(p, e.latlng.lat, e.latlng.lng); renderVisual(); afterEdit(); return; }
+  const gs = groups();
+  const sel = V.selectedId && groupOf(V.selectedId);
+  const def = sel ? gs.indexOf(gs.find(g => g.section === sel.section)) : 0;
+  const box = document.createElement('div');
+  box.className = 'addpop';
+  box.innerHTML = '<div class="coords">' + e.latlng.lat.toFixed(5) + ', ' + e.latlng.lng.toFixed(5) + '</div>' +
+    (gs.length > 1 ? '<label class="f">Add to<select>' + gs.map((g, i) => '<option value="' + i + '"' + (i === def ? ' selected' : '') + '>' + esc(g.section ? g.section.title : 'Top of guide') + '</option>').join('') + '</select></label>' : '') +
+    '<button class="primary">Add spot here</button>';
+  box.querySelector('button').addEventListener('click', () => {
+    const sEl = box.querySelector('select');
+    const g = groups()[sEl ? +sEl.value : 0] || { section: null, items: [] };
+    newSpot(g, { lat: e.latlng.lat, lng: e.latlng.lng });
+    map.closePopup();
+    renderVisual(); afterEdit();
+    const inp = $('vlist').querySelector('[data-spot-name="' + V.selectedId + '"]');
+    if (inp) { inp.scrollIntoView({ block: 'center' }); inp.select(); }
+  });
+  addPopup = L.popup({ closeButton: true, autoPan: true }).setLatLng(e.latlng).setContent(box).openOn(map);
+}
+
+// ============================================================
+// SEARCH (OpenStreetMap via Photon — free, and results may be stored)
+// ============================================================
+let searchTimer = null, searchSeq = 0;
+$('searchInput').addEventListener('input', () => {
+  clearTimeout(searchTimer);
+  const q = $('searchInput').value.trim();
+  if (!q) { show($('results'), false); return; }
+  renderResults(q, null, 'Searching…');
+  if (q.length < 3) { renderResults(q, [], null); return; }
+  searchTimer = setTimeout(() => runSearch(q), 350);
+});
+$('searchInput').addEventListener('keydown', e => { if (e.key === 'Escape') { $('searchInput').value = ''; show($('results'), false); } });
+document.addEventListener('click', e => { if (!e.target.closest('#msearch')) show($('results'), false); });
+$('searchInput').addEventListener('focus', () => { if ($('searchInput').value.trim()) show($('results')); });
+
+async function runSearch(q) {
+  const seq = ++searchSeq;
+  const c = map.getCenter();
+  const url = PHOTON + '?q=' + encodeURIComponent(q) + '&limit=6&lang=en&lat=' + c.lat.toFixed(4) + '&lon=' + c.lng.toFixed(4);
+  try {
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(res.status);
+    const j = await res.json();
+    if (seq !== searchSeq) return;
+    const items = (j.features || []).map(f => {
+      const p = f.properties || {}, g = f.geometry && f.geometry.coordinates;
+      const street = [p.housenumber, p.street].filter(Boolean).join(' ');
+      return {
+        name: p.name || street || q,
+        address: [street, p.city || p.town || p.village || p.county, p.state, p.country].filter(Boolean).filter((v, i, a) => a.indexOf(v) === i).join(', '),
+        street, city: p.city || p.town || p.village || '',
+        lat: g ? g[1] : null, lng: g ? g[0] : null
+      };
+    }).filter(r => r.lat != null);
+    renderResults(q, items, null);
+  } catch (err) {
+    if (seq === searchSeq) renderResults(q, [], "Search isn't available right now — click the map to drop the pin instead.");
+  }
+}
+let lastResults = [];
+function renderResults(q, items, msg) {
+  if (!state.model) return;
+  const ql = q.toLowerCase();
+  const inGuide = blocks().filter(b => b.type === 'spot' && b.name.toLowerCase().includes(ql)).slice(0, 3);
+  const p = pendingSpot();
+  lastResults = items || [];
+  let h = inGuide.map(b => '<button data-pick-guide="' + b.id + '"><div><div class="rn">' + esc(b.name) + '</div><div class="ra">' + esc(M.getField(b, 'category')) + '</div></div><span class="rt" style="color:var(--ok)">In guide</span></button>').join('');
+  h += (items || []).map((r, i) => '<button data-pick="' + i + '"><div><div class="rn">' + esc(r.name) + '</div><div class="ra">' + esc(r.address) + '</div></div><span class="rt" style="color:var(--brand-dark)">' + (p ? 'Place “' + esc(p.name) + '” here' : '＋ Add') + '</span></button>').join('');
+  if (msg) h += '<div class="foot">' + esc(msg) + '</div>';
+  else if (items && !items.length && q.length >= 3) h += '<div class="foot">No matches on OpenStreetMap. Click the map to drop a pin instead.</div>';
+  else if (items) h += '<div class="foot">Results from OpenStreetMap (Photon)</div>';
+  $('results').innerHTML = h;
+  show($('results'), !!h);
+}
+$('results').addEventListener('click', e => {
+  const g = e.target.closest('[data-pick-guide]');
+  if (g) { show($('results'), false); $('searchInput').value = ''; select(g.dataset.pickGuide); return; }
+  const b = e.target.closest('[data-pick]');
+  if (!b) return;
+  const r = lastResults[+b.dataset.pick];
+  show($('results'), false); $('searchInput').value = '';
+  const p = pendingSpot();
+  if (p) {
+    M.setLatLng(p, r.lat, r.lng);
+    if (/^new spot$/i.test(p.name.trim())) p.name = r.name;
+    if (!M.getField(p, 'google maps')) M.setField(p, 'Google Maps', gmapsLink(p.name, [r.street, r.city].filter(Boolean).join(' ')));
+  } else {
+    const sel = V.selectedId && groupOf(V.selectedId);
+    const g = sel || groups()[0] || { section: null, items: [] };
+    newSpot(g, { name: r.name, lat: r.lat, lng: r.lng, gmaps: gmapsLink(r.name, [r.street, r.city].filter(Boolean).join(' ')) });
+  }
+  renderVisual(); afterEdit();
+  map.flyTo([r.lat, r.lng], 17, { duration: 0.6 });
+});
 
 // ============================================================
 // NEW GUIDE
 // ============================================================
-$('newGuideBtn').addEventListener('click', () => {
-  if (isDirty() && !confirm('You have unsaved changes. Leave this guide? (Your draft stays saved on this device.)')) return;
-  state.current = null; renderGuideList();
-  show($('editorView'), false); $('editorView').style.display = 'none';
-  show($('emptyState'), false); show($('newGuideView'));
-  setStatus($('ngStatus'), '');
+function startNewGuide() {
+  if (isDirty() && !confirm('You have unsaved changes. Leave this guide? (Your draft stays saved on this device.)')) { renderPicker(); return; }
+  state.current = null; state.model = null;
+  show($('editorView'), false); show($('emptyState'), false); show($('newGuideView'));
+  setStatus($('ngStatus'), ''); setSaveState();
   $('ngSlug').focus();
-});
-$('ngCancel').addEventListener('click', () => { show($('newGuideView'), false); show($('emptyState')); });
+}
+$('ngCancel').addEventListener('click', () => { show($('newGuideView'), false); show($('emptyState')); renderPicker(); });
 $('ngSlug').addEventListener('input', () => {
   const v = $('ngSlug').value.toLowerCase().replace(/[^a-z0-9-]+/g, '-').replace(/^-+/, '');
   if (v !== $('ngSlug').value) $('ngSlug').value = v;
@@ -626,7 +1409,6 @@ $('ngCreate').addEventListener('click', async () => {
   const author = $('ngAuthor').value.trim(), city = $('ngCity').value.trim();
   const c = $('ngCenter').value.split(',').map(x => parseFloat(x.trim()));
   const err = m => setStatus($('ngStatus'), m, 'err');
-
   if (!/^[a-z0-9]+(-[a-z0-9]+)*$/.test(slug)) return err('Enter a web address using lowercase letters, numbers and dashes.');
   if (RESERVED.includes(slug)) return err('"' + slug + '" is used by the site itself. Pick another address.');
   if (state.guides.some(g => g.slug === slug)) return err('A guide already uses /' + slug + '/.');
@@ -639,15 +1421,12 @@ $('ngCreate').addEventListener('click', async () => {
   try {
     step('Checking the address is free…');
     if (await getFile(slug + '/index.html') || await getFile(slug + '/places.md')) throw new ApiError(0, 'Files already exist at /' + slug + '/ on GitHub. Pick another address.');
-
     step('Creating ' + slug + '/places.md…');
     await putFile(slug + '/places.md', starterPlacesMd({ title, subtitle, author: author || 'Anonymous', center: [c[0], c[1]] }), null, 'Create ' + slug + ' guide content (editor)');
     done.push(slug + '/places.md');
-
     step('Creating the guide page…');
     await putFile(slug + '/index.html', guidePageHtml(slug, title, subtitle), null, 'Create ' + slug + ' guide page (editor)');
     done.push(slug + '/index.html');
-
     step('Adding it to the guide list…');
     const f = await getFile('guides.json');
     const idx = f ? JSON.parse(f.text) : { guides: [] };
@@ -656,12 +1435,10 @@ $('ngCreate').addEventListener('click', async () => {
     state.guidesSha = await putFile('guides.json', JSON.stringify(idx, null, 2) + '\n', f ? f.sha : null, 'Add ' + slug + ' to guide list (editor)');
     state.guides = idx.guides;
     done.push('guides.json');
-
     ['ngSlug', 'ngTitle', 'ngSubtitle', 'ngAuthor', 'ngCity', 'ngCenter'].forEach(id => $(id).value = '');
     $('ngSlugPreview').textContent = '…';
-    renderGuideList();
     await openGuide(slug, { force: true });
-    setStatus($('status'), 'Guide created. It will be live at guiides.com/' + slug + '/ in about a minute.', 'ok');
+    flashSaveState('Guide created · live at guiides.com/' + slug + '/ in about a minute', 'clean');
   } catch (e) {
     err('Stopped: ' + e.message + (done.length ? ' Already created: ' + done.join(', ') + '.' : ''));
   }
@@ -672,15 +1449,12 @@ $('ngCreate').addEventListener('click', async () => {
 // START
 // ============================================================
 $('repoName1').textContent = REPO.owner + '/' + REPO.name;
+window.addEventListener('resize', () => layoutStrip());
 (async function start() {
   const saved = localStorage.getItem('gg-token') || sessionStorage.getItem('gg-token');
   if (!saved) { show($('loginView')); $('tokenInput').focus(); return; }
   try { await signIn(saved, !!localStorage.getItem('gg-token')); }
-  catch (e) {
-    token = null;
-    show($('loginView'));
-    setStatus($('loginStatus'), e.message, 'err');
-  }
+  catch (e) { token = null; show($('loginView')); setStatus($('loginStatus'), e.message, 'err'); }
 })();
 </script>
 </body>
