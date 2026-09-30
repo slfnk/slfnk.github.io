@@ -11,8 +11,8 @@ On Waverly is a books-and-gifts shop in San Francisco's Chinatown, on the corner
 
 ## Categories
 
-Food Picks: #E07A3A
-Don't Miss: #3D6B5E
+Food Picks: #7ad459
+Don't Miss: #3d6b5e
 Boba: #C96B8B
 Shopping: #4A7FB5
 
