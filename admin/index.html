@@ -62,6 +62,8 @@
   .brand span { color: var(--text-3); letter-spacing: 0; font-size: 13px; }
   #guidePicker { width: auto; max-width: 280px; height: 36px; font-weight: 600; font-size: 13px; }
   .seg { display: flex; padding: 3px; background: #EFECE6; border-radius: 9px; gap: 2px; }
+  header { position: sticky; }
+  #modeSeg { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); }
   .seg button { height: 30px; border: none; background: transparent; color: var(--text-2); border-radius: 7px; padding: 0 12px; }
   .seg button.on { background: #fff; color: var(--text); }
   .grow { flex-grow: 1; }
@@ -193,6 +195,17 @@
   .textbar button:hover { background: var(--hover); }
   .ghead .updated-ro { font-size: 11px; font-weight: 600; letter-spacing: 0.13em; text-transform: uppercase; color: #5E7480; cursor: help; }
   .addlink { height: 28px; font-size: 12px; border: none; background: transparent; color: var(--brand-dark); padding: 0 6px; }
+  .cmeta .del { width: 28px; height: 28px; margin-left: 2px; }
+  .cmeta .del svg.i { width: 14px; height: 14px; }
+  .brk { display: flex; gap: 6px; padding: 10px 10px 10px 4px; border: 1px dashed #CFCAC2; border-radius: 10px; background: #FBFAF7; }
+  .brk.sel { border-style: solid; border-color: var(--brand); }
+  .brk.dragging { opacity: 0.45; }
+  .brk.drop-before { box-shadow: 0 -5px 0 -2px var(--brand); }
+  .brk .btitle { font-family: var(--serif); font-size: 18px; font-weight: 700; padding: 3px 6px; }
+  .brk .btext { font-family: var(--serif); font-size: 13.5px; font-style: italic; color: var(--text-2); padding: 4px 6px; resize: vertical; min-height: 34px; }
+  .brk .blabel { font-size: 10px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-3); }
+  .addrow { display: flex; gap: 8px; margin-top: 14px; }
+  .addrow button { flex: 1 1 0; border-style: dashed; color: var(--brand-dark); display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
   .toast { position: sticky; bottom: 16px; margin-top: 16px; display: flex; align-items: center; gap: 10px; padding: 0 6px 0 16px; height: 52px; border-radius: 10px; background: #1A1A1A; color: #fff; font-size: 13px; z-index: 5; }
   .toast span { flex: 1 1 auto; }
   .toast button { border: none; }
@@ -227,6 +240,7 @@
     #mapWrap { order: -1; position: sticky; top: var(--top); z-index: 900; height: 42vh; }
     #vlist { border-right: none; overflow: visible; padding-bottom: 60px; }
     header { gap: 8px; padding: 0 10px; flex-wrap: nowrap; overflow-x: auto; }
+    #modeSeg { position: static; transform: none; }
     .brand span, .who { display: none; }
     .catrow { grid-template-columns: 44px 90px minmax(0, 1fr) 36px; }
     .catrow .cnt { display: none; }
@@ -562,7 +576,7 @@ function checkGuide(text) {
   out.stats.push({ kind: 'ok', text: parsed.places.length + ' spots on the map' });
   const off = !!parsed.guide.categoriesOff;
   out.stats.push(off ? { kind: 'ok', text: 'Categories off' } : { kind: cats.length ? 'ok' : 'warn', text: cats.length + ' categories' });
-  out.stats.push({ kind: 'ok', text: parsed.sectionBreaks.length + ' sections' });
+  out.stats.push({ kind: 'ok', text: parsed.sectionBreaks.length + ' text break' + (parsed.sectionBreaks.length === 1 ? '' : 's') });
   if (noWriteup) out.stats.push({ kind: 'warn', text: noWriteup + ' without a write-up' });
 
   if (hidden.length) out.issues.push(hidden.length + ' entr' + (hidden.length === 1 ? 'y has' : 'ies have') + ' no usable Location, so ' + (hidden.length === 1 ? "it won't" : "they won't") + ' appear: ' + hidden.slice(0, 5).join(', ') + (hidden.length > 5 ? '…' : ''));
@@ -938,15 +952,12 @@ const catByName = n => catList().find(c => c.name === n);
 const catColor = n => (catByName(n) || {}).color || '#888888';
 const HEX = /^#[0-9a-fA-F]{6}$/;
 const DEFAULT_PIN = '#038f9e';
-// "Categories: off" in the header = no tags/filters on the guide; each pin picks its own color
+// "Categories: off" in the header = no tags/filters on the guide, and one pin color for every spot
 const catsOff = () => /^(off|no|none|false)$/i.test((M.getMeta(state.model, 'Categories') || '').trim());
 const defaultPin = () => { const v = (M.getMeta(state.model, 'Pin Color') || '').trim(); return HEX.test(v) ? v : DEFAULT_PIN; };
 function spotColor(b) {
-  if (!catsOff()) return catColor(M.getField(b, 'category'));
-  const own = M.getField(b, 'color');
-  if (HEX.test(own)) return own;
-  const c = catByName(M.getField(b, 'category'));
-  return c ? c.color : defaultPin();
+  // Categories stay in the file while off, so switching back restores every color
+  return catsOff() ? defaultPin() : catColor(M.getField(b, 'category'));
 }
 function rgb(hex) {
   let h = hex.replace('#', '');
@@ -958,61 +969,37 @@ const toHex6 = c => HEX.test(c) ? c.toLowerCase() : '#' + rgb(c).map(v => v.toSt
 const mix = (hex, to, t) => 'rgb(' + rgb(hex).map((v, i) => Math.round(v + (to[i] - v) * t)).join(',') + ')';
 const chipStyle = n => 'background:' + mix(catColor(n), [255, 255, 255], 0.84) + ';color:' + mix(catColor(n), [0, 0, 0], 0.5);
 
-// Sections with the spots that follow them (the file keeps them interleaved)
-function groups() {
-  const gs = [];
-  let cur = { section: null, items: [] };
-  blocks().forEach(b => {
-    if (b.type === 'section') { gs.push(cur); cur = { section: b, items: [] }; }
-    else cur.items.push(b);
-  });
-  gs.push(cur);
-  return gs.filter((g, i) => i > 0 || g.items.length);
+// The list is one ordered run of spots and text breaks (a text break is a "## Title" block in the file)
+function insertIndex() {
+  // New things go right after the selected card, otherwise at the end
+  const bs = blocks(), i = V.selectedId ? bs.findIndex(b => b.id === V.selectedId) : -1;
+  return i >= 0 ? i + 1 : bs.length;
 }
-function groupOf(id) { return groups().find(g => g.items.some(b => b.id === id)) || null; }
-// Which category a spot dropped into a section should take
-function sectionCategory(g) {
-  const names = catList().map(c => c.name);
-  if (g && g.section) {
-    const t = g.section.title.trim().toLowerCase();
-    const m = names.find(n => { const c = n.toLowerCase(); return c === t || t.startsWith(c) || c.startsWith(t); });
-    if (m) return m;
-  }
-  const first = g && g.items.find(b => b.type === 'spot');
-  return first ? M.getField(first, 'category') : (names[0] || '');
-}
-function groupEndIndex(g) {
-  const bs = blocks();
-  if (!g.section) { const i = bs.findIndex(b => b.type === 'section'); return i < 0 ? bs.length : i; }
-  const si = bs.indexOf(g.section);
-  const next = bs.findIndex((b, i) => i > si && b.type === 'section');
-  return next < 0 ? bs.length : next;
-}
-function moveSpot(id, beforeId, targetGroup) {
-  const bs = blocks();
-  const from = bs.findIndex(b => b.id === id);
+function moveBlock(id, beforeId) {
+  const bs = blocks(), from = bs.findIndex(b => b.id === id);
   if (from < 0) return;
-  const spot = bs[from];
-  const fromGroup = groupOf(id);
-  bs.splice(from, 1);
-  let to;
-  if (beforeId) { to = bs.findIndex(b => b.id === beforeId); targetGroup = groupOf(beforeId); }
-  if (to == null || to < 0) to = groupEndIndex(targetGroup);
-  bs.splice(to, 0, spot);
-  if (!catsOff() && targetGroup && fromGroup && targetGroup.section !== fromGroup.section) {
-    const cat = sectionCategory(targetGroup);
-    if (cat) M.setField(spot, 'Category', cat);
-  }
+  const [item] = bs.splice(from, 1);
+  let to = beforeId ? bs.findIndex(b => b.id === beforeId) : bs.length;
+  if (to < 0) to = bs.length;
+  bs.splice(to, 0, item);
 }
-function newSpot(g, { name, lat, lng, gmaps } = {}) {
-  const cat = catsOff() ? '' : (sectionCategory(g) || (catList()[0] || {}).name || '');
+function newSpot({ name, lat, lng, gmaps } = {}) {
+  const sel = V.selectedId && findBlock(V.selectedId);
+  const selCat = sel && sel.type === 'spot' ? M.getField(sel, 'category') : '';
+  const cat = catsOff() ? '' : ((catByName(selCat) && selCat) || (catList()[0] || {}).name || '');
   const spot = { type: 'spot', id: M.newId(), name: name || 'New spot', fields: [], paragraphs: ['[Write-Up Coming Soon]'] };
   if (cat) M.setField(spot, 'Category', cat);
   if (lat != null) M.setLatLng(spot, lat, lng);
   if (gmaps) M.setField(spot, 'Google Maps', gmaps);
-  blocks().splice(groupEndIndex(g), 0, spot);
+  blocks().splice(insertIndex(), 0, spot);
   V.selectedId = spot.id; V.expandedId = spot.id;
   return spot;
+}
+function newBreak() {
+  const b = { type: 'section', id: M.newId(), title: '', blurb: '' };
+  blocks().splice(insertIndex(), 0, b);
+  V.selectedId = b.id; V.expandedId = null;
+  return b;
 }
 function gmapsLink(name, extra) {
   const q = [name, extra].filter(Boolean).join(' ');
@@ -1091,47 +1078,28 @@ function renderVisual() {
   if (catsOff()) {
     const dp = defaultPin();
     h += '<div class="catbar"><div class="seg small"><button data-act="cats-on">Categories</button><button class="on" disabled style="opacity:1">No categories</button></div>' +
-      '<span class="grow"></span><span class="pincolor"><span class="hint">Default pin</span>' +
+      '<span class="grow"></span><span class="pincolor"><span class="hint">Pin color</span>' +
       '<input type="color" data-pin-default value="' + val(toHex6(dp)) + '" aria-label="Default pin color">' +
       '<input class="hex" data-pin-default-hex value="' + val(dp.toUpperCase()) + '" aria-label="Default pin color hex" spellcheck="false"></span></div>' +
-      '<div class="hint" style="padding:6px 4px 0">No tags or category filters on the guide. Each spot can pick its own pin color; the rest use the default.</div>';
+      '<div class="explain">No tags or category filters on the guide, and every pin uses this color. Each spot keeps its category, so switching back brings the tags and colors back.</div>';
   } else {
   h += '<div class="catbar"><div class="seg small"><button class="on" disabled style="opacity:1">Categories</button><button data-act="cats-off">No categories</button></div>' + catList().map(c => '<span class="catchip"><span class="dot" style="background:' + val(c.color) + '"></span>' + val(c.name) + '</span>').join('') +
     '<span class="grow"></span><button data-act="toggle-cats" style="display:inline-flex;align-items:center;gap:6px;height:32px;font-size:12px' + (V.catPanel ? ';background:#EFECE6' : '') + '">' + ICON.palette + 'Edit categories</button></div>';
-  h += '<div class="explain">Categories tag each spot, color its pin, and become the filter buttons. Sections are the headings that order the list — they usually share a category\'s name, but they don\'t have to.</div>';
+  h += '<div class="explain">Categories tag each spot, color its pin, and become the filter buttons on the guide.</div>';
   if (V.catPanel) h += renderCatPanel();
   }
 
-  // ---- sections + cards
+  // ---- spots and text breaks, in guide order
   const dragging = !!V.dragId;
-  groups().forEach((g, gi, all) => {
-    const gkey = g.section ? g.section.id : 'lead';
-    const spots = g.items.filter(b => b.type === 'spot');
-    h += '<div class="group" data-group="' + gkey + '">';
-    if (g.section) {
-      h += '<div class="sechead">' + (catsOff() ? '' : '<span class="dot" style="background:' + val(catColor(sectionCategory(g))) + '"></span>') +
-        '<input class="ie sectitle" data-sec-title="' + g.section.id + '" value="' + val(g.section.title) + '" aria-label="Section title">' +
-        '<span class="count">' + spots.length + (spots.length === 1 ? ' spot' : ' spots') + '</span>' +
-        '<button class="icon ghost" data-act="sec-up" data-id="' + g.section.id + '" aria-label="Move section up"' + (gi === 0 || !all[gi - 1].section ? ' disabled' : '') + '>' + ICON.up + '</button>' +
-        '<button class="icon ghost" data-act="sec-down" data-id="' + g.section.id + '" aria-label="Move section down"' + (gi === all.length - 1 ? ' disabled' : '') + '>' + ICON.down + '</button>' +
-        (g.items.length ? '' : '<button class="icon ghost" data-act="sec-del" data-id="' + g.section.id + '" aria-label="Delete section" title="Delete empty section">' + ICON.trash + '</button>') +
-        '<button class="addspot" data-act="add-spot" data-group="' + gkey + '">' + ICON.plus + 'Add spot</button></div>' +
-        '<div style="display:flex;align-items:center;gap:4px"><input class="ie secblurb" data-sec-blurb="' + g.section.id + '" value="' + val(g.section.blurb) + '" placeholder="Add a line introducing ' + val(g.section.title) + '…" aria-label="Section intro" style="flex:1 1 auto">' +
-        '<div class="textbar"><button data-act="insert-link" data-target="[data-sec-blurb=&quot;' + g.section.id + '&quot;]" title="Add a link">' + ICON.link + '</button></div></div>';
-    } else {
-      h += '<div class="sechead"><span class="sectitle" style="font-size:15px;color:var(--text-3)">Before the first section</span>' +
-        '<button class="addspot" data-act="add-spot" data-group="lead">' + ICON.plus + 'Add spot</button></div>';
-    }
-    h += '<div class="cards">';
-    g.items.forEach(b => {
-      if (b.type === 'raw') { h += '<div class="rawnote">A block of text the guide can\'t show as a spot. Edit it in the Markdown view.</div>'; return; }
-      h += renderCard(b);
-    });
-    h += '<div class="dropzone' + (!g.items.length ? ' empty' : '') + '" data-zone="' + gkey + '" data-label="Drop here to move to ' + val(g.section ? g.section.title : 'the top') + '">' +
-      (!g.items.length ? '<span>No spots yet</span>' : '') + '</div>';
-    h += '</div></div>';
+  h += '<div class="cards" style="margin-top:16px">';
+  const all = blocks();
+  all.forEach((b, i) => {
+    if (b.type === 'raw') { h += '<div class="rawnote">A block of text the guide can\'t show as a spot. Edit it in the Markdown view.</div>'; return; }
+    h += b.type === 'section' ? renderBreak(b, i, all.length) : renderCard(b, i, all.length);
   });
-  h += '<button class="addsec" data-act="add-section">' + '＋ Add section</button>';
+  h += '<div class="dropzone' + (!all.length ? ' empty' : '') + '" data-zone="end" data-label="Drop here to move to the end">' + (!all.length ? '<span>No spots yet</span>' : '') + '</div></div>';
+  h += '<div class="addrow"><button data-act="add-spot">' + ICON.plus + 'Add spot</button><button data-act="add-break">' + ICON.plus + 'Add text break</button></div>';
+  h += '<div class="hint" style="margin-top:6px;text-align:center">New items go below the selected card, or at the end.</div>';
 
   if (V.toast) h += '<div class="toast"><span>' + val(V.toast.text) + '</span><button class="undo" data-act="undo">Undo</button><button class="x icon" data-act="toast-x" aria-label="Dismiss"><svg class="i" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>';
 
@@ -1143,7 +1111,7 @@ function renderVisual() {
   updatePlaceBanner();
 }
 
-function renderCard(b) {
+function renderCard(b, i, n) {
   const cat = M.getField(b, 'category');
   const ll = M.getLatLng(b);
   const sel = b.id === V.selectedId, exp = b.id === V.expandedId;
@@ -1155,7 +1123,8 @@ function renderCard(b) {
     (catsOff() ? '<span class="pindot" style="background:' + val(spotColor(b)) + '"></span>' :
       (cat ? '<span class="chip" style="' + chipStyle(cat) + '">' + val(cat) + '</span>' : '<span class="chip" style="background:#EEE;color:#555">No category</span>')) +
     '<span class="price">' + val(M.getField(b, 'price')) + '</span>' +
-    '<span class="loc" style="color:' + (ll ? 'var(--ok)' : 'var(--warn)') + '">' + ICON.pin + (ll ? 'On map' : 'Needs location') + '</span></div>' +
+    '<span class="loc" style="color:' + (ll ? 'var(--ok)' : 'var(--warn)') + '">' + ICON.pin + (ll ? 'On map' : 'Needs location') + '</span>' +
+    '<button class="icon ghost del" data-act="del-spot" data-id="' + b.id + '" aria-label="Delete ' + val(b.name) + '" title="Delete">' + ICON.trash + '</button></div>' +
     '<button class="cname" data-act="select" data-id="' + b.id + '">' + val(b.name) + '</button>';
   if (!exp) {
     h += '<div class="preview' + (isPlaceholder(writeup) ? ' placeholder' : '') + '">' + val(isPlaceholder(writeup) ? '[Write-Up Coming Soon]' : writeup.replace(/\[([^\]\n]+)\]\((https?:[^)\s]+)\)/g, '$1')) + '</div>';
@@ -1165,13 +1134,7 @@ function renderCard(b) {
     h += '<div class="cform">' +
       '<div class="g3"><label class="f span2">Name<input data-spot-name="' + b.id + '" value="' + val(b.name) + '"></label>' +
       '<label class="f">Price<input data-spot-field="Price" data-id="' + b.id + '" value="' + val(M.getField(b, 'price')) + '" placeholder="$"></label></div>' +
-      (catsOff()
-        ? '<div style="display:flex;flex-direction:column;gap:4px;font-size:11px;font-weight:600;color:var(--text-2)">Pin color<div class="pincolor">' +
-          '<input type="color" data-spot-color="' + b.id + '" value="' + val(toHex6(spotColor(b))) + '" aria-label="Pin color">' +
-          '<input class="hex" data-spot-hex="' + b.id + '" value="' + val(spotColor(b).toUpperCase()) + '" aria-label="Pin color hex" spellcheck="false">' +
-          (HEX.test(M.getField(b, 'color')) ? '<button class="ghost" data-act="spot-color-reset" data-id="' + b.id + '" style="height:32px;font-size:12px">Use default</button>' : '<span class="hint">Default</span>') +
-          '</div></div>'
-        : '<label class="f">Category<select data-spot-cat="' + b.id + '">' + opts + '</select></label>') +
+      (catsOff() ? '' : '<label class="f">Category<select data-spot-cat="' + b.id + '">' + opts + '</select></label>') +
       '<div class="f" style="display:flex;flex-direction:column;gap:2px;font-size:11px;font-weight:600;color:var(--text-2)"><div style="display:flex;align-items:center">Write-up<span class="grow"></span><span class="textbar"><button data-act="insert-link" data-target="[data-spot-writeup=&quot;' + b.id + '&quot;]">' + ICON.link + 'Link</button></span></div>' +
       '<textarea class="writeup" data-spot-writeup="' + b.id + '" aria-label="Write-up" placeholder="What makes this spot worth the trip? (blank line = new paragraph)">' + val(writeup) + '</textarea></div>' +
       '<div class="g2"><label class="f">Google Maps link<input data-spot-field="Google Maps" data-id="' + b.id + '" value="' + val(M.getField(b, 'google maps')) + '" spellcheck="false"></label>' +
@@ -1182,12 +1145,26 @@ function renderCard(b) {
       '<span class="grow">' + (ll ? 'Drag its pin to adjust' : 'Click the map, search, or paste coordinates') + '</span>' +
       (ll ? '<button class="ghost" data-act="unplace" data-id="' + b.id + '">Remove from map</button>' : '') + '</div>' +
       '<div class="cactions"><button class="danger" data-act="del-spot" data-id="' + b.id + '">Delete spot</button>' +
-      '<button class="icon ghost" data-act="spot-up" data-id="' + b.id + '" aria-label="Move up">' + ICON.up + '</button>' +
-      '<button class="icon ghost" data-act="spot-down" data-id="' + b.id + '" aria-label="Move down">' + ICON.down + '</button>' +
+      '<button class="icon ghost" data-act="item-up" data-id="' + b.id + '" aria-label="Move up"' + (i === 0 ? ' disabled' : '') + '>' + ICON.up + '</button>' +
+      '<button class="icon ghost" data-act="item-down" data-id="' + b.id + '" aria-label="Move down"' + (i === n - 1 ? ' disabled' : '') + '>' + ICON.down + '</button>' +
       '<span class="grow"></span><button data-act="done" style="background:#1A1A1A;color:#fff;border-color:#1A1A1A">Done</button></div></div>';
   }
-  h += '</div><button class="icon ghost" data-act="del-spot" data-id="' + b.id + '" aria-label="Delete ' + val(b.name) + '" title="Delete">' + ICON.trash + '</button></div>';
+  h += '</div></div>';
   return h;
+}
+
+function renderBreak(b, i, n) {
+  const sel = b.id === V.selectedId;
+  return '<div class="brk' + (sel ? ' sel' : '') + '" data-card="' + b.id + '" draggable="true">' +
+    '<button class="grip" aria-label="Drag to reorder text break" title="Drag to reorder">' + ICON.grip + '</button>' +
+    '<div class="cbody" style="gap:4px"><div class="cmeta"><span class="blabel">Text break</span><span class="grow"></span>' +
+    '<button class="icon ghost del" data-act="item-up" data-id="' + b.id + '" aria-label="Move up"' + (i === 0 ? ' disabled' : '') + '>' + ICON.up + '</button>' +
+    '<button class="icon ghost del" data-act="item-down" data-id="' + b.id + '" aria-label="Move down"' + (i === n - 1 ? ' disabled' : '') + '>' + ICON.down + '</button>' +
+    '<button class="icon ghost del" data-act="del-break" data-id="' + b.id + '" aria-label="Delete text break" title="Delete">' + ICON.trash + '</button></div>' +
+    '<input class="ie btitle" data-brk-title="' + b.id + '" value="' + val(b.title) + '" placeholder="Title (optional)" aria-label="Text break title">' +
+    '<div style="display:flex;align-items:flex-start;gap:4px"><textarea class="ie btext" data-brk-text="' + b.id + '" rows="1" placeholder="A few words to introduce what comes next…" aria-label="Text break text" style="flex:1 1 auto">' + val(b.blurb) + '</textarea>' +
+    '<span class="textbar"><button data-act="insert-link" data-target="[data-brk-text=&quot;' + b.id + '&quot;]" title="Add a link">' + ICON.link + '</button></span></div>' +
+    '</div></div>';
 }
 
 function renderCatPanel() {
@@ -1256,44 +1233,26 @@ $('vlist').addEventListener('click', e => {
       toastUndo('Deleted ' + b.name, () => { blocks().splice(i, 0, b); V.selectedId = b.id; });
       break;
     }
-    case 'spot-up': case 'spot-down': {
-      const g = groupOf(id), idx = g.items.findIndex(b => b.id === id);
-      const j = act === 'spot-up' ? idx - 1 : idx + 1;
-      if (j < 0 || j >= g.items.length) return;
-      const a = bs.indexOf(g.items[idx]), c = bs.indexOf(g.items[j]);
-      [bs[a], bs[c]] = [bs[c], bs[a]];
+    case 'item-up': case 'item-down': {
+      const i = bs.findIndex(b => b.id === id), j = act === 'item-up' ? i - 1 : i + 1;
+      if (i < 0 || j < 0 || j >= bs.length) return;
+      [bs[i], bs[j]] = [bs[j], bs[i]];
       break;
     }
     case 'unplace': M.setLatLng(findBlock(id), null); break;
-    case 'add-spot': {
-      const key = btn.dataset.group;
-      const g = groups().find(x => (x.section ? x.section.id : 'lead') === key);
-      newSpot(g);
-      break;
-    }
-    case 'add-section': {
-      const s = { type: 'section', id: M.newId(), title: 'New section', blurb: '' };
-      bs.push(s);
+    case 'add-spot': newSpot(); break;
+    case 'add-break': {
+      const b = newBreak();
       renderVisual(); afterEdit();
-      const inp = $('vlist').querySelector('[data-sec-title="' + s.id + '"]');
-      if (inp) { inp.scrollIntoView({ block: 'center' }); inp.select(); }
+      const inp = $('vlist').querySelector('[data-brk-title="' + b.id + '"]');
+      if (inp) { inp.scrollIntoView({ block: 'center' }); inp.focus(); }
       return;
     }
-    case 'sec-del': {
-      const i = bs.findIndex(b => b.id === id), s = bs[i];
+    case 'del-break': {
+      const i = bs.findIndex(b => b.id === id), b = bs[i];
       bs.splice(i, 1);
-      toastUndo('Deleted section ' + s.title, () => blocks().splice(i, 0, s));
-      break;
-    }
-    case 'sec-up': case 'sec-down': {
-      const gs = groups(), gi = gs.findIndex(g => g.section && g.section.id === id);
-      const other = gs[act === 'sec-up' ? gi - 1 : gi + 1];
-      if (!other || !other.section) return;
-      const chunk = g => [g.section].concat(g.items);
-      const a = act === 'sec-up' ? other : gs[gi], b2 = act === 'sec-up' ? gs[gi] : other;
-      const start = bs.indexOf(a.section);
-      const merged = chunk(b2).concat(chunk(a));
-      bs.splice(start, merged.length, ...merged);
+      if (V.selectedId === id) V.selectedId = null;
+      toastUndo('Deleted text break' + (b.title ? ' “' + b.title + '”' : ''), () => blocks().splice(i, 0, b));
       break;
     }
     case 'undo': if (V.toast) { V.toast.undo(); V.toast = null; } break;
@@ -1373,7 +1332,6 @@ $('vlist').addEventListener('click', e => {
       ta.dispatchEvent(new Event('input', { bubbles: true }));
       return;
     }
-    case 'spot-color-reset': M.setField(findBlock(id), 'Color', ''); break;
     case 'cat-move-cancel': delete V.moveTargets[id]; renderVisual(); return;
     case 'cat-move-del': {
       const c = catList().find(x => x.id === id), to = catList().find(x => x.id === V.moveTargets[id]);
@@ -1393,6 +1351,15 @@ $('vlist').addEventListener('click', e => {
   renderVisual(); afterEdit();
 });
 
+$('vlist').addEventListener('focusin', e => {
+  const brk = e.target.closest && e.target.closest('.brk');
+  if (brk && V.selectedId !== brk.dataset.card) {
+    V.selectedId = brk.dataset.card;
+    $('vlist').querySelectorAll('.card.sel, .brk.sel').forEach(el => el.classList.remove('sel'));
+    brk.classList.add('sel'); syncMarkers(); updatePlaceBanner();
+  }
+});
+
 // Text-ish edits update the model without redrawing (keeps the cursor where it is)
 $('vlist').addEventListener('input', e => {
   const t = e.target, d = t.dataset, m = state.model;
@@ -1402,8 +1369,8 @@ $('vlist').addEventListener('input', e => {
     if (d.meta === 'Title') autosize(t);
   } else if (d.intro != null) {
     m.intro = t.value.split(/\n\s*\n/).map(p => p.trim()).filter(Boolean);
-  } else if (d.secTitle) { findBlock(d.secTitle).title = t.value; }
-  else if (d.secBlurb) { findBlock(d.secBlurb).blurb = t.value; }
+  } else if (d.brkTitle) { findBlock(d.brkTitle).title = t.value; }
+  else if (d.brkText) { findBlock(d.brkText).blurb = t.value.replace(/\s*\n\s*/g, ' '); autosize(t); }
   else if (d.spotName) {
     findBlock(d.spotName).name = t.value;
     const nb = $('vlist').querySelector('[data-card="' + d.spotName + '"] .cname');
@@ -1465,8 +1432,6 @@ $('vlist').addEventListener('input', e => {
     c.name = t.value;
     blocks().forEach(b => {
       if (b.type === 'spot' && M.getField(b, 'category') === old) M.setField(b, 'Category', t.value);
-      // A section named exactly like the category follows the rename
-      if (b.type === 'section' && b.title === old) b.title = t.value;
     });
   } else return;
   afterEdit();
@@ -1481,14 +1446,14 @@ $('vlist').addEventListener('change', e => {
     else if (c.length >= 2 && !isNaN(c[0]) && !isNaN(c[1]) && Math.abs(c[0]) <= 90 && Math.abs(c[1]) <= 180) { M.setLatLng(b, c[0], c[1]); if (map) map.flyTo([c[0], c[1]], 16, { duration: 0.5 }); }
     else { alert('Enter coordinates as two numbers, like 37.9053, -122.5494'); return; }
   } else if (d.catMove) { V.moveTargets[d.catMove] = t.value; return; }
-  else if (d.catColor || d.catHex || d.catName || d.meta === 'Author Link' || d.secTitle || d.spotColor || d.spotHex || d.pinDefault != null || d.pinDefaultHex != null) { /* redraw below */ }
+  else if (d.catColor || d.catHex || d.catName || d.meta === 'Author Link' || d.pinDefault != null || d.pinDefaultHex != null) { /* redraw below */ }
   else return;
   afterEdit(); scheduleRender();
 });
 let renderTimer = null;
 function scheduleRender() { clearTimeout(renderTimer); renderTimer = setTimeout(renderVisual, 250); }
 
-// Drag to reorder (and to move between sections). No redraws mid-drag:
+// Drag to reorder. No redraws mid-drag:
 // replacing the dragged card would cancel the drag in some browsers.
 function markDropTarget() {
   $('vlist').querySelectorAll('.drop-before').forEach(el => el.classList.remove('drop-before'));
@@ -1516,8 +1481,8 @@ $('vlist').addEventListener('drop', e => {
   if (!V.dragId) return;
   e.preventDefault();
   const id = V.dragId;
-  if (V.overId && V.overId !== id) moveSpot(id, V.overId, null);
-  else if (V.overZone) moveSpot(id, null, groups().find(g => (g.section ? g.section.id : 'lead') === V.overZone));
+  if (V.overId && V.overId !== id) moveBlock(id, V.overId);
+  else if (V.overZone) moveBlock(id, null);
   V.dragId = V.overId = V.overZone = null;
   renderVisual(); afterEdit();
 });
@@ -1601,18 +1566,12 @@ function onMapClick(e) {
   if (!state.model) return;
   const p = pendingSpot();
   if (p) { M.setLatLng(p, e.latlng.lat, e.latlng.lng); renderVisual(); afterEdit(); return; }
-  const gs = groups();
-  const sel = V.selectedId && groupOf(V.selectedId);
-  const def = sel ? gs.indexOf(gs.find(g => g.section === sel.section)) : 0;
   const box = document.createElement('div');
   box.className = 'addpop';
   box.innerHTML = '<div class="coords">' + e.latlng.lat.toFixed(5) + ', ' + e.latlng.lng.toFixed(5) + '</div>' +
-    (gs.length > 1 ? '<label class="f">Add to<select>' + gs.map((g, i) => '<option value="' + i + '"' + (i === def ? ' selected' : '') + '>' + esc(g.section ? g.section.title : 'Top of guide') + '</option>').join('') + '</select></label>' : '') +
     '<button class="primary">Add spot here</button>';
   box.querySelector('button').addEventListener('click', () => {
-    const sEl = box.querySelector('select');
-    const g = groups()[sEl ? +sEl.value : 0] || { section: null, items: [] };
-    newSpot(g, { lat: e.latlng.lat, lng: e.latlng.lng });
+    newSpot({ lat: e.latlng.lat, lng: e.latlng.lng });
     map.closePopup();
     renderVisual(); afterEdit();
     const inp = $('vlist').querySelector('[data-spot-name="' + V.selectedId + '"]');
@@ -1689,9 +1648,7 @@ $('results').addEventListener('click', e => {
     if (/^new spot$/i.test(p.name.trim())) p.name = r.name;
     if (!M.getField(p, 'google maps')) M.setField(p, 'Google Maps', gmapsLink(p.name, [r.street, r.city].filter(Boolean).join(' ')));
   } else {
-    const sel = V.selectedId && groupOf(V.selectedId);
-    const g = sel || groups()[0] || { section: null, items: [] };
-    newSpot(g, { name: r.name, lat: r.lat, lng: r.lng, gmaps: gmapsLink(r.name, [r.street, r.city].filter(Boolean).join(' ')) });
+    newSpot({ name: r.name, lat: r.lat, lng: r.lng, gmaps: gmapsLink(r.name, [r.street, r.city].filter(Boolean).join(' ')) });
   }
   renderVisual(); afterEdit();
   map.flyTo([r.lat, r.lng], 17, { duration: 0.6 });

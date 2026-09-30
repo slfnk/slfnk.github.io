@@ -78,9 +78,9 @@
     const raw = entryBlocks.join('===').split(/^---$/m).filter(b => b.trim());
     raw.forEach(block => {
       const lines = block.split('\n');
-      const sectionLine = lines.find(l => l.trim().match(/^## (.+)$/));
+      const sectionLine = lines.find(l => /^##(\s+.*)?$/.test(l.trim()));
       if (sectionLine) {
-        const title = sectionLine.trim().replace(/^##\s*/, '');
+        const title = sectionLine.trim().replace(/^##\s*/, '').trim();
         const blurb = [];
         let past = false;
         lines.forEach(l => {
@@ -128,7 +128,7 @@
     model.blocks.forEach(b => {
       o.push('', '---', '');
       if (b.type === 'section') {
-        o.push('## ' + b.title.trim());
+        o.push(b.title.trim() ? '## ' + b.title.trim() : '##');
         if (b.blurb.trim()) o.push('', b.blurb.trim());
       } else if (b.type === 'spot') {
         o.push('# ' + b.name.trim(), '');

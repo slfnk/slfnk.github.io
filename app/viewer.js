@@ -498,19 +498,32 @@ Object.entries(data.categories).forEach(([k, v]) => {
   CATEGORIES[k] = { color: v.color, label: k };
 });
 function catColor(cat) { return CATEGORIES[cat]?.color || '#888'; }
-// "Categories: off" guides: no tags or category filters, and each pin can have its own color
+// "Categories: off" guides: no tags or category filters, and every pin uses the guide's pin color
 const CATS_OFF = !!guide.categoriesOff;
 const DEFAULT_PIN = /^#[0-9a-fA-F]{3,8}$/.test(guide.pinColor || '') ? guide.pinColor : '#038f9e';
 function spotColor(p) {
-  if (CATS_OFF) return p.color || CATEGORIES[p.category]?.color || DEFAULT_PIN;
+  // No categories = one pin color for the whole guide (categories stay in the file for switching back)
+  if (CATS_OFF) return DEFAULT_PIN;
   return catColor(p.category);
 }
 const places = data.places;
 const sectionBreaks = data.sectionBreaks || [];
 
 // Build a map of beforeIndex → section break for quick lookup
+// Text breaks sit before a given spot; several can stack, and some can follow the last spot
 const sectionMap = {};
-sectionBreaks.forEach(sb => { sectionMap[sb.beforeIndex] = sb; });
+sectionBreaks.forEach(sb => {
+  if (!sb.title && !sb.content) return;
+  (sectionMap[sb.beforeIndex] = sectionMap[sb.beforeIndex] || []).push(sb);
+});
+function renderBreak(sb, cat) {
+  const sbDiv = document.createElement('div');
+  sbDiv.className = 'section-break';
+  sbDiv.dataset.cat = cat || ''; // tag with the category of entries that follow
+  sbDiv.innerHTML = (sb.title ? '<h3>' + sb.title + '</h3>' : '') +
+    (sb.content ? '<p>' + richText(sb.content) + '</p>' : '');
+  return sbDiv;
+}
 
 // ============================================
 // RENDER INTRO
@@ -760,15 +773,7 @@ places.forEach((p, i) => {
   const col = spotColor(p);
 
   // Insert section break if one exists before this index
-  if (sectionMap[i]) {
-    const sb = sectionMap[i];
-    const sbDiv = document.createElement('div');
-    sbDiv.className = 'section-break';
-    sbDiv.dataset.cat = p.category; // tag with the category of entries that follow
-    sbDiv.innerHTML = '<h3>' + sb.title + '</h3>' +
-      (sb.content ? '<p>' + richText(sb.content) + '</p>' : '');
-    entriesEl.appendChild(sbDiv);
-  }
+  (sectionMap[i] || []).forEach(sb => entriesEl.appendChild(renderBreak(sb, p.category)));
 
   // Desktop entry
   const entry = document.createElement('div');
@@ -834,6 +839,10 @@ places.forEach((p, i) => {
   });
   carousel.appendChild(card);
 });
+
+// Breaks placed after the last spot
+Object.keys(sectionMap).map(Number).filter(k => k >= places.length).sort((a, b) => a - b)
+  .forEach(k => sectionMap[k].forEach(sb => entriesEl.appendChild(renderBreak(sb, ''))));
 
 newTabLinks();
 

@@ -55,9 +55,9 @@ function parsePlacesMd(text) {
   entriesRaw.forEach(block => {
     const lines = block.split('\n');
     // Detect section break: ## Title (double hash)
-    const sectionLine = lines.find(l => l.trim().match(/^## (.+)$/));
+    const sectionLine = lines.find(l => /^##(\s+.*)?$/.test(l.trim()));
     if (sectionLine) {
-      const title = sectionLine.trim().replace(/^##\s*/, '');
+      const title = sectionLine.trim().replace(/^##\s*/, '').trim();
       const contentLines = [];
       let pastTitle = false;
       lines.forEach(l => {
