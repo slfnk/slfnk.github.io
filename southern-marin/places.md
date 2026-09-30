@@ -41,22 +41,22 @@ Deep Cuts: #D95B43
 
 ---
 
-# Mamahuhu
-
-- Category: Grub
-- Price: $$
-- Location: 37.9052952, -122.5494049
-- Google Maps: https://www.google.com/maps/search/?api=1&query=Mamahuhu+173+Throckmorton+Ave+Mill+Valley+CA
-[Write-Up Coming Soon]
-
----
-
 # La Ginestra
 
 - Category: Grub
 - Price: $$
 - Location: 37.905772, -122.548688
 - Google Maps: https://www.google.com/maps/search/?api=1&query=La+Ginestra+127+Throckmorton+Ave+Mill+Valley+CA
+[Write-Up Coming Soon]
+
+---
+
+# Mamahuhu
+
+- Category: Grub
+- Price: $$
+- Location: 37.9052952, -122.5494049
+- Google Maps: https://www.google.com/maps/search/?api=1&query=Mamahuhu+173+Throckmorton+Ave+Mill+Valley+CA
 [Write-Up Coming Soon]
 
 ---
