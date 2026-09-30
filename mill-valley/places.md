@@ -5,6 +5,7 @@ Author: SL FNK
 Author Link: https://www.instagram.com/cultistresults/
 Updated: September 2026
 Center: 37.90656287516964, -122.54627954085258, 15
+Categories: off
 
 ## Intro
 
