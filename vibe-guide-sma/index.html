@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Moved — GUIIDES</title>
+<link rel="canonical" href="https://guiides.com/san-miguel/">
+<script>
+  // Old address: /vibe-guide-sma/?g=slug#spot  →  new address: /slug/#spot
+  (function() {
+    var g = new URLSearchParams(location.search).get('g');
+    var slug = (g && /^[a-z0-9-]+$/.test(g)) ? g : 'san-miguel';
+    location.replace('/' + slug + '/' + location.hash);
+  })();
+</script>
+<noscript><meta http-equiv="refresh" content="0; url=/san-miguel/"></noscript>
+</head>
+<body>
+<p>This guide has moved to <a href="/san-miguel/">guiides.com/san-miguel</a>.</p>
+</body>
+</html>
