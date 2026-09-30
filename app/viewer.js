@@ -144,8 +144,8 @@ const settingsConfig = [
   },
   {
     key: 'accent', label: 'Accent', type: 'cycle',
-    options: ['Teal', 'Coral', 'Gold', 'Indigo', 'Rose', 'Slate'],
-    _colors: ['#2AAA8A', '#D95B43', '#C4A035', '#4A6FA5', '#C96B8B', '#6B8291'],
+    options: ['Teal', 'Coral', 'Gold', 'Indigo', 'Rose', 'Slate', 'Jade'],
+    _colors: ['#038f9e', '#D95B43', '#C4A035', '#4A6FA5', '#C96B8B', '#6B8291', '#2AAA8A'],
     get: function() {
       const cur = getComputedStyle(document.documentElement).getPropertyValue('--progress').trim();
       let idx = this._colors.indexOf(cur);
@@ -156,7 +156,7 @@ const settingsConfig = [
         const norm = ctx.fillStyle; // always returns #rrggbb
         idx = this._colors.findIndex(c => { ctx.fillStyle = c; return ctx.fillStyle === norm; });
       }
-      return idx >= 0 ? idx : 5; // default Slate
+      return idx >= 0 ? idx : 0; // default Teal
     },
     set: function(idx) {
       document.documentElement.style.setProperty('--progress', this._colors[idx]);
@@ -409,7 +409,7 @@ try {
   if (savedPinSize !== null) document.documentElement.style.setProperty('--pin-size', savedPinSize + 'px');
   const savedAccent = localStorage.getItem('vg-accent');
   if (savedAccent !== null) {
-    const accentColors = ['#2AAA8A', '#D95B43', '#C4A035', '#4A6FA5', '#C96B8B', '#6B8291'];
+    const accentColors = ['#038f9e', '#D95B43', '#C4A035', '#4A6FA5', '#C96B8B', '#6B8291', '#2AAA8A'];
     const ai = parseInt(savedAccent);
     if (ai >= 0 && ai < accentColors.length) document.documentElement.style.setProperty('--progress', accentColors[ai]);
   }

@@ -8,7 +8,7 @@
     --text-3: #8A8A8A;
     --border: #E0DDD8;
     --hover: #F3F1ED;
-    --progress: #6B8291;
+    --progress: #038f9e;
     --serif: 'Source Serif 4', Georgia, serif;
     --sans: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
     --card-blur: 0px;
@@ -96,7 +96,7 @@
   .guiides-brand {
     font-family: var(--sans);
     font-size: 0.62rem;
-    color: #038f9e;
+    color: #FF8F8F;
     text-decoration: none;
     letter-spacing: 0.04em;
     font-weight: 500;
@@ -107,7 +107,7 @@
     font-weight: 700;
     letter-spacing: 0.08em;
   }
-  .guiides-brand:hover { color: #026f7b; transform: scale(1.06); }
+  .guiides-brand:hover { color: #F26B6B; transform: scale(1.06); }
   .intro-section .updated-inline {
     font-size: 0.68rem;
     font-weight: 600;
