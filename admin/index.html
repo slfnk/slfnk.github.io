@@ -1,0 +1,687 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>GUIIDES editor</title>
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&family=DM+Sans:wght@400;500;600;700&display=swap">
+<script src="/app/parser.js"></script>
+<style>
+  :root {
+    --bg: #FAF9F6; --panel: #FFFFFF; --text: #1A1A1A; --text-2: #5C5C5C; --text-3: #8A8A8A;
+    --border: #E0DDD8; --hover: #F3F1ED; --brand: #038f9e; --brand-dark: #026f7b;
+    --ok: #2E7D4F; --warn: #A66A00; --err: #B3261E;
+    --sans: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+    --serif: 'Source Serif 4', Georgia, serif;
+    --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: var(--sans); background: var(--bg); color: var(--text); font-size: 14px; line-height: 1.5; }
+  a { color: var(--brand); }
+  button {
+    font: inherit; font-weight: 600; font-size: 13px; cursor: pointer;
+    border: 1px solid var(--border); background: var(--panel); color: var(--text);
+    border-radius: 6px; padding: 0.4rem 0.8rem;
+  }
+  button:hover { border-color: var(--text-3); }
+  button.primary { background: var(--brand); border-color: var(--brand); color: #fff; }
+  button.primary:hover { background: var(--brand-dark); }
+  button:disabled { opacity: 0.5; cursor: default; }
+  input, textarea {
+    font: inherit; width: 100%; padding: 0.45rem 0.6rem; border: 1px solid var(--border);
+    border-radius: 6px; background: var(--panel); color: var(--text);
+  }
+  input:focus, textarea:focus { outline: none; border-color: var(--brand); }
+  label { display: block; font-size: 12px; font-weight: 600; color: var(--text-2); margin: 0.8rem 0 0.25rem; }
+  .hint { font-size: 12px; color: var(--text-3); margin-top: 0.25rem; }
+  .hidden { display: none !important; }
+
+  header {
+    display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+    padding: 0.7rem 1.25rem; border-bottom: 1px solid var(--border); background: var(--bg);
+    position: sticky; top: 0; z-index: 5;
+  }
+  .brand { color: var(--brand); font-weight: 500; letter-spacing: 0.04em; text-decoration: none; }
+  .brand strong { font-weight: 700; letter-spacing: 0.08em; }
+  .brand span { color: var(--text-3); font-weight: 500; letter-spacing: 0; margin-left: 0.4rem; }
+  .who { font-size: 12px; color: var(--text-3); display: flex; align-items: center; gap: 0.6rem; }
+
+  /* Login */
+  .login { max-width: 520px; margin: 3rem auto; padding: 0 1.25rem; }
+  .login h1 { font-family: var(--serif); font-size: 1.6rem; margin-bottom: 0.5rem; }
+  .login p { color: var(--text-2); margin-bottom: 0.6rem; }
+  .login ol { color: var(--text-2); margin: 0.4rem 0 1rem 1.2rem; }
+  .login li { margin-bottom: 0.25rem; }
+  .login .row { display: flex; gap: 0.5rem; align-items: center; margin-top: 0.6rem; }
+  .login .row label { margin: 0; font-weight: 500; display: flex; gap: 0.35rem; align-items: center; }
+  .login .row input[type=checkbox] { width: auto; }
+
+  /* App layout */
+  .app { display: grid; grid-template-columns: 240px minmax(0, 1fr); min-height: calc(100vh - 49px); }
+  .sidebar { border-right: 1px solid var(--border); padding: 1rem; }
+  .sidebar h2 { font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-3); margin-bottom: 0.5rem; }
+  .guide-list { list-style: none; margin-bottom: 1rem; }
+  .guide-list button {
+    width: 100%; text-align: left; border: none; background: none; padding: 0.5rem 0.6rem;
+    border-radius: 6px; font-weight: 500;
+  }
+  .guide-list button:hover { background: var(--hover); }
+  .guide-list button.active { background: var(--hover); color: var(--brand); font-weight: 700; }
+  .guide-list small { display: block; color: var(--text-3); font-weight: 400; font-size: 11px; }
+
+  .main { padding: 1rem 1.25rem; min-width: 0; display: flex; flex-direction: column; gap: 0.75rem; }
+  .toolbar { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
+  .toolbar h1 { font-family: var(--serif); font-size: 1.25rem; margin-right: auto; }
+  .toolbar .path { font-family: var(--mono); font-size: 12px; color: var(--text-3); display: block; font-weight: 400; }
+  .empty { color: var(--text-3); padding: 3rem 0; text-align: center; font-family: var(--serif); font-style: italic; }
+
+  .editor {
+    font-family: var(--mono); font-size: 13px; line-height: 1.55; min-height: 60vh; flex: 1;
+    resize: vertical; tab-size: 2; white-space: pre; overflow-wrap: normal; overflow-x: auto;
+  }
+  .checks { display: flex; flex-wrap: wrap; gap: 0.4rem 1rem; font-size: 12px; color: var(--text-2); }
+  .checks .ok { color: var(--ok); }
+  .checks .warn { color: var(--warn); }
+  .checks .err { color: var(--err); font-weight: 600; }
+  .issues { font-size: 12px; color: var(--warn); }
+  .issues li { margin-left: 1.1rem; }
+
+  .status { font-size: 12px; min-height: 1.2em; }
+  .status.ok { color: var(--ok); }
+  .status.err { color: var(--err); font-weight: 600; }
+  .status.busy { color: var(--text-2); }
+  .dirty-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--warn); display: inline-block; margin-left: 0.4rem; vertical-align: middle; }
+
+  .banner-note {
+    background: #FFF6E5; border: 1px solid #F0D9A8; color: #6B4A00; border-radius: 6px;
+    padding: 0.6rem 0.8rem; font-size: 13px; display: flex; gap: 0.6rem; align-items: center; flex-wrap: wrap;
+  }
+
+  /* New guide panel */
+  .panel { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 1rem 1.25rem; max-width: 560px; }
+  .panel h2 { font-family: var(--serif); font-size: 1.2rem; }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0 0.75rem; }
+  .actions { display: flex; gap: 0.5rem; margin-top: 1rem; }
+
+  @media (max-width: 760px) {
+    .app { grid-template-columns: 1fr; }
+    .sidebar { border-right: none; border-bottom: 1px solid var(--border); }
+    .editor { min-height: 50vh; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <a class="brand" href="/">⛺︎ <strong>GUIIDES</strong><span>editor</span></a>
+  <div class="who hidden" id="who">
+    <span id="whoText"></span>
+    <button id="signOut">Sign out</button>
+  </div>
+</header>
+
+<!-- ============ LOGIN ============ -->
+<section class="login hidden" id="loginView">
+  <h1>Sign in with a GitHub token</h1>
+  <p>The editor saves straight to your site's GitHub repo. It needs a token that can only touch that one repo.</p>
+  <ol>
+    <li>Open <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener">GitHub → new fine-grained token</a>.</li>
+    <li>Name it "GUIIDES editor" and pick an expiration (90 days is sensible).</li>
+    <li>Under <b>Repository access</b>, choose <b>Only select repositories</b> → <b id="repoName1"></b>.</li>
+    <li>Under <b>Permissions → Repository permissions</b>, set <b>Contents</b> to <b>Read and write</b>.</li>
+    <li>Generate, copy it, and paste it below. Don't paste it anywhere else.</li>
+  </ol>
+  <label for="tokenInput">Token</label>
+  <input id="tokenInput" type="password" autocomplete="off" spellcheck="false" placeholder="github_pat_…">
+  <div class="row">
+    <label><input type="checkbox" id="rememberToken" checked> Remember on this device</label>
+  </div>
+  <div class="row">
+    <button class="primary" id="signIn">Sign in</button>
+    <span class="status" id="loginStatus"></span>
+  </div>
+</section>
+
+<!-- ============ APP ============ -->
+<div class="app hidden" id="appView">
+  <aside class="sidebar">
+    <h2>Guides</h2>
+    <ul class="guide-list" id="guideList"></ul>
+    <button id="newGuideBtn">+ New guide</button>
+  </aside>
+
+  <main class="main">
+    <div id="emptyState" class="empty">Pick a guide on the left, or start a new one.</div>
+
+    <!-- Guide editor -->
+    <div id="editorView" class="hidden" style="display:flex;flex-direction:column;gap:0.75rem;flex:1">
+      <div class="toolbar">
+        <h1><span id="edTitle"></span><span id="dirtyDot" class="dirty-dot hidden" title="Unsaved changes"></span>
+          <span class="path" id="edPath"></span></h1>
+        <a id="viewLive" href="#" target="_blank" rel="noopener"><button>View live ↗</button></a>
+        <button id="reloadBtn">Reload</button>
+        <button class="primary" id="saveBtn" disabled>Save</button>
+      </div>
+      <div class="banner-note hidden" id="draftNote">
+        <span id="draftText"></span>
+        <button id="restoreDraft">Restore draft</button>
+        <button id="discardDraft">Discard</button>
+      </div>
+      <div class="checks" id="checks"></div>
+      <ul class="issues" id="issues"></ul>
+      <textarea class="editor" id="editor" spellcheck="true"></textarea>
+      <div class="status" id="status"></div>
+    </div>
+
+    <!-- New guide -->
+    <div id="newGuideView" class="hidden">
+      <div class="panel">
+        <h2>New guide</h2>
+        <label for="ngSlug">Web address</label>
+        <input id="ngSlug" placeholder="cdmx-cantinas" spellcheck="false">
+        <div class="hint">guiides.com/<b id="ngSlugPreview">…</b>/ · lowercase letters, numbers and dashes</div>
+        <label for="ngTitle">Title</label>
+        <input id="ngTitle" placeholder="Cantinas of Mexico City">
+        <label for="ngSubtitle">Subtitle</label>
+        <input id="ngSubtitle" placeholder="Swinging doors, cold beers, and free botanas">
+        <div class="grid2">
+          <div><label for="ngAuthor">Author</label><input id="ngAuthor" placeholder="SL FNK"></div>
+          <div><label for="ngCity">City</label><input id="ngCity" placeholder="Mexico City"></div>
+        </div>
+        <label for="ngCenter">Map center</label>
+        <input id="ngCenter" placeholder="19.4326, -99.1332" spellcheck="false">
+        <div class="hint">Right-click a spot in Google Maps and click the numbers at the top to copy them.</div>
+        <div class="actions">
+          <button class="primary" id="ngCreate">Create guide</button>
+          <button id="ngCancel">Cancel</button>
+        </div>
+        <div class="status" id="ngStatus" style="margin-top:0.6rem"></div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script>
+// ============================================================
+// CONFIG
+// ============================================================
+const REPO = { owner: 'slfnk', name: 'slfnk.github.io', branch: 'main' };
+const SITE = 'https://guiides.com';
+const RESERVED = ['app', 'admin', 'banners', 'vibe-guide-sma', 'favicon', 'images', 'assets'];
+const API = 'https://api.github.com';
+
+// ============================================================
+// SMALL HELPERS
+// ============================================================
+const $ = id => document.getElementById(id);
+const show = (el, on = true) => el.classList.toggle('hidden', !on);
+const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+function setStatus(el, msg, kind) { el.textContent = msg || ''; el.className = 'status' + (kind ? ' ' + kind : ''); }
+function monthYear() { return new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' }); }
+
+// UTF-8 safe base64 (GitHub's contents API speaks base64)
+function b64decode(b64) {
+  const bin = atob(b64.replace(/\s/g, ''));
+  return new TextDecoder().decode(Uint8Array.from(bin, c => c.charCodeAt(0)));
+}
+function b64encode(str) {
+  const bytes = new TextEncoder().encode(str);
+  let bin = '';
+  for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000));
+  return btoa(bin);
+}
+
+// ============================================================
+// GITHUB API
+// ============================================================
+let token = null;
+
+class ApiError extends Error {
+  constructor(status, message) { super(message); this.status = status; }
+}
+
+async function gh(path, opts = {}) {
+  const headers = {
+    'Accept': 'application/vnd.github+json',
+    'Authorization': 'Bearer ' + token,
+    'X-GitHub-Api-Version': '2022-11-28'
+  };
+  if (opts.body) headers['Content-Type'] = 'application/json';
+  let res;
+  try {
+    res = await fetch(API + path, { ...opts, headers, cache: 'no-store' });
+  } catch (e) {
+    throw new ApiError(0, "Couldn't reach GitHub. Check your connection and try again.");
+  }
+  if (res.ok || res.status === 404) return res;
+  let detail = '';
+  try { detail = (await res.json()).message || ''; } catch (e) {}
+  if (res.status === 401) throw new ApiError(401, 'GitHub rejected the token. It may have expired — sign out and paste a new one.');
+  if (res.status === 403) throw new ApiError(403, "The token doesn't have permission for this. Check it has Contents: Read and write on " + REPO.name + '. ' + detail);
+  if (res.status === 409 || res.status === 422) throw new ApiError(409, detail || 'Conflict');
+  throw new ApiError(res.status, 'GitHub error ' + res.status + (detail ? ': ' + detail : ''));
+}
+
+const encPath = p => p.split('/').map(encodeURIComponent).join('/');
+const contentsUrl = p => `/repos/${REPO.owner}/${REPO.name}/contents/${encPath(p)}`;
+
+async function getFile(path) {
+  const res = await gh(contentsUrl(path) + '?ref=' + REPO.branch);
+  if (res.status === 404) return null;
+  const j = await res.json();
+  return { text: b64decode(j.content || ''), sha: j.sha };
+}
+
+// sha = the version we started from. GitHub refuses the save if the file changed since.
+async function putFile(path, text, sha, message) {
+  const body = { message, content: b64encode(text), branch: REPO.branch };
+  if (sha) body.sha = sha;
+  const res = await gh(contentsUrl(path), { method: 'PUT', body: JSON.stringify(body) });
+  const j = await res.json();
+  return j.content.sha;
+}
+
+// ============================================================
+// GUIDE PAGE TEMPLATE — must match the existing /<slug>/index.html files
+// ============================================================
+function guidePageHtml(slug, title, subtitle) {
+  const t = esc(title), s = esc(subtitle);
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<!-- Guide page: only the title/description lines below differ between guides -->
+<title>${t}</title>
+<meta name="description" content="${s}">
+<meta property="og:type" content="website">
+<meta property="og:title" content="${t}">
+<meta property="og:description" content="${s}">
+<meta property="og:url" content="https://guiides.com/${slug}/">
+<link rel="canonical" href="https://guiides.com/${slug}/">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preconnect" href="https://cdnjs.cloudflare.com">
+<link rel="preconnect" href="https://a.basemaps.cartocdn.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;0,8..60,700;1,8..60,400&family=DM+Sans:ital,wght@0,400;0,500;0,600;1,400&display=swap">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"><\/script>
+<link rel="stylesheet" href="/app/viewer.css">
+</head>
+<body data-guide="${slug}">
+<script src="/app/parser.js"><\/script>
+<script src="/app/viewer.js"><\/script>
+</body>
+</html>
+`;
+}
+
+function starterPlacesMd({ title, subtitle, author, center }) {
+  const [lat, lng] = center;
+  return `Guide: ${title}
+Title: ${title}
+Subtitle: ${subtitle}
+Author: ${author}
+Updated: ${monthYear()}
+Center: ${lat}, ${lng}, 15
+
+## Intro
+
+Write a paragraph or two setting the scene. Blank lines separate paragraphs.
+
+## Categories
+
+Eats: #E07A3A
+Drinks: #8B5DAD
+Sights: #3D6B5E
+
+===
+
+---
+
+## Eats
+
+A one-line blurb that introduces this section.
+
+---
+
+# Your First Spot
+
+- Category: Eats
+- Price: $
+- Location: ${lat}, ${lng}
+Write about this spot here. Replace the Location with the spot's real coordinates.
+`;
+}
+
+// ============================================================
+// VALIDATION — uses the same parser as the live guide pages
+// ============================================================
+function checkGuide(text) {
+  const out = { ok: true, parsed: null, stats: [], issues: [] };
+  if (/^\s*</.test(text)) { out.ok = false; out.issues.push('This looks like HTML, not a guide file. Was index.html pasted in by mistake?'); return out; }
+  if (!/^Title:/m.test(text)) { out.ok = false; out.issues.push('Missing the "Title:" line at the top.'); }
+  if (!/^===\s*$/m.test(text)) { out.ok = false; out.issues.push('Missing the "===" line that separates the header from the spots.'); }
+  let parsed;
+  try { parsed = parsePlacesMd(text); } catch (e) { out.ok = false; out.issues.push('Parser error: ' + e.message); return out; }
+  out.parsed = parsed;
+
+  const cats = Object.keys(parsed.categories);
+  const body = text.split(/^===\s*$/m).slice(1).join('\n');
+  const headings = (body.match(/^# .+$/gm) || []).map(h => h.replace(/^#\s*/, '').trim());
+  const shown = new Set(parsed.places.map(p => p.name));
+  const hidden = headings.filter(h => !shown.has(h));
+  const uncategorized = parsed.places.filter(p => !parsed.categories[p.category]).map(p => p.name);
+  const noWriteup = parsed.places.filter(p => !p.description || /^\[write-up coming soon\]$/i.test(p.description)).length;
+
+  out.stats.push({ kind: 'ok', text: parsed.places.length + ' spots on the map' });
+  out.stats.push({ kind: cats.length ? 'ok' : 'warn', text: cats.length + ' categories' });
+  out.stats.push({ kind: 'ok', text: parsed.sectionBreaks.length + ' sections' });
+  if (noWriteup) out.stats.push({ kind: 'warn', text: noWriteup + ' without a write-up' });
+
+  if (hidden.length) out.issues.push(hidden.length + ' entr' + (hidden.length === 1 ? 'y has' : 'ies have') + ' no usable Location, so ' + (hidden.length === 1 ? "it won't" : "they won't") + ' appear: ' + hidden.slice(0, 5).join(', ') + (hidden.length > 5 ? '…' : ''));
+  if (uncategorized.length) out.issues.push('Category not listed under "## Categories" (pin will be gray): ' + [...new Set(uncategorized.map(n => parsed.places.find(p => p.name === n).category || '(none)'))].join(', '));
+  const slugs = parsed.places.map(p => p.slug);
+  const dupes = slugs.filter((s, i) => slugs.indexOf(s) !== i);
+  if (dupes.length) out.issues.push('Two spots share a name, so their share links collide: ' + [...new Set(dupes)].join(', '));
+  return out;
+}
+
+function renderChecks(result) {
+  $('checks').innerHTML = result.stats.map(s => '<span class="' + s.kind + '">' + esc(s.text) + '</span>').join('') +
+    (result.ok ? '' : '<span class="err">Can\'t save until the problems below are fixed</span>');
+  $('issues').innerHTML = result.issues.map(i => '<li>' + esc(i) + '</li>').join('');
+}
+
+// ============================================================
+// STATE
+// ============================================================
+const state = {
+  guides: [], guidesSha: null,
+  current: null,          // { slug, sha, original, originalSpots }
+  lastCheck: null
+};
+const draftKey = slug => 'gg-draft:' + slug;
+
+function isDirty() { return !!state.current && $('editor').value !== state.current.original; }
+function updateDirty() {
+  const d = isDirty();
+  show($('dirtyDot'), d);
+  $('saveBtn').disabled = !d || !(state.lastCheck && state.lastCheck.ok);
+}
+
+// ============================================================
+// SIGN IN
+// ============================================================
+async function signIn(t, remember) {
+  token = t;
+  const res = await gh(`/repos/${REPO.owner}/${REPO.name}`);
+  if (res.status === 404) throw new ApiError(404, "This token can't see " + REPO.owner + '/' + REPO.name + '. Make sure you picked that repository under "Repository access".');
+  (remember ? localStorage : sessionStorage).setItem('gg-token', t);
+  $('whoText').textContent = REPO.owner + '/' + REPO.name;
+  show($('who'));
+  show($('loginView'), false);
+  show($('appView'));
+  await loadGuideIndex();
+}
+
+function signOut() {
+  if (isDirty() && !confirm('You have unsaved changes. Sign out anyway? (Your draft stays saved on this device.)')) return;
+  localStorage.removeItem('gg-token'); sessionStorage.removeItem('gg-token');
+  location.reload();
+}
+
+$('signIn').addEventListener('click', async () => {
+  const t = $('tokenInput').value.trim();
+  if (!t) { setStatus($('loginStatus'), 'Paste your token first.', 'err'); return; }
+  setStatus($('loginStatus'), 'Checking…', 'busy');
+  try { await signIn(t, $('rememberToken').checked); $('tokenInput').value = ''; }
+  catch (e) { token = null; setStatus($('loginStatus'), e.message, 'err'); }
+});
+$('tokenInput').addEventListener('keydown', e => { if (e.key === 'Enter') $('signIn').click(); });
+$('tokenInput').addEventListener('input', () => setStatus($('loginStatus'), ''));
+$('signOut').addEventListener('click', signOut);
+
+// ============================================================
+// GUIDE LIST
+// ============================================================
+async function loadGuideIndex() {
+  const f = await getFile('guides.json');
+  if (!f) { state.guides = []; state.guidesSha = null; }
+  else { state.guides = (JSON.parse(f.text).guides || []); state.guidesSha = f.sha; }
+  renderGuideList();
+}
+
+function renderGuideList() {
+  $('guideList').innerHTML = state.guides.map(g =>
+    '<li><button data-slug="' + esc(g.slug) + '"' + (state.current && state.current.slug === g.slug ? ' class="active"' : '') + '>' +
+    esc(g.title) + '<small>' + esc(g.city || '') + ' · /' + esc(g.slug) + '/' + (g.published === false ? ' · hidden' : '') + '</small></button></li>'
+  ).join('') || '<li class="hint">No guides yet.</li>';
+}
+
+$('guideList').addEventListener('click', e => {
+  const b = e.target.closest('button[data-slug]');
+  if (b) openGuide(b.dataset.slug);
+});
+
+// ============================================================
+// EDIT A GUIDE
+// ============================================================
+async function openGuide(slug, { force = false } = {}) {
+  if (!force && isDirty() && !confirm('You have unsaved changes to this guide. Switch anyway? (Your draft stays saved on this device.)')) return;
+  show($('emptyState'), false); show($('newGuideView'), false); show($('editorView'));
+  $('editorView').style.display = 'flex';
+  setStatus($('status'), 'Loading…', 'busy');
+  $('editor').value = ''; $('editor').disabled = true;
+  try {
+    const f = await getFile(slug + '/places.md');
+    if (!f) throw new ApiError(404, 'No file at /' + slug + '/places.md');
+    const check = checkGuide(f.text);
+    state.current = { slug, sha: f.sha, original: f.text, originalSpots: check.parsed ? check.parsed.places.length : 0 };
+    const g = state.guides.find(x => x.slug === slug);
+    $('edTitle').textContent = (check.parsed && check.parsed.guide.title) || (g && g.title) || slug;
+    $('edPath').textContent = slug + '/places.md';
+    $('viewLive').href = SITE + '/' + slug + '/';
+    $('editor').value = f.text; $('editor').disabled = false;
+    state.lastCheck = check; renderChecks(check);
+    setStatus($('status'), '');
+    offerDraft(slug, f);
+    renderGuideList(); updateDirty();
+  } catch (e) {
+    state.current = null;
+    setStatus($('status'), e.message, 'err');
+  }
+}
+
+// Drafts: every keystroke is kept on this device, so a closed tab or failed save loses nothing
+function offerDraft(slug, file) {
+  let d = null;
+  try { d = JSON.parse(localStorage.getItem(draftKey(slug)) || 'null'); } catch (e) {}
+  if (!d || d.text === file.text) { localStorage.removeItem(draftKey(slug)); show($('draftNote'), false); return; }
+  const when = new Date(d.savedAt).toLocaleString();
+  $('draftText').textContent = 'You have unsaved edits from ' + when + (d.baseSha !== file.sha ? '. The guide has changed on GitHub since then — restoring would undo those changes.' : '.');
+  show($('draftNote'));
+}
+$('restoreDraft').addEventListener('click', () => {
+  const d = JSON.parse(localStorage.getItem(draftKey(state.current.slug)) || 'null');
+  if (d) { $('editor').value = d.text; onEdit(); }
+  show($('draftNote'), false);
+});
+$('discardDraft').addEventListener('click', () => {
+  localStorage.removeItem(draftKey(state.current.slug)); show($('draftNote'), false);
+});
+
+let checkTimer = null;
+function onEdit() {
+  if (!state.current) return;
+  const text = $('editor').value;
+  if (text !== state.current.original) {
+    try { localStorage.setItem(draftKey(state.current.slug), JSON.stringify({ text, baseSha: state.current.sha, savedAt: Date.now() })); } catch (e) {}
+  } else {
+    localStorage.removeItem(draftKey(state.current.slug));
+  }
+  updateDirty();
+  clearTimeout(checkTimer);
+  checkTimer = setTimeout(() => { state.lastCheck = checkGuide(text); renderChecks(state.lastCheck); updateDirty(); }, 300);
+}
+$('editor').addEventListener('input', onEdit);
+$('editor').addEventListener('keydown', e => {
+  if (e.key === 'Tab') { e.preventDefault(); document.execCommand('insertText', false, '  '); }
+});
+
+async function save() {
+  if (!state.current || !isDirty()) return;
+  const text = $('editor').value;
+  const check = checkGuide(text);
+  state.lastCheck = check; renderChecks(check);
+  if (!check.ok) { setStatus($('status'), 'Fix the problems above before saving.', 'err'); return; }
+  const before = state.current.originalSpots, after = check.parsed.places.length;
+  if (after < before && !confirm('This save removes ' + (before - after) + ' spot' + (before - after === 1 ? '' : 's') + ' from the map (' + before + ' → ' + after + '). Save anyway?')) return;
+
+  const slug = state.current.slug;
+  $('saveBtn').disabled = true;
+  setStatus($('status'), 'Saving…', 'busy');
+  try {
+    const newSha = await putFile(slug + '/places.md', text, state.current.sha, 'Update ' + slug + ' guide (editor)');
+    state.current.sha = newSha; state.current.original = text; state.current.originalSpots = after;
+    localStorage.removeItem(draftKey(slug));
+    $('edTitle').textContent = check.parsed.guide.title || slug;
+    const synced = await syncGuideMeta(slug, check.parsed.guide);
+    setStatus($('status'), 'Saved' + (synced ? ' (also updated the page title and guide list)' : '') + '. Live on the site in about a minute.', 'ok');
+  } catch (e) {
+    if (e.status === 409) {
+      setStatus($('status'), "Not saved: this guide changed on GitHub after you opened it, and saving would overwrite that. Your edits are kept as a draft. Click Reload, then Restore draft only if you're sure your version should win.", 'err');
+    } else {
+      setStatus($('status'), 'Not saved: ' + e.message + ' Your edits are kept as a draft on this device.', 'err');
+    }
+  }
+  updateDirty();
+}
+$('saveBtn').addEventListener('click', save);
+document.addEventListener('keydown', e => {
+  if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 's') { e.preventDefault(); save(); }
+});
+
+// Keep the guide page's <title>/preview text and guides.json in step with places.md
+async function syncGuideMeta(slug, guide) {
+  let changed = false;
+  const title = guide.title || slug, subtitle = guide.deck || '';
+  const page = await getFile(slug + '/index.html');
+  const want = guidePageHtml(slug, title, subtitle);
+  if (page && page.text !== want) {
+    await putFile(slug + '/index.html', want, page.sha, 'Sync ' + slug + ' page title (editor)');
+    changed = true;
+  }
+  const entry = state.guides.find(g => g.slug === slug);
+  if (entry && entry.title !== title) {
+    const f = await getFile('guides.json');
+    const idx = JSON.parse(f.text);
+    const e = (idx.guides || []).find(g => g.slug === slug);
+    if (e) {
+      e.title = title;
+      state.guidesSha = await putFile('guides.json', JSON.stringify(idx, null, 2) + '\n', f.sha, 'Update ' + slug + ' title in guide list (editor)');
+      state.guides = idx.guides; renderGuideList();
+      changed = true;
+    }
+  }
+  return changed;
+}
+
+$('reloadBtn').addEventListener('click', () => {
+  if (!state.current) return;
+  if (isDirty() && !confirm('Reload the latest version from GitHub? Your current edits stay saved as a draft you can restore.')) return;
+  openGuide(state.current.slug, { force: true });
+});
+
+window.addEventListener('beforeunload', e => { if (isDirty()) { e.preventDefault(); e.returnValue = ''; } });
+
+// ============================================================
+// NEW GUIDE
+// ============================================================
+$('newGuideBtn').addEventListener('click', () => {
+  if (isDirty() && !confirm('You have unsaved changes. Leave this guide? (Your draft stays saved on this device.)')) return;
+  state.current = null; renderGuideList();
+  show($('editorView'), false); $('editorView').style.display = 'none';
+  show($('emptyState'), false); show($('newGuideView'));
+  setStatus($('ngStatus'), '');
+  $('ngSlug').focus();
+});
+$('ngCancel').addEventListener('click', () => { show($('newGuideView'), false); show($('emptyState')); });
+$('ngSlug').addEventListener('input', () => {
+  const v = $('ngSlug').value.toLowerCase().replace(/[^a-z0-9-]+/g, '-').replace(/^-+/, '');
+  if (v !== $('ngSlug').value) $('ngSlug').value = v;
+  $('ngSlugPreview').textContent = v || '…';
+  setStatus($('ngStatus'), '');
+});
+['ngTitle', 'ngSubtitle', 'ngAuthor', 'ngCity', 'ngCenter'].forEach(id => $(id).addEventListener('input', () => setStatus($('ngStatus'), '')));
+
+$('ngCreate').addEventListener('click', async () => {
+  const slug = $('ngSlug').value.replace(/-+$/, '');
+  const title = $('ngTitle').value.trim(), subtitle = $('ngSubtitle').value.trim();
+  const author = $('ngAuthor').value.trim(), city = $('ngCity').value.trim();
+  const c = $('ngCenter').value.split(',').map(x => parseFloat(x.trim()));
+  const err = m => setStatus($('ngStatus'), m, 'err');
+
+  if (!/^[a-z0-9]+(-[a-z0-9]+)*$/.test(slug)) return err('Enter a web address using lowercase letters, numbers and dashes.');
+  if (RESERVED.includes(slug)) return err('"' + slug + '" is used by the site itself. Pick another address.');
+  if (state.guides.some(g => g.slug === slug)) return err('A guide already uses /' + slug + '/.');
+  if (!title) return err('Enter a title.');
+  if (c.length < 2 || isNaN(c[0]) || isNaN(c[1]) || Math.abs(c[0]) > 90 || Math.abs(c[1]) > 180) return err('Enter the map center as two numbers, like 19.4326, -99.1332.');
+
+  $('ngCreate').disabled = true;
+  const step = m => setStatus($('ngStatus'), m, 'busy');
+  const done = [];
+  try {
+    step('Checking the address is free…');
+    if (await getFile(slug + '/index.html') || await getFile(slug + '/places.md')) throw new ApiError(0, 'Files already exist at /' + slug + '/ on GitHub. Pick another address.');
+
+    step('Creating ' + slug + '/places.md…');
+    await putFile(slug + '/places.md', starterPlacesMd({ title, subtitle, author: author || 'Anonymous', center: [c[0], c[1]] }), null, 'Create ' + slug + ' guide content (editor)');
+    done.push(slug + '/places.md');
+
+    step('Creating the guide page…');
+    await putFile(slug + '/index.html', guidePageHtml(slug, title, subtitle), null, 'Create ' + slug + ' guide page (editor)');
+    done.push(slug + '/index.html');
+
+    step('Adding it to the guide list…');
+    const f = await getFile('guides.json');
+    const idx = f ? JSON.parse(f.text) : { guides: [] };
+    idx.guides = idx.guides || [];
+    idx.guides.push({ slug, title, city, published: true });
+    state.guidesSha = await putFile('guides.json', JSON.stringify(idx, null, 2) + '\n', f ? f.sha : null, 'Add ' + slug + ' to guide list (editor)');
+    state.guides = idx.guides;
+    done.push('guides.json');
+
+    ['ngSlug', 'ngTitle', 'ngSubtitle', 'ngAuthor', 'ngCity', 'ngCenter'].forEach(id => $(id).value = '');
+    $('ngSlugPreview').textContent = '…';
+    renderGuideList();
+    await openGuide(slug, { force: true });
+    setStatus($('status'), 'Guide created. It will be live at guiides.com/' + slug + '/ in about a minute.', 'ok');
+  } catch (e) {
+    err('Stopped: ' + e.message + (done.length ? ' Already created: ' + done.join(', ') + '.' : ''));
+  }
+  $('ngCreate').disabled = false;
+});
+
+// ============================================================
+// START
+// ============================================================
+$('repoName1').textContent = REPO.owner + '/' + REPO.name;
+(async function start() {
+  const saved = localStorage.getItem('gg-token') || sessionStorage.getItem('gg-token');
+  if (!saved) { show($('loginView')); $('tokenInput').focus(); return; }
+  try { await signIn(saved, !!localStorage.getItem('gg-token')); }
+  catch (e) {
+    token = null;
+    show($('loginView'));
+    setStatus($('loginStatus'), e.message, 'err');
+  }
+})();
+</script>
+</body>
+</html>
