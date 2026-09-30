@@ -8,7 +8,11 @@ Center: 37.90656287516964, -122.54627954085258, 15
 
 ## Intro
 
-[Intro comin
+Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.
+
+Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum. Curabitur pretium tincidunt lacus. Nulla gravida orci a odio. Nullam varius, turpis et commodo pharetra, est eros bibendum elit, nec luctus magna felis sollicitudin mauris. Integer in mauris eu nibh euismod gravida. Duis ac tellus et risus vulputate vehicula.
+
+Donec lobortis risus a elit. Etiam tempor. Ut ullamcorper, ligula eu tempor congue, eros est euismod turpis, id tincidunt sapien risus a quam. Maecenas fermentum consequat mi. Donec fermentum. Pellentesque malesuada nulla a mi. Duis sapien sem, aliquet nec, commodo eget, consequat quis, neque. Aliquam faucibus, elit ut dictum aliquet, felis ness un.
 
 ## Categories
 
@@ -24,6 +28,16 @@ Deep Cuts: #D95B43
 ## Grub
 
 [Section intro coming soon]
+
+---
+
+# Avatar's Punjabi Burritos
+
+- Category: Grub
+- Price: $$
+- Location: 37.905884, -122.549485
+- Google Maps: https://www.google.com/maps/search/?api=1&query=Avatar%27s+Punjabi+Burritos+15+Madrona+St+Mill+Valley+CA
+[Write-Up Coming Soon]
 
 ---
 
@@ -53,16 +67,6 @@ Deep Cuts: #D95B43
 - Price: $$
 - Location: 37.8819391, -122.5244742
 - Google Maps: https://www.google.com/maps/search/?api=1&query=Hook+Fish+Co+254+Shoreline+Hwy+Mill+Valley+CA
-[Write-Up Coming Soon]
-
----
-
-# Avatar's Punjabi Burritos
-
-- Category: Grub
-- Price: $$
-- Location: 37.905884, -122.549485
-- Google Maps: https://www.google.com/maps/search/?api=1&query=Avatar%27s+Punjabi+Burritos+15+Madrona+St+Mill+Valley+CA
 [Write-Up Coming Soon]
 
 ---
