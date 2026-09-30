@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FAQ — GUIIDES</title>
+<meta name="description" content="Questions and answers about Guiides, hand-written guides to places.">
+<meta property="og:title" content="FAQ — GUIIDES">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;0,8..60,700;1,8..60,400&family=DM+Sans:wght@400;500;600;700&display=swap">
+<script src="/app/markdown.js"></script>
+<style>
+  :root { --bg: #FAF9F6; --text: #1A1A1A; --text-2: #5C5C5C; --border: #E0DDD8; --accent: #038f9e; --brand: #FF8F8F; }
+  @media (prefers-color-scheme: dark) { :root { --bg: #1A1A1A; --text: #E8E4DE; --text-2: #A8A8A8; --border: #333; --accent: #25b3c2; } }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif; line-height: 1.6; }
+  .wrap { max-width: 680px; margin: 0 auto; padding: 1.25rem 1.5rem 4rem; }
+  .brand { display: inline-block; font-size: 0.72rem; font-weight: 500; letter-spacing: 0.04em; color: var(--brand); text-decoration: none; transition: transform 0.15s; }
+  .brand strong { font-weight: 700; letter-spacing: 0.08em; }
+  .brand:hover { transform: scale(1.06); }
+  h1 { font-family: 'Source Serif 4', Georgia, serif; font-size: clamp(2rem, 6vw, 2.6rem); line-height: 1.15; margin: 2.5rem 0 1rem; }
+  .faq-intro p, .faq-answer p { font-family: 'Source Serif 4', Georgia, serif; font-size: 1.05rem; line-height: 1.75; color: var(--text-2); margin-bottom: 0.9rem; }
+  .faq-intro { margin-bottom: 1.5rem; }
+  .faq-item { border-top: 1px solid var(--border); }
+  .faq-item:last-of-type { border-bottom: 1px solid var(--border); }
+  .faq-item summary { list-style: none; cursor: pointer; padding: 1.1rem 2.2rem 1.1rem 0; position: relative; font-family: 'Source Serif 4', Georgia, serif; font-size: 1.2rem; font-weight: 600; }
+  .faq-item summary::-webkit-details-marker { display: none; }
+  .faq-item summary::after { content: '+'; position: absolute; right: 0.2rem; top: 50%; transform: translateY(-50%); font-family: 'DM Sans', sans-serif; font-size: 1.4rem; font-weight: 400; color: var(--accent); }
+  .faq-item[open] summary::after { content: '–'; }
+  .faq-answer { padding: 0 0 0.8rem; }
+  .faq-answer ul, .faq-answer ol, .faq-intro ul, .faq-intro ol { margin: 0 0 0.9rem 1.3rem; font-family: 'Source Serif 4', Georgia, serif; font-size: 1.05rem; line-height: 1.7; color: var(--text-2); }
+  .faq-answer h3, .faq-answer h4 { font-family: 'Source Serif 4', Georgia, serif; margin: 0.6rem 0 0.4rem; }
+  blockquote { border-left: 3px solid var(--accent); padding-left: 1rem; margin: 0 0 0.9rem; font-style: italic; }
+  hr { border: none; border-top: 1px solid var(--border); margin: 1.5rem 0; }
+  a { color: var(--accent); }
+  strong { color: var(--text); }
+  code { font-size: 0.9em; background: rgba(127,127,127,0.12); padding: 0.1em 0.35em; border-radius: 4px; }
+  .msg { color: var(--text-2); margin-top: 2rem; }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <a class="brand" href="/">⛺︎ <strong>GUIIDES</strong> ⛺︎</a>
+    <main id="faq"><p class="msg">Loading…</p></main>
+  </div>
+<script>
+  fetch('/faq/faq.md', { cache: 'no-cache' })
+    .then(r => { if (!r.ok) throw new Error(r.status); return r.text(); })
+    .then(md => {
+      const out = GuiidesMarkdown.renderFaq(md);
+      document.getElementById('faq').innerHTML = out.html;
+      if (out.title) document.title = out.title + ' — GUIIDES';
+      // Open the question in the address bar, e.g. /faq/#how-do-i-save-spots
+      document.querySelectorAll('.faq-item summary').forEach(s => {
+        const id = s.textContent.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+        s.parentNode.id = id;
+        if (location.hash === '#' + id) s.parentNode.open = true;
+      });
+    })
+    .catch(() => { document.getElementById('faq').innerHTML = '<p class="msg">The FAQ couldn\'t be loaded. Try again in a moment.</p>'; });
+</script>
+</body>
+</html>

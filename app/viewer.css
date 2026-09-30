@@ -1092,3 +1092,32 @@
 
   /* Hide thumbnails */
   body.hide-thumbs .entry-thumb-wrap { display: none; }
+
+  /* =================== PASSWORD-PROTECTED GUIDES =================== */
+  body.is-locked #introBody, body.is-locked .intro-toggle-wrap, body.is-locked .filter-bar,
+  body.is-locked #entries, body.is-locked .col-right, body.is-locked .card-carousel,
+  body.is-locked .map-filter-bar {
+    filter: blur(7px); pointer-events: none; user-select: none;
+  }
+  body.is-locked .mobile-toggle, body.is-locked .topbar-icons { display: none; }
+  body.is-locked .col-left { overflow: hidden; }
+  .lock-panel {
+    position: relative; z-index: 20; margin: 0.5rem auto 1.5rem; max-width: 360px; width: calc(100% - 3rem);
+    background: var(--bg); border: 1px solid var(--border); border-radius: 14px; padding: 1.5rem 1.4rem;
+    box-shadow: 0 12px 40px rgba(0,0,0,0.12); text-align: center; display: flex; flex-direction: column; gap: 0.7rem;
+  }
+  .lock-panel svg { width: 26px; height: 26px; margin: 0 auto; fill: none; stroke: var(--progress); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  .lock-panel h2 { font-family: var(--serif); font-size: 1.2rem; line-height: 1.3; }
+  .lock-panel p { font-size: 0.85rem; color: var(--text-2); }
+  .lock-panel input[type=password] {
+    font: inherit; font-size: 1rem; padding: 0.65rem 0.8rem; border: 1px solid var(--border); border-radius: 8px;
+    background: var(--bg); color: var(--text); text-align: center;
+  }
+  .lock-panel input[type=password]:focus { outline: none; border-color: var(--progress); }
+  .lock-remember { font-size: 0.78rem; color: var(--text-2); display: flex; gap: 0.4rem; align-items: center; justify-content: center; }
+  .lock-panel button {
+    font: inherit; font-weight: 700; font-size: 0.9rem; padding: 0.7rem; border: none; border-radius: 8px;
+    background: var(--progress); color: #fff; cursor: pointer;
+  }
+  .lock-msg { font-size: 0.8rem; color: var(--text-2); min-height: 1.2em; }
+  .lock-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }

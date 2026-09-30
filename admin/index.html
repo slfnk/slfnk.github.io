@@ -13,6 +13,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script src="/app/parser.js"></script>
 <script src="/app/model.js"></script>
+<script src="/app/markdown.js"></script>
 <style>
   :root {
     --bg: #FAF9F6; --panel: #FFFFFF; --text: #1A1A1A; --text-2: #5C5C5C; --text-3: #6B6B6B;
@@ -144,7 +145,7 @@
   .grip svg { width: 12px; height: 18px; }
   .cbody { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
   .cmeta { display: flex; align-items: center; gap: 8px; }
-  .chip { font-size: 10px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; padding: 3px 7px; border-radius: 4px; }
+  .chip { font-size: 10px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; padding: 2px 7px; border-radius: 2px; }
   .price { font-size: 12px; color: var(--text-3); }
   .loc { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 600; margin-left: auto; white-space: nowrap; }
   .loc svg.i { width: 12px; height: 12px; }
@@ -201,11 +202,31 @@
   .brk.sel { border-style: solid; border-color: var(--brand); }
   .brk.dragging { opacity: 0.45; }
   .brk.drop-before { box-shadow: 0 -5px 0 -2px var(--brand); }
-  .brk .btitle { font-family: var(--serif); font-size: 18px; font-weight: 700; padding: 3px 6px; }
-  .brk .btext { font-family: var(--serif); font-size: 13.5px; font-style: italic; color: var(--text-2); padding: 4px 6px; resize: vertical; min-height: 34px; }
+  .brk .btitle { font-family: var(--serif); font-size: 18px; font-weight: 700; padding: 3px 6px; text-align: center; }
+  .brk .btext { font-family: var(--serif); font-size: 13.5px; font-style: italic; color: var(--text-2); padding: 4px 6px; resize: vertical; min-height: 34px; text-align: center; }
   .brk .blabel { font-size: 10px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-3); }
   .addrow { display: flex; gap: 8px; margin-top: 14px; }
   .addrow button { flex: 1 1 0; border-style: dashed; color: var(--brand-dark); display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
+  .lockrow { display: flex; align-items: center; justify-content: center; gap: 8px; flex-wrap: wrap; font-size: 12px; color: var(--text-2); margin-top: 6px; }
+  .lockrow svg.i { width: 13px; height: 13px; }
+  .lockrow button { height: 28px; font-size: 12px; padding: 0 8px; border: none; background: transparent; color: var(--brand-dark); }
+  .lockrow button:hover { background: var(--hover); }
+  .lockrow .on { color: var(--ok); font-weight: 700; }
+  .lockform { width: 100%; background: #fff; border: 1px solid var(--border); border-radius: 10px; padding: 12px; display: flex; flex-direction: column; gap: 8px; text-align: left; margin-top: 6px; }
+  .lockform .g2 input { height: 36px; }
+  .lockform .warn { font-size: 12px; color: #6B4A00; background: #FFF6E5; border: 1px solid #F0D9A8; border-radius: 8px; padding: 8px 10px; line-height: 1.5; }
+  #docView { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); height: calc(100vh - var(--top)); }
+  #docEditor { font-family: var(--mono); font-size: 13px; line-height: 1.6; border: none; border-right: 1px solid var(--border); border-radius: 0; padding: 18px; resize: none; height: 100%; }
+  #docPreview { overflow-y: auto; padding: 8px 28px 60px; }
+  #docPreview h1 { font-family: var(--serif); font-size: 30px; line-height: 1.15; margin: 20px 0 12px; }
+  #docPreview p, #docPreview li { font-family: var(--serif); font-size: 15px; line-height: 1.7; color: var(--text-2); margin-bottom: 10px; }
+  #docPreview ul, #docPreview ol { margin: 0 0 10px 20px; }
+  #docPreview details { border-top: 1px solid var(--border); }
+  #docPreview details:last-of-type { border-bottom: 1px solid var(--border); }
+  #docPreview summary { cursor: pointer; padding: 12px 0; font-family: var(--serif); font-size: 17px; font-weight: 600; }
+  #docPreview blockquote { border-left: 3px solid var(--brand); padding-left: 12px; font-style: italic; }
+  .dochead { font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-3); padding: 14px 0 0; }
+  @media (max-width: 860px) { #docView { grid-template-columns: 1fr; grid-template-rows: 55vh auto; height: auto; } #docEditor { border-right: none; border-bottom: 1px solid var(--border); } }
   .toast { position: sticky; bottom: 16px; margin-top: 16px; display: flex; align-items: center; gap: 10px; padding: 0 6px 0 16px; height: 52px; border-radius: 10px; background: #1A1A1A; color: #fff; font-size: 13px; z-index: 5; }
   .toast span { flex: 1 1 auto; }
   .toast button { border: none; }
@@ -330,6 +351,22 @@
     <div id="textView" class="hidden">
       <textarea id="editor" spellcheck="true" aria-label="Guide file"></textarea>
     </div>
+  </div>
+
+  <div id="unlockView" class="hidden">
+    <div class="panel">
+      <h2>This guide is password protected</h2>
+      <p class="hint" style="margin-top:6px">Enter its password to edit it. It stays unlocked in this browser tab.</p>
+      <label class="f" for="unlockPw">Password</label>
+      <input id="unlockPw" type="password" autocomplete="off">
+      <div class="row" style="margin-top:1rem"><button class="primary" id="unlockGo">Unlock</button></div>
+      <div class="status" id="unlockStatus" style="margin-top:0.6rem"></div>
+    </div>
+  </div>
+
+  <div id="docView" class="hidden">
+    <textarea id="docEditor" spellcheck="true" aria-label="FAQ page (Markdown)"></textarea>
+    <div id="docPreview"><div class="dochead">Preview · guiides.com/faq/</div><div id="docPreviewBody"></div></div>
   </div>
 
   <div id="deleteView" class="hidden">
@@ -612,7 +649,7 @@ const state = {
 const V = {             // visual-editor UI state
   selectedId: null, expandedId: null, catPanel: false,
   dragId: null, overId: null, overZone: null,
-  toast: null, catNotes: {}, hexDrafts: {}, moveTargets: {}, showAuthorLink: false
+  toast: null, catNotes: {}, hexDrafts: {}, moveTargets: {}, showAuthorLink: false, lockForm: false
 };
 const draftKey = slug => 'gg-draft:' + slug;
 
@@ -621,7 +658,9 @@ function currentText() {
   return state.mode === 'visual' ? M.serializeGuideModel(state.model) : $('editor').value;
 }
 function isDirty() {
+  if (state.doc) return $('docEditor').value !== state.doc.original;
   if (!state.current) return false;
+  if (state.current.lockDirty) return true;
   return state.mode === 'visual'
     ? M.serializeGuideModel(state.model) !== state.current.baseline
     : $('editor').value !== state.current.original && $('editor').value !== state.current.baseline;
@@ -665,18 +704,22 @@ async function loadGuideIndex() {
   state.guides = f ? (JSON.parse(f.text).guides || []) : [];
   state.guidesSha = f ? f.sha : null;
   renderPicker();
+  if (new URLSearchParams(location.hash.slice(1)).get('page') === 'faq') { openFaq({ force: true }); return; }
   const want = new URLSearchParams(location.hash.slice(1)).get('guide');
   if (want && state.guides.some(g => g.slug === want)) openGuide(want, { force: true });
 }
 function renderPicker() {
-  const cur = state.current ? state.current.slug : '';
+  const cur = state.doc ? '__faq' : (state.current ? state.current.slug : '');
   $('guidePicker').innerHTML = (cur ? '' : '<option value="">Choose a guide…</option>') +
+    '<optgroup label="Guides">' +
     state.guides.map(g => '<option value="' + esc(g.slug) + '"' + (g.slug === cur ? ' selected' : '') + '>' + esc(g.title) + '</option>').join('') +
-    '<option value="__new">＋ New guide…</option>';
+    '<option value="__new">＋ New guide…</option></optgroup>' +
+    '<optgroup label="Site pages"><option value="__faq"' + (cur === '__faq' ? ' selected' : '') + '>FAQ page</option></optgroup>';
 }
 $('guidePicker').addEventListener('change', () => {
   const v = $('guidePicker').value;
   if (v === '__new') { startNewGuide(); return; }
+  if (v === '__faq') { openFaq(); return; }
   if (v) openGuide(v);
 });
 
@@ -685,6 +728,13 @@ $('guidePicker').addEventListener('change', () => {
 // ============================================================
 function setSaveState() {
   const el = $('saveState');
+  if (state.doc) {
+    const dd = isDirty();
+    el.className = dd ? 'dirty' : 'clean';
+    el.textContent = dd ? 'Unsaved changes' : (el.dataset.msg || 'All changes saved');
+    $('saveBtn').disabled = !dd;
+    return;
+  }
   if (!state.current) { el.textContent = ''; $('saveBtn').disabled = true; return; }
   const d = isDirty();
   el.className = d ? 'dirty' : 'clean';
@@ -722,19 +772,30 @@ function afterEdit({ now = false } = {}) {
 
 async function openGuide(slug, { force = false } = {}) {
   if (!force && isDirty() && !confirm('You have unsaved changes to this guide. Switch anyway? (Your draft stays saved on this device.)')) { renderPicker(); return; }
-  show($('emptyState'), false); show($('newGuideView'), false); show($('deleteView'), false); show($('editorView'));
+  hideAllViews(); show($('editorView'));
+  state.doc = null;
   flashSaveState('Loading…', 'clean');
   try {
     const f = await getFile(slug + '/places.md');
     if (!f) throw new ApiError(404, 'No file at /' + slug + '/places.md');
+    // Password-protected: decrypt before anything else sees the file
+    let password = null;
+    const lockedLine = (f.text.match(/^Locked:\s*(.+)$/m) || [])[1];
+    if (lockedLine) {
+      password = await askPassword(slug, lockedLine);
+      if (password == null) { flashSaveState('Locked', 'clean'); return; }
+      f.text = await unlockGuideText(lockedLine, password);
+      hideAllViews(); show($('editorView'));
+    }
     const check = checkGuide(f.text);
     state.model = M.parseGuideModel(f.text);
     state.current = {
       slug, sha: f.sha, original: f.text,
       baseline: M.serializeGuideModel(state.model),
-      originalSpots: check.parsed ? check.parsed.places.length : 0
+      originalSpots: check.parsed ? check.parsed.places.length : 0,
+      password, lockDirty: false
     };
-    Object.assign(V, { selectedId: null, expandedId: null, toast: null, catPanel: false, catNotes: {}, hexDrafts: {}, moveTargets: {}, showAuthorLink: false });
+    Object.assign(V, { selectedId: null, expandedId: null, toast: null, catPanel: false, catNotes: {}, hexDrafts: {}, moveTargets: {}, showAuthorLink: false, lockForm: false });
     $('editor').value = f.text;
     $('viewLive').href = SITE + '/' + slug + '/';
     history.replaceState(null, '', '#guide=' + slug);
@@ -781,6 +842,7 @@ function stampUpdated() {
   else ed.value = ed.value.replace(/^(Author(?: Link)?:.*)$/m, '$1\nUpdated: ' + stamp);
 }
 async function save() {
+  if (state.doc) { saveFaq(); return; }
   if (!state.current || !isDirty()) return;
   stampUpdated();
   const text = currentText();
@@ -793,8 +855,11 @@ async function save() {
   $('saveBtn').disabled = true;
   flashSaveState('Saving…', 'clean');
   try {
-    const newSha = await putFile(slug + '/places.md', text, state.current.sha, 'Update ' + slug + ' guide (editor)');
-    Object.assign(state.current, { sha: newSha, original: text, originalSpots: after });
+    const pw = state.current.password;
+    const fileText = pw ? await lockGuideText(text, pw) : text;
+    const newSha = await putFile(slug + '/places.md', fileText, state.current.sha, 'Update ' + slug + ' guide (editor)' + (pw ? ' [protected]' : ''));
+    Object.assign(state.current, { sha: newSha, original: text, originalSpots: after, lockDirty: false });
+    if (pw) { try { sessionStorage.setItem('gg-pw:' + slug, pw); } catch (e) {} }
     state.current.baseline = state.mode === 'visual' ? text : M.serializeGuideModel(M.parseGuideModel(text));
     if (state.mode === 'text') state.model = M.parseGuideModel(text);
     localStorage.removeItem(draftKey(slug));
@@ -836,6 +901,10 @@ async function syncGuideMeta(slug, guide) {
 }
 
 $('reloadBtn').addEventListener('click', () => {
+  if (state.doc) {
+    if (isDirty() && !confirm('Reload the FAQ page from GitHub? Your current edits stay saved as a draft you can restore.')) return;
+    openFaq({ force: true }); return;
+  }
   if (!state.current) return;
   if (isDirty() && !confirm('Reload the latest version from GitHub? Your current edits stay saved as a draft you can restore.')) return;
   openGuide(state.current.slug, { force: true });
@@ -850,7 +919,7 @@ function toggleMenu(open) {
   show($('moreMenu'), on);
   $('moreBtn').setAttribute('aria-expanded', on ? 'true' : 'false');
   $('deleteGuideBtn').disabled = !state.current;
-  $('reloadBtn').disabled = !state.current;
+  $('reloadBtn').disabled = !state.current && !state.doc;
 }
 $('moreBtn').addEventListener('click', e => { e.stopPropagation(); toggleMenu(); });
 document.addEventListener('click', e => { if (!e.target.closest('.menuwrap')) toggleMenu(false); });
@@ -917,6 +986,111 @@ $('delGo').addEventListener('click', async () => {
 });
 
 // ============================================================
+// VIEWS
+// ============================================================
+function hideAllViews() {
+  ['emptyState', 'newGuideView', 'deleteView', 'unlockView', 'editorView', 'docView'].forEach(id => show($(id), false));
+  show($('modeSeg'), true);
+}
+
+// ============================================================
+// PASSWORD PROTECTION
+// ============================================================
+// Ask for the password of a protected guide (remembered for this browser tab)
+function askPassword(slug, lockedLine) {
+  return new Promise(resolve => {
+    const remembered = sessionStorage.getItem('gg-pw:' + slug);
+    const tryPw = async pw => { try { await unlockGuideText(lockedLine, pw); return true; } catch (e) { return false; } };
+    (async () => {
+      if (remembered && await tryPw(remembered)) { resolve(remembered); return; }
+      hideAllViews(); show($('unlockView'));
+      $('unlockPw').value = ''; setStatus($('unlockStatus'), ''); $('unlockPw').focus();
+      const go = async () => {
+        const pw = $('unlockPw').value;
+        if (!pw) return;
+        setStatus($('unlockStatus'), 'Checking…', 'busy');
+        if (await tryPw(pw)) {
+          try { sessionStorage.setItem('gg-pw:' + slug, pw); } catch (e) {}
+          $('unlockGo').onclick = null; $('unlockPw').onkeydown = null;
+          resolve(pw);
+        } else setStatus($('unlockStatus'), "That password doesn't match.", 'err');
+      };
+      $('unlockGo').onclick = go;
+      $('unlockPw').onkeydown = e => { if (e.key === 'Enter') go(); };
+    })();
+  });
+}
+
+const LOCK_ICON = '<svg class="i" viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>';
+function renderLockRow() {
+  const on = !!(state.current && state.current.password);
+  let h = '<div class="lockrow">' + LOCK_ICON + 'Password protection: ' +
+    (on ? '<span class="on">On</span><button data-act="lock-form">Change password</button><button data-act="lock-off">Turn off</button>'
+        : 'Off<button data-act="lock-form">Turn on…</button>') +
+    (state.current && state.current.lockDirty ? '<span class="hint">· takes effect when you save</span>' : '') + '</div>';
+  if (V.lockForm) {
+    h += '<div class="lockform"><b style="font-size:13px">' + (on ? 'Change the password' : 'Protect this guide with a password') + '</b>' +
+      '<div class="g2"><label class="f">Password<input type="password" id="lockPw1" autocomplete="new-password"></label>' +
+      '<label class="f">Type it again<input type="password" id="lockPw2" autocomplete="new-password"></label></div>' +
+      '<div class="warn">Visitors see the title, subtitle and byline; everything else is blurred until they enter the password. ' +
+      'Keep the password somewhere safe: without it, nobody can open the guide, including you in this editor. ' +
+      'Earlier, unprotected versions of this guide stay readable in GitHub\'s history.</div>' +
+      '<div class="field-note" id="lockNote"></div>' +
+      '<div style="display:flex;gap:8px"><button class="primary" data-act="lock-set">' + (on ? 'Change password' : 'Protect guide') + '</button><button class="ghost" data-act="lock-cancel">Cancel</button></div></div>';
+  }
+  return h;
+}
+
+// ============================================================
+// FAQ PAGE (faq/faq.md, shown at guiides.com/faq/)
+// ============================================================
+const FAQ_PATH = 'faq/faq.md';
+function renderFaqPreview() {
+  $('docPreviewBody').innerHTML = window.GuiidesMarkdown ? GuiidesMarkdown.renderFaq($('docEditor').value).html : '';
+}
+async function openFaq({ force = false } = {}) {
+  if (!force && isDirty() && !confirm('You have unsaved changes. Leave anyway? (Your draft stays saved on this device.)')) { renderPicker(); return; }
+  state.current = null; state.model = null;
+  hideAllViews(); show($('docView')); show($('modeSeg'), false);
+  flashSaveState('Loading…', 'clean');
+  try {
+    const f = await getFile(FAQ_PATH);
+    state.doc = { path: FAQ_PATH, sha: f ? f.sha : null, original: f ? f.text : '# FAQ\n\nA line or two of introduction.\n\n## First question?\n\nThe answer.\n' };
+    $('docEditor').value = state.doc.original;
+    let d = null;
+    try { d = JSON.parse(localStorage.getItem(draftKey('__faq')) || 'null'); } catch (e) {}
+    if (d && d.text !== state.doc.original && confirm('You have unsaved FAQ edits from ' + new Date(d.savedAt).toLocaleString() + '. Restore them?')) $('docEditor').value = d.text;
+    else localStorage.removeItem(draftKey('__faq'));
+    $('viewLive').href = SITE + '/faq/';
+    history.replaceState(null, '', '#page=faq');
+    renderFaqPreview(); renderPicker();
+    $('saveState').dataset.msg = '';
+    setSaveState();
+  } catch (e) { state.doc = null; flashSaveState(e.message, 'err'); }
+}
+$('docEditor').addEventListener('input', () => {
+  renderFaqPreview();
+  if (isDirty()) { try { localStorage.setItem(draftKey('__faq'), JSON.stringify({ text: $('docEditor').value, savedAt: Date.now() })); } catch (e) {} $('saveState').dataset.msg = ''; }
+  else localStorage.removeItem(draftKey('__faq'));
+  setSaveState();
+});
+$('docEditor').addEventListener('keydown', e => { if (e.key === 'Tab') { e.preventDefault(); document.execCommand('insertText', false, '  '); } });
+async function saveFaq() {
+  if (!state.doc || !isDirty()) return;
+  const text = $('docEditor').value.replace(/\s*$/, '\n');
+  $('saveBtn').disabled = true; flashSaveState('Saving…', 'clean');
+  try {
+    state.doc.sha = await putFile(FAQ_PATH, text, state.doc.sha, 'Update FAQ page (editor)');
+    state.doc.original = text; $('docEditor').value = text;
+    localStorage.removeItem(draftKey('__faq'));
+    flashSaveState('Saved · live in about a minute', 'clean');
+  } catch (e) {
+    flashSaveState(e.status === 409 ? 'Not saved — changed on GitHub. Reload first.' : 'Not saved: ' + e.message, 'err');
+  }
+  setSaveState();
+}
+
+// ============================================================
 // VISUAL ⇄ MARKDOWN
 // ============================================================
 function setMode(mode, { convert = true } = {}) {
@@ -967,7 +1141,8 @@ function rgb(hex) {
 }
 const toHex6 = c => HEX.test(c) ? c.toLowerCase() : '#' + rgb(c).map(v => v.toString(16).padStart(2, '0')).join('');
 const mix = (hex, to, t) => 'rgb(' + rgb(hex).map((v, i) => Math.round(v + (to[i] - v) * t)).join(',') + ')';
-const chipStyle = n => 'background:' + mix(catColor(n), [255, 255, 255], 0.84) + ';color:' + mix(catColor(n), [0, 0, 0], 0.5);
+// Same as the live guide's tags: solid category color, white text
+const chipStyle = n => 'background:' + catColor(n) + ';color:#fff';
 
 // The list is one ordered run of spots and text breaks (a text break is a "## Title" block in the file)
 function insertIndex() {
@@ -1071,6 +1246,7 @@ function renderVisual() {
       : '<button class="addlink" data-act="authorlink-add">＋ Add link</button>') + '</div>' +
     (linkBad ? '<div class="field-note">Links need to start with https://</div>' : '') +
     '<div style="width:100%"><div class="textbar"><button data-act="insert-link" data-target="[data-intro]">' + ICON.link + 'Link</button></div>' +
+    renderLockRow() +
     '<textarea class="ie intro" data-intro rows="4" placeholder="Write an intro that sets the scene… (blank line = new paragraph)" aria-label="Intro">' + val(m.intro.join('\n\n')) + '</textarea></div>' +
     '</div>';
 
@@ -1101,7 +1277,7 @@ function renderVisual() {
   h += '<div class="addrow"><button data-act="add-spot">' + ICON.plus + 'Add spot</button><button data-act="add-break">' + ICON.plus + 'Add text break</button></div>';
   h += '<div class="hint" style="margin-top:6px;text-align:center">New items go below the selected card, or at the end.</div>';
 
-  if (V.toast) h += '<div class="toast"><span>' + val(V.toast.text) + '</span><button class="undo" data-act="undo">Undo</button><button class="x icon" data-act="toast-x" aria-label="Dismiss"><svg class="i" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>';
+  if (V.toast) h += '<div class="toast"><span>' + val(V.toast.text) + '</span>' + (V.toast.undo ? '<button class="undo" data-act="undo">Undo</button>' : '') + '<button class="x icon" data-act="toast-x" aria-label="Dismiss"><svg class="i" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>';
 
   $('vlist').innerHTML = h;
   $('vlist').classList.toggle('dragging-any', dragging);
@@ -1255,7 +1431,7 @@ $('vlist').addEventListener('click', e => {
       toastUndo('Deleted text break' + (b.title ? ' “' + b.title + '”' : ''), () => blocks().splice(i, 0, b));
       break;
     }
-    case 'undo': if (V.toast) { V.toast.undo(); V.toast = null; } break;
+    case 'undo': if (V.toast && V.toast.undo) { V.toast.undo(); V.toast = null; } break;
     case 'toast-x': V.toast = null; renderVisual(); return;
     case 'toggle-cats': V.catPanel = !V.catPanel; V.catNotes = {}; V.hexDrafts = {}; V.moveTargets = {}; renderVisual(); return;
     case 'cat-add': {
@@ -1296,6 +1472,22 @@ $('vlist').addEventListener('click', e => {
         toastUndo('Categories on' + (loose.length ? ' — ' + loose.length + ' spot' + (loose.length === 1 ? ' needs' : 's need') + ' a category' : ''), () => M.setMeta(state.model, 'Categories', 'off', 'Center'));
       }
       V.catPanel = true;
+      break;
+    }
+    case 'lock-form': V.lockForm = true; renderVisual(); { const i1 = $('lockPw1'); if (i1) i1.focus(); } return;
+    case 'lock-cancel': V.lockForm = false; renderVisual(); return;
+    case 'lock-set': {
+      const a = $('lockPw1').value, b = $('lockPw2').value;
+      if (a.length < 4) { $('lockNote').textContent = 'Use at least 4 characters.'; return; }
+      if (a !== b) { $('lockNote').textContent = "The two passwords don't match."; return; }
+      state.current.password = a; state.current.lockDirty = true; V.lockForm = false;
+      toastUndo('Password set — save to lock the live guide', null);
+      break;
+    }
+    case 'lock-off': {
+      if (!confirm('Turn off password protection? After you save, anyone can read this guide.')) return;
+      state.current.password = null; state.current.lockDirty = true;
+      toastUndo('Protection off — save to unlock the live guide', null);
       break;
     }
     case 'authorlink-add': {
@@ -1659,8 +1851,8 @@ $('results').addEventListener('click', e => {
 // ============================================================
 function startNewGuide() {
   if (isDirty() && !confirm('You have unsaved changes. Leave this guide? (Your draft stays saved on this device.)')) { renderPicker(); return; }
-  state.current = null; state.model = null;
-  show($('editorView'), false); show($('emptyState'), false); show($('deleteView'), false); show($('newGuideView'));
+  state.current = null; state.model = null; state.doc = null;
+  hideAllViews(); show($('newGuideView'));
   setStatus($('ngStatus'), ''); setSaveState();
   $('ngSlug').focus();
 }

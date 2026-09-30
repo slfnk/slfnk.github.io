@@ -24,6 +24,7 @@ function parsePlacesMd(text) {
         else if (key === 'Author Link') guide.authorLink = val;
         else if (key === 'Categories') guide.categoriesOff = /^(off|no|none|false)$/i.test(val);
         else if (key === 'Pin Color') guide.pinColor = val;
+        else if (key === 'Locked') guide.locked = val;
         else if (key === 'Updated') guide.updated = val;
         else if (key === 'Center') {
           const c = val.split(',').map(x => parseFloat(x.trim()));
@@ -116,4 +117,45 @@ function parsePlacesMd(text) {
   });
 
   return { guide, categories, places, sectionBreaks };
+}
+
+// ============================================================
+// PASSWORD PROTECTION
+// A protected places.md keeps only its title area in plain text. Everything
+// else is encrypted (AES-GCM, key from the password via PBKDF2) into one line:
+//   Locked: v1.<salt>.<iv>.<ciphertext>
+// The site is public, so the encryption is what actually keeps it private.
+// ============================================================
+const LOCK_PUBLIC_KEYS = ['Guide', 'Title', 'Subtitle', 'Author', 'Author Link', 'Updated', 'Center'];
+const LOCK_ITERATIONS = 200000;
+
+function lockB64(bytes) {
+  let s = ''; const b = new Uint8Array(bytes);
+  for (let i = 0; i < b.length; i += 0x8000) s += String.fromCharCode.apply(null, b.subarray(i, i + 0x8000));
+  return btoa(s);
+}
+function lockUnB64(str) { return Uint8Array.from(atob(str), c => c.charCodeAt(0)); }
+async function lockKey(password, salt) {
+  const base = await crypto.subtle.importKey('raw', new TextEncoder().encode(password), 'PBKDF2', false, ['deriveKey']);
+  return crypto.subtle.deriveKey({ name: 'PBKDF2', salt, iterations: LOCK_ITERATIONS, hash: 'SHA-256' }, base,
+    { name: 'AES-GCM', length: 256 }, false, ['encrypt', 'decrypt']);
+}
+// Plain guide text → protected guide text
+async function lockGuideText(text, password) {
+  const salt = crypto.getRandomValues(new Uint8Array(16)), iv = crypto.getRandomValues(new Uint8Array(12));
+  const key = await lockKey(password, salt);
+  const ct = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, new TextEncoder().encode(text));
+  const header = String(text).split(/^===$/m)[0].split('\n').filter(line => {
+    const m = line.match(/^(\w[\w\s]*?):\s*(.+)$/);
+    return m && LOCK_PUBLIC_KEYS.includes(m[1].trim());
+  });
+  return header.join('\n') + '\nLocked: v1.' + lockB64(salt) + '.' + lockB64(iv) + '.' + lockB64(ct) + '\n';
+}
+// The "Locked:" value + password → plain guide text (throws if the password is wrong)
+async function unlockGuideText(locked, password) {
+  const parts = String(locked).trim().split('.');
+  if (parts[0] !== 'v1' || parts.length !== 4) throw new Error('Unrecognized lock format');
+  const key = await lockKey(password, lockUnB64(parts[1]));
+  const pt = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: lockUnB64(parts[2]) }, key, lockUnB64(parts[3]));
+  return new TextDecoder().decode(pt);
 }

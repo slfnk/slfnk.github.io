@@ -480,13 +480,79 @@ function showGuideNotFound(err) {
     .catch(() => {});
 }
 
+// ============================================
+// PASSWORD-PROTECTED GUIDES
+// ============================================
+const pwKey = 'vg-pw:' + GUIDE_SLUG;
+function storedPassword() {
+  try { return localStorage.getItem(pwKey) || sessionStorage.getItem(pwKey); } catch (e) { return null; }
+}
+function forgetPassword() { try { localStorage.removeItem(pwKey); sessionStorage.removeItem(pwKey); } catch (e) {} }
+
+// Show the title area, with a blurred stand-in guide behind a password box
+function initLocked(data) {
+  const g = data.guide;
+  const c = (g.center && !isNaN(g.center.lat)) ? g.center : { lat: 20, lng: 0, zoom: 3 };
+  const bars = n => Array.from({ length: n }, (_, i) => '▇▇▇▇▇▇▇'.slice(0, 3 + (i * 7 + n) % 5)).join(' ');
+  const places = Array.from({ length: 8 }, (_, i) => {
+    const a = i * 2.4, r = 0.002 + (i % 4) * 0.0012;
+    return {
+      name: bars(2 + i % 2), slug: 'locked-' + i, category: 'Spots', price: null,
+      lat: c.lat + Math.sin(a) * r, lng: c.lng + Math.cos(a) * r * 1.3,
+      description: bars(18 + (i % 3) * 7), gmaps: null, instagram: null, facebook: null, image: null, links: []
+    };
+  });
+  const accent = getComputedStyle(document.documentElement).getPropertyValue('--progress').trim() || '#038f9e';
+  init({
+    guide: Object.assign({}, g, { intro: [bars(40), bars(30)], center: { lat: c.lat, lng: c.lng, zoom: c.zoom || 15 } }),
+    categories: { Spots: { color: accent } }, places, sectionBreaks: []
+  });
+  document.body.classList.add('is-locked');
+  const panel = document.createElement('form');
+  panel.className = 'lock-panel';
+  panel.innerHTML =
+    '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>' +
+    '<h2>This guide is password protected</h2>' +
+    '<p>Enter the password from the guide\'s author to open it.</p>' +
+    '<label class="lock-sr" for="lockPw">Password</label>' +
+    '<input id="lockPw" type="password" autocomplete="current-password" placeholder="Password" required>' +
+    '<label class="lock-remember"><input type="checkbox" id="lockRemember" checked> Remember on this device</label>' +
+    '<button type="submit">Unlock</button>' +
+    '<div class="lock-msg" role="alert"></div>';
+  document.getElementById('introSection').after(panel);
+  panel.addEventListener('submit', async e => {
+    e.preventDefault();
+    const pw = document.getElementById('lockPw').value;
+    const msg = panel.querySelector('.lock-msg');
+    msg.textContent = 'Unlocking…';
+    try {
+      await unlockGuideText(g.locked, pw);
+      try { (document.getElementById('lockRemember').checked ? localStorage : sessionStorage).setItem(pwKey, pw); } catch (err) {}
+      location.reload();
+    } catch (err) {
+      msg.textContent = "That password doesn't match. Check with the guide's author.";
+      document.getElementById('lockPw').select();
+    }
+  });
+}
+
 loadGuideText()
-  .then(text => {
+  .then(async text => {
     // Guard against a wrong file pasted into places.md (e.g. index.html)
     if (/^\s*</.test(text) || !/^Title:/m.test(text)) {
       throw new Error('/' + GUIDE_SLUG + '/places.md doesn\'t look like a guide file — it may contain HTML or be missing its Title: line.');
     }
-    init(parsePlacesMd(text));
+    const data = parsePlacesMd(text);
+    if (data.guide.locked) {
+      const pw = storedPassword();
+      if (pw) {
+        try { init(parsePlacesMd(await unlockGuideText(data.guide.locked, pw))); return; }
+        catch (e) { forgetPassword(); } // password changed since last visit
+      }
+      initLocked(data);
+      return;
+    }
+    init(data);
   })
   .catch(showGuideNotFound);
 
