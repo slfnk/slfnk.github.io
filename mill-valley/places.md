@@ -1,5 +1,5 @@
-Guide: The Best of Mill Valley
-Title: The Best of Mill Valley
+Guide: The Best of Mill Valley, California
+Title: The Best of Mill Valley, California
 Subtitle: Good bites, better nature, and some curveballs
 Author: SL FNK
 Author Link: https://www.instagram.com/cultistresults/
