@@ -1,5 +1,5 @@
 Guide: Staff Picks
-Title: Chinatown Staff Picks from On Waverly
+Title: Chinatown Picks from On Waverly Staff
 Subtitle: Where the folks behind the counter eat, sip, and shop
 Author: On Waverly Staff
 Updated: September 2026
@@ -7,9 +7,7 @@ Center: 37.7952, -122.4068, 16
 
 ## Intro
 
-On Waverly is a books-and-gifts shop in San Francisco's Chinatown, on the corner of Waverly Place and Washington Street. This guide maps the staff picks sign posted in the shop.
-
-Most of the list is walkable from the shop. A few picks are farther out: Outta Sight Pizza in the Tenderloin, Tunnel Tops in the Presidio, and the Inner Richmond.
+On Waverly is a books-and-gifts shop in San Francisco's Chinatown, on the corner of Waverly Place and Washington Street. This guide maps the staff picks sign posted in the shop. Most of the list is walkable from the shop. A few picks are farther out.
 
 ## Categories
 
