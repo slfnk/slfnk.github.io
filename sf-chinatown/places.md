@@ -10,7 +10,7 @@ Category Intros: off
 
 ## Intro
 
-On Waverly is a books-and-gifts shop in San Francisco's Chinatown, on the corner of Waverly Place and Washington Street. This guide maps the staff picks sign posted in the shop. Most of the list is walkable from the shop. A few picks are farther out.
+On Waverly is a books-and-gifts shop in San Francisco's Chinatown, on the corner of Waverly Place and Washington Street. This guide maps the staff picks sign posted in the shop. Most of the list is walkable from the shop in Chinatown, but a few picks are farther out.
 
 ## Categories
 
@@ -179,16 +179,6 @@ Staff picks: joong (Chinese tamales) and the BBQ pork bun. A few doors down Wave
 
 ---
 
-# Maison Nico
-
-- Category: Food Picks
-- Price: $$
-- Location: 37.7957889, -122.4032333
-- Google Maps: https://www.google.com/maps/search/?api=1&query=Maison+Nico+710+Montgomery+St+San+Francisco
-Staff pick: fancy, delicious pastries. A French pastry shop just past the edge of Chinatown on Montgomery St.
-
----
-
 # Outta Sight Pizza
 
 - Category: Food Picks
@@ -196,6 +186,16 @@ Staff pick: fancy, delicious pastries. A French pastry shop just past the edge o
 - Location: 37.7818216, -122.4171258
 - Google Maps: https://www.google.com/maps/search/?api=1&query=Outta+Sight+Pizza+422+Larkin+St+San+Francisco
 Staff pick: the Peking duck pizza. It's a trek to the Tenderloin, but it's on the list.
+
+---
+
+# Maison Nico
+
+- Category: Food Picks
+- Price: $$
+- Location: 37.7957889, -122.4032333
+- Google Maps: https://www.google.com/maps/search/?api=1&query=Maison+Nico+710+Montgomery+St+San+Francisco
+Staff pick: fancy, delicious pastries. A French pastry shop just past the edge of Chinatown on Montgomery St.
 
 ---
 
