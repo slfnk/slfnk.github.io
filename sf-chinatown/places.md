@@ -1,6 +1,6 @@
 Guide: Staff Picks
 Title: Chinatown Picks from On Waverly Staff
-Subtitle: Where the folks behind the counter eat, sip, and shop
+Subtitle: Where the folks behind the counter eat, sip, and shop.
 Author: On Waverly Staff
 Profile: slfnk
 Updated: October 2026
