@@ -132,7 +132,7 @@
   .catmove select { width: auto; height: 32px; padding: 0 6px; font-size: 12px; }
   .catmove button { height: 32px; font-size: 12px; }
 
-  .sechead { display: flex; align-items: center; gap: 6px; padding: 12px 0 4px; margin-top: 18px; border-top: 2px solid var(--border); }
+  .sechead { display: flex; align-items: center; gap: 6px; padding: 12px 0 4px; margin-top: 18px; border-top: 1px solid var(--border); }
   .sechead .sectitle { font-family: var(--serif); font-size: 20px; font-weight: 700; padding: 3px 6px; flex: 1 1 auto; min-width: 80px; }
   .sechead .count { font-size: 12px; color: var(--text-3); white-space: nowrap; }
   .secblurb { font-family: var(--serif); font-size: 13px; font-style: italic; color: var(--text-2); padding: 4px 6px; margin-bottom: 8px; }
@@ -158,7 +158,7 @@
   .g2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
   .span2 { grid-column: span 2; }
   .cform input, .cform select { height: 36px; }
-  .cform textarea.writeup { min-height: 120px; font-family: var(--serif); font-size: 14px; line-height: 1.6; resize: vertical; }
+  .cform textarea.writeup { min-height: 120px; font-family: var(--serif); font-size: 14px; font-weight: 400; line-height: 1.6; resize: vertical; }
   .locbox { display: flex; align-items: center; gap: 8px; background: var(--hover); border-radius: 8px; padding: 8px 10px; font-size: 12px; color: var(--text-2); flex-wrap: wrap; }
   .locbox input { width: 220px; height: 32px; font-family: var(--mono); font-size: 12px; }
   .locbox button { height: 32px; font-size: 12px; }
@@ -173,6 +173,59 @@
   .rawnote { font-size: 12px; color: var(--text-3); background: var(--hover); border-radius: 8px; padding: 8px 10px; }
 
   .seg.small button { height: 26px; font-size: 12px; padding: 0 10px; }
+
+  /* ---------- category groups ---------- */
+  .grp { display: flex; flex-direction: column; gap: 9px; }
+  .grp + .grp { margin-top: 10px; }
+  .grp .sechead { margin-top: 8px; padding: 12px 2px 2px; }
+  .grp:first-child .sechead { margin-top: 0; border-top: none; }
+  .grp .sechead .dot { width: 11px; height: 11px; }
+  .grp .sechead .sectitle { font-family: var(--serif); font-size: 19px; font-weight: 700; flex: 0 1 auto; padding: 0 4px; }
+  .grp.over .sechead { color: var(--brand-dark); }
+  .grp .secblurb { width: 100%; min-height: 34px; resize: vertical; margin: 0; }
+  .grp .secblurb:placeholder-shown { font-style: italic; }
+  .grp.loose .sectitle { color: var(--text-3); }
+  .wtoggle { display: inline-flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 600; color: var(--text-2); cursor: pointer; padding: 8px 4px 0; }
+  .wtoggle input { width: 16px; height: 16px; margin: 0; accent-color: var(--brand); cursor: pointer; }
+  .wtoggle .hint { font-weight: 400; }
+
+  /* ---------- pin colors (no categories) ---------- */
+  .swatches { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+  .sw { width: 26px; height: 26px; padding: 0; border-radius: 50%; border: 2px solid #fff; box-shadow: 0 0 0 1px rgba(0,0,0,0.18); }
+  .sw:hover { box-shadow: 0 0 0 1px rgba(0,0,0,0.45); }
+  .sw.on { box-shadow: 0 0 0 2px var(--text); }
+  .sw.dflt { width: auto; border-radius: 999px; padding: 0 9px 0 4px; display: inline-flex; align-items: center; gap: 5px; font-size: 11px; background: #fff; border: 1px solid var(--field); box-shadow: none; height: 26px; }
+  .sw.dflt.on { border-color: var(--text); box-shadow: 0 0 0 1px var(--text); }
+  .sw.dflt .pindot { width: 14px; height: 14px; }
+  .swatches input[type=color] { width: 30px; height: 28px; padding: 1px; border-radius: 6px; cursor: pointer; }
+
+  /* ---------- banner ---------- */
+  .bshape { -webkit-clip-path: polygon(0 50%, 14.6% 0, 84.6% 0, 100% 50%, 84.6% 100%, 14.6% 100%); clip-path: polygon(0 50%, 14.6% 0, 84.6% 0, 100% 50%, 84.6% 100%, 14.6% 100%); }
+  .bprev { display: block; width: 62%; max-width: 300px; aspect-ratio: 1600 / 119; height: auto; padding: 0; border: none; border-radius: 0; background-size: cover; background-position: center; margin: 4px auto 0; }
+  .bprev.none { background: repeating-linear-gradient(90deg, #E6E2DB 0 6px, transparent 6px 10px); }
+  .bmeta { font-size: 12px; color: var(--text-2); display: flex; align-items: center; justify-content: center; gap: 6px; }
+  .bmeta button { height: 26px; font-size: 12px; padding: 0 8px; border: none; background: transparent; color: var(--brand-dark); }
+  .bmeta button:hover { background: var(--hover); }
+  .bpanel { width: 100%; background: #fff; border: 1px solid var(--border); border-radius: 12px; padding: 12px; display: flex; flex-direction: column; gap: 10px; }
+  .bgrid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+  .btile { height: 40px; padding: 0; border-radius: 6px; border: 1px solid var(--border); background-size: cover; background-position: center; position: relative; }
+  .btile.on { box-shadow: 0 0 0 2px #fff, 0 0 0 4px var(--brand); border-color: transparent; }
+  .btile.word { font-size: 12px; font-weight: 700; color: var(--text-2); background: var(--hover); display: inline-flex; align-items: center; justify-content: center; gap: 5px; }
+  .btile.word.on { color: var(--brand-dark); }
+  .btile .n { position: absolute; left: 4px; bottom: 3px; font-size: 10px; font-weight: 700; color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,0.6); }
+
+  /* ---------- byline → profile ---------- */
+  .ghead select.profpick { width: auto; height: 28px; padding: 0 6px; font-size: 12px; color: var(--brand-dark); border-color: transparent; background: transparent; cursor: pointer; }
+  .ghead select.profpick:hover { border-color: #CFCAC2; }
+
+  /* ---------- profile editor ---------- */
+  .panel.wide { max-width: 640px; }
+  .panel .pf-bio { min-height: 140px; font-family: var(--serif); font-size: 15px; line-height: 1.65; resize: vertical; }
+  .pf-links { display: flex; flex-direction: column; gap: 6px; margin-top: 4px; }
+  .pf-guides { margin-top: 1rem; border-top: 1px solid var(--border); padding-top: 0.8rem; }
+  .pf-guides h3 { font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-3); margin-bottom: 6px; }
+  .pf-guides ul { list-style: none; display: flex; flex-direction: column; gap: 4px; font-size: 13px; }
+  .pf-guides li .hint { margin-left: 6px; }
   .pincolor { display: flex; align-items: center; gap: 8px; }
   .pincolor input[type=color] { width: 40px; height: 32px; padding: 2px; cursor: pointer; flex-shrink: 0; }
   .pincolor input.hex { width: 100px; height: 32px; font-family: var(--mono); font-size: 12px; }
@@ -348,6 +401,9 @@
     <div id="homeView">
       <div class="home-head"><h1>Your guides</h1><span class="grow"></span><p class="status" id="appStatus"></p></div>
       <div class="ggrid" id="guideGrid"></div>
+      <div class="home-pages"><h2>Profiles</h2>
+        <div id="profileCards" style="display:flex;gap:10px;flex-wrap:wrap"></div>
+      </div>
       <div class="home-pages"><h2>Site pages</h2>
         <a class="pcard" href="#page=faq" data-open-page="faq"><svg class="i" viewBox="0 0 24 24"><path d="M7 3h7l5 5v13H7z"/><path d="M14 3v5h5"/></svg>FAQ page <span class="hint">guiides.com/faq/</span></a>
       </div>
@@ -417,6 +473,35 @@
     </div>
   </div>
 
+  <div id="profileView" class="hidden">
+    <div class="panel wide">
+      <h2 id="pfHeading">Profile</h2>
+      <div class="hint" style="margin-top:4px">guiides.com/by/<b id="pfAddr">…</b>/ · the guide byline links here</div>
+      <div id="pfHandleRow">
+        <label class="f" for="pfHandle">Web address</label>
+        <input id="pfHandle" placeholder="slfnk" spellcheck="false">
+        <div class="hint">Lowercase letters, numbers and dashes. This can't be changed later.</div>
+      </div>
+      <label class="f" for="pfName">Name</label>
+      <input id="pfName" placeholder="Name as it appears on your guides">
+      <div class="grid2">
+        <div><label class="f" for="pfLocation">Based in <span class="hint">(optional)</span></label><input id="pfLocation" placeholder="A city, a country, two places…"></div>
+        <div><label class="f" for="pfPhoto">Photo <span class="hint">(optional link to an image)</span></label><input id="pfPhoto" placeholder="https://…" spellcheck="false"></div>
+      </div>
+      <label class="f" for="pfBio">Bio <span class="hint">(blank line = new paragraph)</span></label>
+      <textarea id="pfBio" class="pf-bio" placeholder="Who you are and what you look for in a place."></textarea>
+      <label class="f">Links <span class="hint">(Instagram, a website, a newsletter…)</span></label>
+      <div class="pf-links" id="pfLinks"></div>
+      <div><button class="addlink" id="pfAddLink">＋ Add link</button></div>
+      <div class="pf-guides" id="pfGuides"></div>
+      <div class="row hidden" id="pfCreateRow" style="margin-top:1rem">
+        <button class="primary" id="pfCreate">Create profile</button>
+        <button id="pfCancel" class="ghost">Cancel</button>
+      </div>
+      <div class="status" id="pfStatus" style="margin-top:0.6rem"></div>
+    </div>
+  </div>
+
   <div id="newGuideView" class="hidden">
     <div class="panel">
       <h2>New guide</h2>
@@ -431,7 +516,7 @@
         <div><label class="f" for="ngAuthor">Author</label><input id="ngAuthor" placeholder="SL FNK"></div>
         <div><label class="f" for="ngCity">Where <span class="hint">(optional)</span></label><input id="ngCity" placeholder="A city, state, country…"></div>
       </div>
-      <div class="row" style="margin-top:0.8rem"><label><input type="checkbox" id="ngCats" checked> Use categories <span class="hint">(turn off for a simple list where you pick each pin's color)</span></label></div>
+      <div class="row" style="margin-top:0.8rem"><label><input type="checkbox" id="ngCats"> Sort spots into categories <span class="hint">(you can switch this any time; without it, you pick each pin's color)</span></label></div>
       <label class="f" for="ngCenter">Map center</label>
       <input id="ngCenter" placeholder="19.4326, -99.1332" spellcheck="false">
       <div class="hint">Right-click a spot in Google Maps and click the numbers at the top to copy them.</div>
@@ -450,7 +535,7 @@
 // ============================================================
 const REPO = { owner: 'slfnk', name: 'slfnk.github.io', branch: 'main' };
 const SITE = 'https://guiides.com';
-const RESERVED = ['app', 'admin', 'banners', 'vibe-guide-sma', 'favicon', 'images', 'assets'];
+const RESERVED = ['app', 'admin', 'banners', 'by', 'faq', 'vibe-guide-sma', 'favicon', 'images', 'assets'];
 const API = 'https://api.github.com';
 
 // ============================================================
@@ -560,7 +645,7 @@ function guidePageHtml(slug, title, subtitle) {
 `;
 }
 
-function starterPlacesMd({ title, subtitle, author, center, cats = true }) {
+function starterPlacesMd({ title, subtitle, author, center, cats = false }) {
   const [lat, lng] = center;
   if (!cats) return `Guide: ${title}
 Title: ${title}
@@ -608,12 +693,6 @@ Sights: #3D6B5E
 
 ---
 
-## Eats
-
-A one-line blurb that introduces this section.
-
----
-
 # Your First Spot
 
 - Category: Eats
@@ -646,7 +725,8 @@ function checkGuide(text) {
   out.stats.push({ kind: 'ok', text: parsed.places.length + ' spots on the map' });
   const off = !!parsed.guide.categoriesOff;
   out.stats.push(off ? { kind: 'ok', text: 'Categories off' } : { kind: cats.length ? 'ok' : 'warn', text: cats.length + ' categories' });
-  out.stats.push({ kind: 'ok', text: parsed.sectionBreaks.length + ' text break' + (parsed.sectionBreaks.length === 1 ? '' : 's') });
+  const wu = parsed.sectionBreaks.filter(b => b.title || b.content).length;
+  if (wu && !off) out.stats.push({ kind: 'ok', text: parsed.guide.introsOff ? 'Category write-ups hidden' : wu + ' category write-up' + (wu === 1 ? '' : 's') });
   if (noWriteup) out.stats.push({ kind: 'warn', text: noWriteup + ' without a write-up' });
 
   if (hidden.length) out.issues.push(hidden.length + ' entr' + (hidden.length === 1 ? 'y has' : 'ies have') + ' no usable Location, so ' + (hidden.length === 1 ? "it won't" : "they won't") + ' appear: ' + hidden.slice(0, 5).join(', ') + (hidden.length > 5 ? '…' : ''));
@@ -674,6 +754,8 @@ const PHOTON = 'https://photon.komoot.io/api/';
 
 const state = {
   guides: [], guidesSha: null,
+  profiles: [],         // [{ handle, name }] from by/<handle>/profile.md
+  prof: null,           // the profile open in the profile editor
   current: null,        // { slug, sha, original, baseline, originalSpots }
   mode: 'visual',
   model: null,
@@ -682,7 +764,8 @@ const state = {
 const V = {             // visual-editor UI state
   selectedId: null, expandedId: null, catPanel: false,
   dragId: null, overId: null, overZone: null,
-  toast: null, catNotes: {}, hexDrafts: {}, moveTargets: {}, showAuthorLink: false, lockForm: false
+  toast: null, catNotes: {}, hexDrafts: {}, moveTargets: {}, showAuthorLink: false, lockForm: false,
+  bannerPanel: false, overGrp: null
 };
 const draftKey = slug => 'gg-draft:' + slug;
 
@@ -691,6 +774,7 @@ function currentText() {
   return state.mode === 'visual' ? M.serializeGuideModel(state.model) : $('editor').value;
 }
 function isDirty() {
+  if (state.prof) return !state.prof.isNew && serializeProfile(profFromForm()) !== state.prof.baseline;
   if (state.doc) return $('docEditor').value !== state.doc.original;
   if (!state.current) return false;
   if (state.current.lockDirty) return true;
@@ -736,8 +820,11 @@ async function loadGuideIndex() {
   const f = await getFile('guides.json');
   state.guides = f ? (JSON.parse(f.text).guides || []) : [];
   state.guidesSha = f ? f.sha : null;
+  try { await loadProfiles(); } catch (e) { state.profiles = []; }
   renderPicker();
-  if (new URLSearchParams(location.hash.slice(1)).get('page') === 'faq') { openFaq({ force: true }); return; }
+  const hp = new URLSearchParams(location.hash.slice(1));
+  if (hp.get('page') === 'faq') { openFaq({ force: true }); return; }
+  if (hp.get('profile')) { openProfile(hp.get('profile') === 'new' ? null : hp.get('profile'), { force: true }); return; }
   const want = new URLSearchParams(location.hash.slice(1)).get('guide');
   if (want && state.guides.some(g => g.slug === want)) openGuide(want, { force: true });
   else showHome({ force: true });
@@ -749,7 +836,7 @@ async function loadGuideIndex() {
 let homeMaps = [];
 function showHome({ force = false } = {}) {
   if (!force && isDirty() && !confirm('You have unsaved changes. Leave anyway? (Your draft stays saved on this device.)')) return;
-  state.current = null; state.model = null; state.doc = null;
+  state.current = null; state.model = null; state.doc = null; state.prof = null;
   hideAllViews(); show($('emptyState')); show($('modeSeg'), false);
   history.replaceState(null, '', location.pathname);
   $('viewLive').href = SITE + '/';
@@ -760,6 +847,9 @@ $('homeBtn').addEventListener('click', () => showHome());
 
 function renderHome() {
   homeMaps.forEach(m => m.remove()); homeMaps = [];
+  const PERSON = '<svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/></svg>';
+  $('profileCards').innerHTML = state.profiles.map(p => '<a class="pcard" href="#profile=' + esc(p.handle) + '" data-open-profile="' + esc(p.handle) + '">' + PERSON + esc(p.name) + ' <span class="hint">guiides.com/by/' + esc(p.handle) + '/</span></a>').join('') +
+    '<button class="pcard" data-new-profile style="height:auto;border-style:dashed;color:var(--brand-dark)">＋ New profile</button>';
   const LOCK = '<svg class="i" viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>';
   $('guideGrid').innerHTML =
     '<button class="gnew" data-new><span class="plus">＋</span>New guide<span class="sub">A city, a neighborhood, a whole country</span></button>' +
@@ -778,7 +868,7 @@ function renderHome() {
       const data = parsePlacesMd(f.text), gd = data.guide;
       const locked = !!gd.locked;
       const offColor = HEX.test(gd.pinColor || '') ? gd.pinColor : DEFAULT_PIN;
-      const pts = data.places.map(p => ({ lat: p.lat, lng: p.lng, color: gd.categoriesOff ? offColor : ((data.categories[p.category] || {}).color || '#888888') }));
+      const pts = data.places.map(p => ({ lat: p.lat, lng: p.lng, color: gd.categoriesOff ? (p.color || offColor) : ((data.categories[p.category] || {}).color || '#888888') }));
       const meta = [g.city, locked ? 'Protected' : pts.length + (pts.length === 1 ? ' spot' : ' spots'), gd.updated ? 'Updated ' + gd.updated : ''].filter(Boolean);
       document.getElementById('gmeta-' + g.slug).textContent = meta.join(' · ');
       if (locked) {
@@ -812,18 +902,27 @@ $('guideGrid').addEventListener('click', e => {
   if (a) { e.preventDefault(); openGuide(a.dataset.open); }
 });
 document.querySelector('[data-open-page="faq"]').addEventListener('click', e => { e.preventDefault(); openFaq(); });
+$('profileCards').addEventListener('click', e => {
+  if (e.target.closest('[data-new-profile]')) { openProfile(null); return; }
+  const a = e.target.closest('[data-open-profile]');
+  if (a) { e.preventDefault(); openProfile(a.dataset.openProfile); }
+});
 function renderPicker() {
-  const cur = state.doc ? '__faq' : (state.current ? state.current.slug : '');
+  const cur = state.prof ? (state.prof.isNew ? '__newprof' : '__p:' + state.prof.handle) : state.doc ? '__faq' : (state.current ? state.current.slug : '');
   $('guidePicker').innerHTML = '<option value=""' + (cur ? '' : ' selected') + '>Choose a guide…</option>' +
     '<optgroup label="Guides">' +
     state.guides.map(g => '<option value="' + esc(g.slug) + '"' + (g.slug === cur ? ' selected' : '') + '>' + esc(g.title) + '</option>').join('') +
     '<option value="__new">＋ New guide…</option></optgroup>' +
+    '<optgroup label="Profiles">' + state.profiles.map(p => '<option value="__p:' + esc(p.handle) + '"' + (cur === '__p:' + p.handle ? ' selected' : '') + '>' + esc(p.name) + '</option>').join('') +
+    '<option value="__newprof"' + (cur === '__newprof' ? ' selected' : '') + '>＋ New profile…</option></optgroup>' +
     '<optgroup label="Site pages"><option value="__faq"' + (cur === '__faq' ? ' selected' : '') + '>FAQ page</option></optgroup>';
 }
 $('guidePicker').addEventListener('change', () => {
   const v = $('guidePicker').value;
   if (v === '__new') { startNewGuide(); return; }
   if (v === '__faq') { openFaq(); return; }
+  if (v === '__newprof') { openProfile(null); return; }
+  if (v.startsWith('__p:')) { openProfile(v.slice(4)); return; }
   if (v) openGuide(v); else showHome();
 });
 
@@ -832,7 +931,8 @@ $('guidePicker').addEventListener('change', () => {
 // ============================================================
 function setSaveState() {
   const el = $('saveState');
-  if (state.doc) {
+  if (state.prof && state.prof.isNew) { el.textContent = ''; $('saveBtn').disabled = true; return; }
+  if (state.doc || state.prof) {
     const dd = isDirty();
     el.className = dd ? 'dirty' : 'clean';
     el.textContent = dd ? 'Unsaved changes' : (el.dataset.msg || 'All changes saved');
@@ -877,7 +977,7 @@ function afterEdit({ now = false } = {}) {
 async function openGuide(slug, { force = false } = {}) {
   if (!force && isDirty() && !confirm('You have unsaved changes to this guide. Switch anyway? (Your draft stays saved on this device.)')) { renderPicker(); return; }
   hideAllViews(); show($('editorView'));
-  state.doc = null;
+  state.doc = null; state.prof = null;
   flashSaveState('Loading…', 'clean');
   try {
     const f = await getFile(slug + '/places.md');
@@ -892,22 +992,25 @@ async function openGuide(slug, { force = false } = {}) {
       hideAllViews(); show($('editorView'));
     }
     const check = checkGuide(f.text);
-    state.model = M.parseGuideModel(f.text);
+    state.model = loadModel(f.text);
     state.current = {
       slug, sha: f.sha, original: f.text,
       baseline: M.serializeGuideModel(state.model),
       originalSpots: check.parsed ? check.parsed.places.length : 0,
       password, lockDirty: false
     };
-    Object.assign(V, { selectedId: null, expandedId: null, toast: null, catPanel: false, catNotes: {}, hexDrafts: {}, moveTargets: {}, showAuthorLink: false, lockForm: false });
+    Object.assign(V, { selectedId: null, expandedId: null, toast: null, catPanel: false, catNotes: {}, hexDrafts: {}, moveTargets: {}, showAuthorLink: false, lockForm: false, bannerPanel: false });
     $('editor').value = f.text;
     $('viewLive').href = SITE + '/' + slug + '/';
     history.replaceState(null, '', '#guide=' + slug);
     state.lastCheck = check; renderChecks(check);
     $('saveState').dataset.msg = '';
+    const sorted = check.ok && regroup();
+    if (sorted) V.toast = { text: 'Sorted spots into their category groups so each group shares one pin color. Save to keep it.' };
     setMode(check.ok ? 'visual' : 'text', { convert: false });
     renderPicker();
     offerDraft(slug, f);
+    if (sorted) afterEdit({ now: true });
     setSaveState(); layoutStrip();
     if (state.mode === 'visual') fitAll();
   } catch (e) {
@@ -929,7 +1032,7 @@ $('restoreDraft').addEventListener('click', () => {
   show($('draftNote'), false);
   if (!d) return;
   const check = checkGuide(d.text);
-  if (state.mode === 'visual' && check.ok) { state.model = M.parseGuideModel(d.text); renderVisual(); }
+  if (state.mode === 'visual' && check.ok) { state.model = loadModel(d.text); renderVisual(); }
   else { setMode('text', { convert: false }); $('editor').value = d.text; }
   afterEdit({ now: true });
 });
@@ -946,6 +1049,7 @@ function stampUpdated() {
   else ed.value = ed.value.replace(/^(Author(?: Link)?:.*)$/m, '$1\nUpdated: ' + stamp);
 }
 async function save() {
+  if (state.prof) { saveProfile(); return; }
   if (state.doc) { saveFaq(); return; }
   if (!state.current || !isDirty()) return;
   stampUpdated();
@@ -965,10 +1069,10 @@ async function save() {
     Object.assign(state.current, { sha: newSha, original: text, originalSpots: after, lockDirty: false });
     if (pw) { try { sessionStorage.setItem('gg-pw:' + slug, pw); } catch (e) {} }
     state.current.baseline = state.mode === 'visual' ? text : M.serializeGuideModel(M.parseGuideModel(text));
-    if (state.mode === 'text') state.model = M.parseGuideModel(text);
+    if (state.mode === 'text') state.model = loadModel(text);
     localStorage.removeItem(draftKey(slug));
     const synced = await syncGuideMeta(slug, check.parsed.guide);
-    flashSaveState('Saved' + (synced ? ' · page title updated' : '') + ' · live in about a minute', 'clean');
+    flashSaveState('Saved' + (synced ? ' · page details updated' : '') + ' · live in about a minute', 'clean');
     if (state.mode === 'visual') renderVisual();
   } catch (e) {
     if (e.status === 409) {
@@ -991,13 +1095,15 @@ async function syncGuideMeta(slug, guide) {
   const want = guidePageHtml(slug, title, subtitle);
   if (page && page.text !== want) { await putFile(slug + '/index.html', want, page.sha, 'Sync ' + slug + ' page title (editor)'); changed = true; }
   const entry = state.guides.find(g => g.slug === slug);
-  if (entry && entry.title !== title) {
+  const prof = guide.profile || '';
+  if (entry && (entry.title !== title || (entry.profile || '') !== prof)) {
     const f = await getFile('guides.json');
     const idx = JSON.parse(f.text);
     const e = (idx.guides || []).find(g => g.slug === slug);
     if (e) {
       e.title = title;
-      state.guidesSha = await putFile('guides.json', JSON.stringify(idx, null, 2) + '\n', f.sha, 'Update ' + slug + ' title in guide list (editor)');
+      if (prof) e.profile = prof; else delete e.profile; // the profile page lists guides from here
+      state.guidesSha = await putFile('guides.json', JSON.stringify(idx, null, 2) + '\n', f.sha, 'Update ' + slug + ' title/profile in guide list (editor)');
       state.guides = idx.guides; renderPicker(); changed = true;
     }
   }
@@ -1005,6 +1111,10 @@ async function syncGuideMeta(slug, guide) {
 }
 
 $('reloadBtn').addEventListener('click', () => {
+  if (state.prof && !state.prof.isNew) {
+    if (isDirty() && !confirm('Reload this profile from GitHub? Your unsaved edits will be lost.')) return;
+    openProfile(state.prof.handle, { force: true }); return;
+  }
   if (state.doc) {
     if (isDirty() && !confirm('Reload the FAQ page from GitHub? Your current edits stay saved as a draft you can restore.')) return;
     openFaq({ force: true }); return;
@@ -1023,7 +1133,7 @@ function toggleMenu(open) {
   show($('moreMenu'), on);
   $('moreBtn').setAttribute('aria-expanded', on ? 'true' : 'false');
   $('deleteGuideBtn').disabled = !state.current;
-  $('reloadBtn').disabled = !state.current && !state.doc;
+  $('reloadBtn').disabled = !state.current && !state.doc && !(state.prof && !state.prof.isNew);
 }
 $('moreBtn').addEventListener('click', e => { e.stopPropagation(); toggleMenu(); });
 document.addEventListener('click', e => { if (!e.target.closest('.menuwrap')) toggleMenu(false); });
@@ -1094,7 +1204,7 @@ $('delGo').addEventListener('click', async () => {
 function hideAllViews() {
   homeMaps.forEach(m => m.remove()); homeMaps = [];
   setStatus($('appStatus'), '');
-  ['emptyState', 'newGuideView', 'deleteView', 'unlockView', 'editorView', 'docView'].forEach(id => show($(id), false));
+  ['emptyState', 'newGuideView', 'deleteView', 'unlockView', 'editorView', 'docView', 'profileView'].forEach(id => show($(id), false));
   show($('modeSeg'), true);
 }
 
@@ -1155,7 +1265,7 @@ function renderFaqPreview() {
 }
 async function openFaq({ force = false } = {}) {
   if (!force && isDirty() && !confirm('You have unsaved changes. Leave anyway? (Your draft stays saved on this device.)')) { renderPicker(); return; }
-  state.current = null; state.model = null;
+  state.current = null; state.model = null; state.prof = null;
   hideAllViews(); show($('docView')); show($('modeSeg'), false);
   flashSaveState('Loading…', 'clean');
   try {
@@ -1207,7 +1317,8 @@ function setMode(mode, { convert = true } = {}) {
     } else {
       const check = checkGuide($('editor').value);
       if (!check.ok) { alert("The Markdown has problems the visual editor can't read yet:\n\n• " + check.issues.join('\n• ')); return; }
-      state.model = M.parseGuideModel($('editor').value);
+      state.model = loadModel($('editor').value);
+      if (regroup()) V.toast = { text: 'Sorted spots into their category groups so each group shares one pin color.' };
     }
   }
   state.mode = mode;
@@ -1235,8 +1346,11 @@ const DEFAULT_PIN = '#038f9e';
 const catsOff = () => /^(off|no|none|false)$/i.test((M.getMeta(state.model, 'Categories') || '').trim());
 const defaultPin = () => { const v = (M.getMeta(state.model, 'Pin Color') || '').trim(); return HEX.test(v) ? v : DEFAULT_PIN; };
 function spotColor(b) {
-  // Categories stay in the file while off, so switching back restores every color
-  return catsOff() ? defaultPin() : catColor(M.getField(b, 'category'));
+  // Same rule as the live guide: with categories on, the category color always wins.
+  // Off: the spot's own color, else the guide's pin color. Categories stay in the file while off.
+  if (!catsOff()) return catColor(M.getField(b, 'category'));
+  const own = M.getField(b, 'color');
+  return HEX.test(own) ? own : defaultPin();
 }
 function rgb(hex) {
   let h = hex.replace('#', '');
@@ -1263,15 +1377,23 @@ function moveBlock(id, beforeId) {
   if (to < 0) to = bs.length;
   bs.splice(to, 0, item);
 }
-function newSpot({ name, lat, lng, gmaps } = {}) {
+function newSpot({ name, lat, lng, gmaps, cat: want } = {}) {
   const sel = V.selectedId && findBlock(V.selectedId);
   const selCat = sel && sel.type === 'spot' ? M.getField(sel, 'category') : '';
-  const cat = catsOff() ? '' : ((catByName(selCat) && selCat) || (catList()[0] || {}).name || '');
+  want = catsOff() || !catByName(want) ? '' : want;
+  const cat = catsOff() ? '' : (want || (catByName(selCat) && selCat) || (catList()[0] || {}).name || '');
   const spot = { type: 'spot', id: M.newId(), name: name || 'New spot', fields: [], paragraphs: ['[Write-Up Coming Soon]'] };
   if (cat) M.setField(spot, 'Category', cat);
   if (lat != null) M.setLatLng(spot, lat, lng);
   if (gmaps) M.setField(spot, 'Google Maps', gmaps);
-  blocks().splice(insertIndex(), 0, spot);
+  let at = insertIndex();
+  if (want && want !== selCat) {
+    // A group's own "Add spot": the end of that group
+    const bs = blocks(); let last = -1;
+    bs.forEach((b, i) => { if (b.type === 'spot' && M.getField(b, 'category') === want) last = i; });
+    at = last >= 0 ? last + 1 : bs.length;
+  }
+  blocks().splice(at, 0, spot);
   V.selectedId = spot.id; V.expandedId = spot.id;
   return spot;
 }
@@ -1298,6 +1420,7 @@ const ICON = {
   down: '<svg class="i" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg>',
   plus: '<svg class="i" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>',
   link: '<svg class="i" viewBox="0 0 24 24" style="width:12px;height:12px"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>',
+  shuffle: '<svg class="i" viewBox="0 0 24 24" style="width:13px;height:13px"><path d="M16 3h5v5M4 20L21 3M21 16v5h-5M15 15l6 6M4 4l5 5"/></svg>',
   palette: '<svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="8.5" cy="10" r="1.2"/><circle cx="12" cy="7.5" r="1.2"/><circle cx="15.5" cy="10" r="1.2"/><path d="M12 21a2.5 2.5 0 0 1 0-5h1.5a2.5 2.5 0 0 0 0-5"/></svg>'
 };
 // Links on a spot: Instagram / Facebook fields plus any number of "Link:" lines
@@ -1330,26 +1453,129 @@ function renderLinks(b) {
 const isPlaceholder = t => !t || /^\[write-up coming soon\]$/i.test(t.trim());
 const val = s => esc(s == null ? '' : s);
 
+// ============================================================
+// CATEGORY GROUPS (categories on)
+// The list is one group per category, in category order. A spot sits in the
+// group of its category, so a group's pins always share one color. A text block
+// titled like a category ("## Cheap Eats") is that category's write-up and sits
+// at the top of its group. Anything else keeps its place in front of the spot
+// that follows it.
+// ============================================================
+const introsOff = () => /^(off|no|none|false)$/i.test((M.getMeta(state.model, 'Category Intros') || '').trim());
+const catNames = () => catList().map(c => c.name);
+const introCat = b => b.type === 'section' ? matchCategory(b.title, catNames()) : null;
+const writeupsOn = () => !introsOff() && blocks().some(b => introCat(b));
+
+function computeGroups() {
+  const cats = catList();
+  const groups = cats.map(c => ({ cat: c, name: c.name, intro: null, items: [] }));
+  const byName = new Map(groups.map(g => [g.name, g]));
+  const loose = { cat: null, name: '', intro: null, items: [] };
+  let pending = [];
+  blocks().forEach(b => {
+    if (b.type === 'spot') {
+      const g = byName.get(M.getField(b, 'category')) || loose;
+      g.items.push(...pending, b); pending = [];
+      return;
+    }
+    const m = introCat(b);
+    if (m && !byName.get(m).intro) { byName.get(m).intro = b; return; }
+    pending.push(b);
+  });
+  cats.forEach((c, i) => { c._introId = groups[i].intro ? groups[i].intro.id : null; });
+  return { groups, loose, trailing: pending };
+}
+
+// Put every block where its group says it goes. Returns true if anything moved.
+function regroup() {
+  if (!state.model || catsOff()) return false;
+  if (writeupsOn()) {
+    computeGroups().groups.forEach(g => {
+      if (!g.intro) blocks().push({ type: 'section', id: M.newId(), title: g.name, blurb: '' });
+    });
+  }
+  const { groups, loose, trailing } = computeGroups();
+  const next = [];
+  groups.forEach(g => { if (g.intro) next.push(g.intro); next.push(...g.items); });
+  next.push(...loose.items, ...trailing);
+  const bs = blocks();
+  const changed = next.length !== bs.length || next.some((b, i) => b !== bs[i]);
+  if (changed) bs.splice(0, bs.length, ...next);
+  return changed;
+}
+
+// Category list order = the order groups first appear in the file. Only the
+// "## Categories" lines move, so this never changes what readers see.
+function orderCatsByFile(model) {
+  const firsts = [];
+  model.blocks.forEach(b => {
+    if (b.type !== 'spot') return;
+    const n = M.getField(b, 'category');
+    if (n && !firsts.includes(n)) firsts.push(n);
+  });
+  const rank = c => { const i = firsts.indexOf(c.name); return i < 0 ? firsts.length + model.categories.indexOf(c) : i; };
+  model.categories.sort((a, b) => rank(a) - rank(b));
+  return model;
+}
+function loadModel(text) { return orderCatsByFile(M.parseGuideModel(text)); }
+
+// Spots and loose text blocks in the order a no-categories guide lists them.
+// Category write-ups stay in the file but sit out while categories are off.
+const flatBlocks = () => blocks().filter(b => b.type === 'spot' || !introCat(b));
+const spotCount = () => blocks().filter(b => b.type === 'spot' && M.getLatLng(b)).length;
+const bannerUrl = n => '/banners/banner_' + n + '.webp';
+const bannerPreview = 1 + Math.floor(Math.random() * BANNER_COUNT); // stands in for "Shuffle" while editing
+
+function renderBannerRow() {
+  const c = bannerChoice(M.getMeta(state.model, 'Banner'));
+  const label = c === 'random' ? 'Banner shuffles on each visit' : c === 'none' ? 'No banner' : 'Banner ' + c;
+  let h = '<button class="bprev bshape' + (c === 'none' ? ' none' : '') + '" data-act="banner-open" aria-label="Change banner" title="Change banner"' +
+    (c === 'none' ? '' : ' style="background-image:url(' + bannerUrl(c === 'random' ? bannerPreview : c) + ')"') + '></button>' +
+    '<div class="bmeta">' + label + '<button data-act="banner-open">' + (V.bannerPanel ? 'Done' : 'Change') + '</button></div>';
+  if (V.bannerPanel) {
+    h += '<div class="bpanel"><div class="bgrid">' +
+      '<button class="btile word' + (c === 'random' ? ' on' : '') + '" data-act="banner-pick" data-v="random">' + ICON.shuffle + 'Shuffle</button>' +
+      '<button class="btile word' + (c === 'none' ? ' on' : '') + '" data-act="banner-pick" data-v="none">None</button>' +
+      Array.from({ length: BANNER_COUNT }, (_, i) => i + 1).map(n =>
+        '<button class="btile' + (c === n ? ' on' : '') + '" data-act="banner-pick" data-v="' + n + '" aria-label="Banner ' + n + '" style="background-image:url(' + bannerUrl(n) + ')"><span class="n">' + n + '</span></button>').join('') +
+      '</div><div class="hint">Shuffle shows a different one of these each time someone opens the guide.</div></div>';
+  }
+  return h;
+}
+
+function renderByline(m) {
+  const link = M.getMeta(m, 'Author Link'), prof = (M.getMeta(m, 'Profile') || '').trim();
+  const mode = prof ? 'p:' + prof : (link || V.showAuthorLink ? 'web' : '');
+  const known = state.profiles.slice();
+  if (prof && !known.some(p => p.handle === prof)) known.push({ handle: prof, name: '/by/' + prof + '/' });
+  const opt = (v, text) => '<option value="' + val(v) + '"' + (mode === v ? ' selected' : '') + '>' + text + '</option>';
+  let h = '<div class="byline">By <input class="ie author" data-meta="Author" value="' + val(M.getMeta(m, 'Author')) + '" placeholder="Your name" aria-label="Author">' +
+    '<select class="profpick" data-profile-pick aria-label="Where the name links to">' +
+    opt('', 'No link') + known.map(p => opt('p:' + p.handle, '→ ' + val(p.name) + '’s profile')).join('') + opt('web', '→ A website…') + '</select>';
+  if (mode === 'web') {
+    h += '<input class="ie authorlink" data-meta="Author Link" value="' + val(link) + '" placeholder="https://… website, Instagram, X" aria-label="Link for your name" spellcheck="false">';
+  }
+  h += '</div>';
+  if (mode === 'web' && link && !/^https?:\/\/\S+$/i.test(link.trim())) h += '<div class="field-note">Links need to start with https://</div>';
+  return h;
+}
+
 function renderVisual() {
   clearTimeout(renderTimer);
   if (!state.model) return;
   const scroll = $('vlist').scrollTop;
   const m = state.model;
-  const link = M.getMeta(m, 'Author Link');
-  const linkBad = link && !/^https?:\/\/\S+$/i.test(link.trim());
+  if (!catsOff()) regroup();
   let h = '';
 
-  // ---- guide header
+  // ---- guide header (same order as the live page)
+  const n = spotCount();
   h += '<div class="ghead">' +
-    '<div class="updated-ro" title="Set automatically each time you save">Updated ' + val(M.getMeta(m, 'Updated') || monthYear()) + '</div>' +
+    '<div class="updated-ro" title="Updated is set automatically each time you save">Updated ' + val(M.getMeta(m, 'Updated') || monthYear()) +
+    '<span style="font-size:0.55em;vertical-align:0.3em;margin:0 0.8em">•</span>' + n + (n === 1 ? ' spot' : ' spots') + '</div>' +
     '<textarea class="ie title" data-meta="Title" rows="1" placeholder="Guide title" aria-label="Guide title">' + val(M.getMeta(m, 'Title')) + '</textarea>' +
     '<input class="ie subtitle" data-meta="Subtitle" value="' + val(M.getMeta(m, 'Subtitle')) + '" placeholder="Add an italic subtitle…" aria-label="Subtitle">' +
-    '<div class="byline">By <input class="ie author" data-meta="Author" value="' + val(M.getMeta(m, 'Author')) + '" placeholder="Your name" aria-label="Author">' +
-    (link || V.showAuthorLink
-      ? '<input class="ie authorlink" data-meta="Author Link" value="' + val(link) + '" placeholder="https://… website, Instagram, X" aria-label="Link for your name" spellcheck="false">' +
-        '<button class="icon ghost" data-act="authorlink-x" aria-label="Remove link" title="Remove link" style="width:28px;height:28px"><svg class="i" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button>'
-      : '<button class="addlink" data-act="authorlink-add">＋ Add link</button>') + '</div>' +
-    (linkBad ? '<div class="field-note">Links need to start with https://</div>' : '') +
+    renderByline(m) + renderBannerRow() +
     '<div style="width:100%"><div class="textbar"><button data-act="insert-link" data-target="[data-intro]">' + ICON.link + 'Link</button></div>' +
     renderLockRow() +
     '<textarea class="ie intro" data-intro rows="4" placeholder="Write an intro that sets the scene… (blank line = new paragraph)" aria-label="Intro">' + val(m.intro.join('\n\n')) + '</textarea></div>' +
@@ -1359,49 +1585,89 @@ function renderVisual() {
   if (catsOff()) {
     const dp = defaultPin();
     h += '<div class="catbar"><div class="seg small"><button data-act="cats-on">Categories</button><button class="on" disabled style="opacity:1">No categories</button></div>' +
-      '<span class="grow"></span><span class="pincolor"><span class="hint">Pin color</span>' +
-      '<input type="color" data-pin-default value="' + val(toHex6(dp)) + '" aria-label="Default pin color">' +
-      '<input class="hex" data-pin-default-hex value="' + val(dp.toUpperCase()) + '" aria-label="Default pin color hex" spellcheck="false"></span></div>' +
-      '<div class="explain">No tags or category filters on the guide, and every pin uses this color. Each spot keeps its category, so switching back brings the tags and colors back.</div>';
+      '<span class="grow"></span><span class="pincolor"><span class="hint">Guide pin color</span>' +
+      '<input type="color" data-pin-default value="' + val(toHex6(dp)) + '" aria-label="Guide pin color">' +
+      '<input class="hex" data-pin-default-hex value="' + val(dp.toUpperCase()) + '" aria-label="Guide pin color hex" spellcheck="false"></span></div>' +
+      '<div class="explain">A plain list: no tags or filters on the guide. Each spot can pick its own pin color; the rest use the guide color.</div>';
   } else {
-  h += '<div class="catbar"><div class="seg small"><button class="on" disabled style="opacity:1">Categories</button><button data-act="cats-off">No categories</button></div>' + catList().map(c => '<span class="catchip"><span class="dot" style="background:' + val(c.color) + '"></span>' + val(c.name) + '</span>').join('') +
-    '<span class="grow"></span><button data-act="toggle-cats" style="display:inline-flex;align-items:center;gap:6px;height:32px;font-size:12px' + (V.catPanel ? ';background:#EFECE6' : '') + '">' + ICON.palette + 'Edit categories</button></div>';
-  h += '<div class="explain">Categories tag each spot, color its pin, and become the filter buttons on the guide.</div>';
-  if (V.catPanel) h += renderCatPanel();
+    h += '<div class="catbar"><div class="seg small"><button class="on" disabled style="opacity:1">Categories</button><button data-act="cats-off">No categories</button></div>' + catList().map(c => '<span class="catchip"><span class="dot" style="background:' + val(c.color) + '"></span>' + val(c.name) + '</span>').join('') +
+      '<span class="grow"></span><button data-act="toggle-cats" style="display:inline-flex;align-items:center;gap:6px;height:32px;font-size:12px' + (V.catPanel ? ';background:#EFECE6' : '') + '">' + ICON.palette + 'Edit categories</button></div>';
+    h += '<div class="explain">Each category is a group below, and its color is every pin in it. Drag a spot into another group to change its category.</div>';
+    h += '<label class="wtoggle"><input type="checkbox" data-writeups' + (writeupsOn() ? ' checked' : '') + '> Category write-ups <span class="hint">— a short intro above each group on the guide</span></label>';
+    if (V.catPanel) h += renderCatPanel();
   }
 
-  // ---- spots and text breaks, in guide order
-  const dragging = !!V.dragId;
+  // ---- the list
   h += '<div class="cards" style="margin-top:16px">';
-  const all = blocks();
-  all.forEach((b, i) => {
-    if (b.type === 'raw') { h += '<div class="rawnote">A block of text the guide can\'t show as a spot. Edit it in the Markdown view.</div>'; return; }
-    h += b.type === 'section' ? renderBreak(b, i, all.length) : renderCard(b, i, all.length);
-  });
-  h += '<div class="dropzone' + (!all.length ? ' empty' : '') + '" data-zone="end" data-label="Drop here to move to the end">' + (!all.length ? '<span>No spots yet</span>' : '') + '</div></div>';
-  h += '<div class="addrow"><button data-act="add-spot">' + ICON.plus + 'Add spot</button><button data-act="add-break">' + ICON.plus + 'Add text break</button></div>';
-  h += '<div class="hint" style="margin-top:6px;text-align:center">New items go below the selected card, or at the end.</div>';
+  if (catsOff()) {
+    const vis = flatBlocks();
+    vis.forEach((b, i) => {
+      const pos = { first: i === 0, last: i === vis.length - 1 };
+      if (b.type === 'raw') h += '<div class="rawnote">A block of text the guide can\'t show as a spot. Edit it in the Markdown view.</div>';
+      else h += b.type === 'section' ? renderBreak(b, pos, true) : renderCard(b, pos);
+    });
+    h += '<div class="dropzone' + (!vis.length ? ' empty' : '') + '" data-zone="end" data-label="Drop here to move to the end">' + (!vis.length ? '<span>No spots yet</span>' : '') + '</div>';
+  } else {
+    const G = computeGroups(), on = writeupsOn();
+    G.groups.forEach((g, gi) => { h += renderGroup(g, gi, on); });
+    if (G.loose.items.length) h += renderGroup(G.loose, -1, false);
+    G.trailing.forEach(b => { h += renderExtra(b); });
+  }
+  h += '</div>';
+  h += '<div class="addrow"><button data-act="add-spot">' + ICON.plus + 'Add spot</button></div>';
+  h += '<div class="hint" style="margin-top:6px;text-align:center">' + (catsOff() ? 'New spots go below the selected one, or at the end.' : 'New spots join the selected spot\'s group, or the first group.') + '</div>';
 
   if (V.toast) h += '<div class="toast"><span>' + val(V.toast.text) + '</span>' + (V.toast.undo ? '<button class="undo" data-act="undo">Undo</button>' : '') + '<button class="x icon" data-act="toast-x" aria-label="Dismiss"><svg class="i" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>';
 
   $('vlist').innerHTML = h;
-  $('vlist').classList.toggle('dragging-any', dragging);
+  $('vlist').classList.toggle('dragging-any', !!V.dragId);
   $('vlist').scrollTop = scroll;
   autosize($('vlist').querySelector('.title'));
+  $('vlist').querySelectorAll('.secblurb').forEach(autosize);
   syncMarkers();
   updatePlaceBanner();
 }
 
-function renderCard(b, i, n) {
+function renderGroup(g, gi, on) {
+  const loose = gi < 0;
+  const spots = g.items.filter(b => b.type === 'spot');
+  let h = '<div class="grp' + (loose ? ' loose' : '') + '"' + (loose ? '' : ' data-grp="' + gi + '"') + '>' +
+    '<div class="sechead"' + (loose ? '' : ' data-zone="top:' + gi + '"') + '>' +
+    '<span class="dot" style="background:' + (loose ? '#888' : val(g.cat.color)) + '"></span>' +
+    '<span class="sectitle">' + (loose ? 'No category' : val(g.name)) + '</span>' +
+    '<span class="count">' + spots.length + (spots.length === 1 ? ' spot' : ' spots') + '</span><span class="grow"></span>' +
+    (loose ? '<span class="hint">Pick a category for each, or drag it into a group</span>'
+           : '<button class="addspot" data-act="add-spot-in" data-gi="' + gi + '">' + ICON.plus + 'Add spot</button>') + '</div>';
+  if (on && !loose && g.intro) {
+    h += '<div style="display:flex;align-items:flex-start;gap:4px"><textarea class="ie secblurb" data-brk-text="' + g.intro.id + '" rows="1" placeholder="A few words to introduce ' + val(g.name) + '… (optional)" aria-label="' + val(g.name) + ' write-up" style="flex:1 1 auto">' + val(g.intro.blurb) + '</textarea>' +
+      '<span class="textbar"><button data-act="insert-link" data-target="[data-brk-text=&quot;' + g.intro.id + '&quot;]" title="Add a link">' + ICON.link + '</button></span></div>';
+  }
+  let si = 0;
+  g.items.forEach(b => {
+    if (b.type === 'spot') { h += renderCard(b, { first: si === 0, last: si === spots.length - 1 }); si++; }
+    else h += renderExtra(b);
+  });
+  if (!loose) h += '<div class="dropzone' + (spots.length ? '' : ' empty') + '" data-zone="end:' + gi + '" data-label="Drop here to move to ' + val(g.name) + '">' + (spots.length ? '' : '<span>No spots yet. Drag one here, or add one.</span>') + '</div>';
+  return h + '</div>';
+}
+
+// Older guides can hold text blocks that aren't a category's write-up; they stay put and stay editable
+function renderExtra(b) {
+  if (b.type === 'raw') return '<div class="rawnote">A block of text the guide can\'t show as a spot. Edit it in the Markdown view.</div>';
+  return renderBreak(b, null, false);
+}
+
+function renderCard(b, pos) {
   const cat = M.getField(b, 'category');
   const ll = M.getLatLng(b);
   const sel = b.id === V.selectedId, exp = b.id === V.expandedId;
   const writeup = b.paragraphs.join('\n\n');
+  const off = catsOff();
   let h = '';
   h += '<div class="card' + (sel ? ' sel' : '') + (V.dragId === b.id ? ' dragging' : '') + '" data-card="' + b.id + '" draggable="' + (exp ? 'false' : 'true') + '">' +
     '<button class="grip" aria-label="Drag to reorder ' + val(b.name) + '" title="Drag to reorder">' + ICON.grip + '</button>' +
     '<div class="cbody"><div class="cmeta">' +
-    (catsOff() ? '<span class="pindot" style="background:' + val(spotColor(b)) + '"></span>' :
+    (off ? '<span class="pindot" style="background:' + val(spotColor(b)) + '"></span>' :
       (cat ? '<span class="chip" style="' + chipStyle(cat) + '">' + val(cat) + '</span>' : '<span class="chip" style="background:#EEE;color:#555">No category</span>')) +
     '<span class="price">' + val(M.getField(b, 'price')) + '</span>' +
     '<span class="loc" style="color:' + (ll ? 'var(--ok)' : 'var(--warn)') + '">' + ICON.pin + (ll ? 'On map' : 'Needs location') + '</span>' +
@@ -1411,11 +1677,11 @@ function renderCard(b, i, n) {
     h += '<div class="preview' + (isPlaceholder(writeup) ? ' placeholder' : '') + '">' + val(isPlaceholder(writeup) ? '[Write-Up Coming Soon]' : writeup.replace(/\[([^\]\n]+)\]\((https?:[^)\s]+)\)/g, '$1')) + '</div>';
   } else {
     const opts = catList().map(c => '<option' + (c.name === cat ? ' selected' : '') + '>' + val(c.name) + '</option>').join('') +
-      (cat && !catByName(cat) ? '<option selected>' + val(cat) + '</option>' : '');
+      (!catByName(cat) ? '<option selected value="' + val(cat) + '">' + (cat ? val(cat) : 'Pick a category…') + '</option>' : '');
     h += '<div class="cform">' +
       '<div class="g3"><label class="f span2">Name<input data-spot-name="' + b.id + '" value="' + val(b.name) + '"></label>' +
       '<label class="f">Price<input data-spot-field="Price" data-id="' + b.id + '" value="' + val(M.getField(b, 'price')) + '" placeholder="$"></label></div>' +
-      (catsOff() ? '' : '<label class="f">Category<select data-spot-cat="' + b.id + '">' + opts + '</select></label>') +
+      (off ? renderSwatches(b) : '<label class="f">Category<select data-spot-cat="' + b.id + '">' + opts + '</select></label>') +
       '<div class="f" style="display:flex;flex-direction:column;gap:2px;font-size:11px;font-weight:600;color:var(--text-2)"><div style="display:flex;align-items:center">Write-up<span class="grow"></span><span class="textbar"><button data-act="insert-link" data-target="[data-spot-writeup=&quot;' + b.id + '&quot;]">' + ICON.link + 'Link</button></span></div>' +
       '<textarea class="writeup" data-spot-writeup="' + b.id + '" aria-label="Write-up" placeholder="What makes this spot worth the trip? (blank line = new paragraph)">' + val(writeup) + '</textarea></div>' +
       '<div class="g2"><label class="f">Google Maps link<input data-spot-field="Google Maps" data-id="' + b.id + '" value="' + val(M.getField(b, 'google maps')) + '" spellcheck="false"></label>' +
@@ -1426,24 +1692,36 @@ function renderCard(b, i, n) {
       '<span class="grow">' + (ll ? 'Drag its pin to adjust' : 'Click the map, search, or paste coordinates') + '</span>' +
       (ll ? '<button class="ghost" data-act="unplace" data-id="' + b.id + '">Remove from map</button>' : '') + '</div>' +
       '<div class="cactions"><button class="danger" data-act="del-spot" data-id="' + b.id + '">Delete spot</button>' +
-      '<button class="icon ghost" data-act="item-up" data-id="' + b.id + '" aria-label="Move up"' + (i === 0 ? ' disabled' : '') + '>' + ICON.up + '</button>' +
-      '<button class="icon ghost" data-act="item-down" data-id="' + b.id + '" aria-label="Move down"' + (i === n - 1 ? ' disabled' : '') + '>' + ICON.down + '</button>' +
+      '<button class="icon ghost" data-act="item-up" data-id="' + b.id + '" aria-label="Move up"' + (pos.first ? ' disabled' : '') + '>' + ICON.up + '</button>' +
+      '<button class="icon ghost" data-act="item-down" data-id="' + b.id + '" aria-label="Move down"' + (pos.last ? ' disabled' : '') + '>' + ICON.down + '</button>' +
       '<span class="grow"></span><button data-act="done" style="background:#1A1A1A;color:#fff;border-color:#1A1A1A">Done</button></div></div>';
   }
   h += '</div></div>';
   return h;
 }
 
-function renderBreak(b, i, n) {
+// Pin color for one spot when categories are off
+function renderSwatches(b) {
+  const own = (M.getField(b, 'color') || '').toLowerCase();
+  const ownOk = HEX.test(own);
+  return '<div class="f" style="display:flex;flex-direction:column;gap:5px;font-size:11px;font-weight:600;color:var(--text-2)">Pin color<div class="swatches">' +
+    '<button class="sw dflt' + (!ownOk ? ' on' : '') + '" data-act="spot-color" data-id="' + b.id + '" data-color=""><span class="pindot" style="background:' + val(defaultPin()) + '"></span>Guide color</button>' +
+    PALETTE.map(c => '<button class="sw' + (ownOk && own === c.toLowerCase() ? ' on' : '') + '" data-act="spot-color" data-id="' + b.id + '" data-color="' + c + '" style="background:' + c + '" aria-label="Pin color ' + c + '" title="' + c + '"></button>').join('') +
+    '<input type="color" data-spot-color="' + b.id + '" value="' + val(toHex6(ownOk ? own : defaultPin())) + '" aria-label="Pick any pin color" title="Any color">' +
+    '</div></div>';
+}
+
+// A free-standing text block (no-categories guides, and leftovers in older guides)
+function renderBreak(b, pos, movable) {
   const sel = b.id === V.selectedId;
-  return '<div class="brk' + (sel ? ' sel' : '') + '" data-card="' + b.id + '" draggable="true">' +
-    '<button class="grip" aria-label="Drag to reorder text break" title="Drag to reorder">' + ICON.grip + '</button>' +
-    '<div class="cbody" style="gap:4px"><div class="cmeta"><span class="blabel">Text break</span><span class="grow"></span>' +
-    '<button class="icon ghost del" data-act="item-up" data-id="' + b.id + '" aria-label="Move up"' + (i === 0 ? ' disabled' : '') + '>' + ICON.up + '</button>' +
-    '<button class="icon ghost del" data-act="item-down" data-id="' + b.id + '" aria-label="Move down"' + (i === n - 1 ? ' disabled' : '') + '>' + ICON.down + '</button>' +
-    '<button class="icon ghost del" data-act="del-break" data-id="' + b.id + '" aria-label="Delete text break" title="Delete">' + ICON.trash + '</button></div>' +
-    '<input class="ie btitle" data-brk-title="' + b.id + '" value="' + val(b.title) + '" placeholder="Title (optional)" aria-label="Text break title">' +
-    '<div style="display:flex;align-items:flex-start;gap:4px"><textarea class="ie btext" data-brk-text="' + b.id + '" rows="1" placeholder="A few words to introduce what comes next…" aria-label="Text break text" style="flex:1 1 auto">' + val(b.blurb) + '</textarea>' +
+  return '<div class="brk' + (sel ? ' sel' : '') + '" data-card="' + b.id + '" draggable="' + (movable ? 'true' : 'false') + '">' +
+    (movable ? '<button class="grip" aria-label="Drag to reorder text block" title="Drag to reorder">' + ICON.grip + '</button>' : '<span style="width:6px"></span>') +
+    '<div class="cbody" style="gap:4px"><div class="cmeta"><span class="blabel">Text block</span><span class="grow"></span>' +
+    (movable ? '<button class="icon ghost del" data-act="item-up" data-id="' + b.id + '" aria-label="Move up"' + (pos.first ? ' disabled' : '') + '>' + ICON.up + '</button>' +
+      '<button class="icon ghost del" data-act="item-down" data-id="' + b.id + '" aria-label="Move down"' + (pos.last ? ' disabled' : '') + '>' + ICON.down + '</button>' : '') +
+    '<button class="icon ghost del" data-act="del-break" data-id="' + b.id + '" aria-label="Delete text block" title="Delete">' + ICON.trash + '</button></div>' +
+    '<input class="ie btitle" data-brk-title="' + b.id + '" value="' + val(b.title) + '" placeholder="Title (optional)" aria-label="Text block title">' +
+    '<div style="display:flex;align-items:flex-start;gap:4px"><textarea class="ie btext" data-brk-text="' + b.id + '" rows="1" placeholder="A few words to introduce what comes next…" aria-label="Text block text" style="flex:1 1 auto">' + val(b.blurb) + '</textarea>' +
     '<span class="textbar"><button data-act="insert-link" data-target="[data-brk-text=&quot;' + b.id + '&quot;]" title="Add a link">' + ICON.link + '</button></span></div>' +
     '</div></div>';
 }
@@ -1515,13 +1793,38 @@ $('vlist').addEventListener('click', e => {
       break;
     }
     case 'item-up': case 'item-down': {
-      const i = bs.findIndex(b => b.id === id), j = act === 'item-up' ? i - 1 : i + 1;
-      if (i < 0 || j < 0 || j >= bs.length) return;
-      [bs[i], bs[j]] = [bs[j], bs[i]];
+      let seq = flatBlocks();
+      if (!catsOff()) {
+        const G = computeGroups();
+        seq = (G.groups.concat([G.loose]).map(g => g.items.filter(x => x.type === 'spot')).find(l => l.some(x => x.id === id))) || [];
+      }
+      const k = seq.findIndex(b => b.id === id), j = act === 'item-up' ? k - 1 : k + 1;
+      if (k < 0 || j < 0 || j >= seq.length) return;
+      const a = bs.indexOf(seq[k]), c = bs.indexOf(seq[j]);
+      [bs[a], bs[c]] = [bs[c], bs[a]];
       break;
     }
     case 'unplace': M.setLatLng(findBlock(id), null); break;
     case 'add-spot': newSpot(); break;
+    case 'add-spot-in': {
+      const g = computeGroups().groups[+btn.dataset.gi];
+      if (!g) return;
+      const sp = newSpot({ cat: g.name });
+      renderVisual(); afterEdit();
+      const inp = $('vlist').querySelector('[data-spot-name="' + sp.id + '"]');
+      if (inp) { inp.scrollIntoView({ block: 'center' }); inp.select(); }
+      return;
+    }
+    case 'spot-color': {
+      M.setField(findBlock(id), 'Color', btn.dataset.color ? btn.dataset.color.toLowerCase() : '');
+      break;
+    }
+    case 'banner-open': V.bannerPanel = !V.bannerPanel; renderVisual(); return;
+    case 'banner-pick': {
+      const v = btn.dataset.v;
+      M.setMeta(state.model, 'Banner', v === 'random' ? '' : v, 'Center');
+      break;
+    }
     case 'add-break': {
       const b = newBreak();
       renderVisual(); afterEdit();
@@ -1552,18 +1855,30 @@ $('vlist').addEventListener('click', e => {
       const n = blocks().filter(b => b.type === 'spot' && M.getField(b, 'category') === c.name).length;
       if (catList().length === 1) { V.catNotes[id] = 'A guide needs at least one category.'; renderVisual(); return; }
       if (n) { V.moveTargets[id] = catList().find(o => o !== c).id; renderVisual(); return; }
-      const i = catList().indexOf(c);
+      const intro = (computeGroups().groups.find(g => g.cat === c) || {}).intro;
+      const i = catList().indexOf(c), ib = intro ? blocks().indexOf(intro) : -1;
       catList().splice(i, 1);
-      toastUndo('Deleted category ' + c.name, () => catList().splice(i, 0, c));
+      if (ib >= 0) blocks().splice(ib, 1);
+      toastUndo('Deleted category ' + c.name, () => { catList().splice(i, 0, c); if (ib >= 0) blocks().splice(ib, 0, intro); });
       break;
     }
     case 'cats-off': {
+      const painted = [];
+      blocks().forEach(b => {
+        if (b.type !== 'spot' || HEX.test(M.getField(b, 'color'))) return;
+        const c = catByName(M.getField(b, 'category'));
+        if (c) { M.setField(b, 'Color', toHex6(c.color)); painted.push(b); }
+      });
       M.setMeta(state.model, 'Categories', 'off', 'Center');
       V.catPanel = false;
-      toastUndo('Categories off — pins keep their current colors until you change them', () => M.setMeta(state.model, 'Categories', ''));
+      toastUndo('Categories off — each pin keeps the color it had', () => {
+        M.setMeta(state.model, 'Categories', '');
+        painted.forEach(b => M.setField(b, 'Color', ''));
+      });
       break;
     }
     case 'cats-on': {
+      const order = blocks().slice();
       M.setMeta(state.model, 'Categories', '');
       const loose = blocks().filter(b => b.type === 'spot' && !catByName(M.getField(b, 'category')));
       if (!catList().length) {
@@ -1574,7 +1889,10 @@ $('vlist').addEventListener('click', e => {
           M.setMeta(state.model, 'Categories', 'off', 'Center'); catList().pop(); loose.forEach(b => M.setField(b, 'Category', ''));
         });
       } else {
-        toastUndo('Categories on' + (loose.length ? ' — ' + loose.length + ' spot' + (loose.length === 1 ? ' needs' : 's need') + ' a category' : ''), () => M.setMeta(state.model, 'Categories', 'off', 'Center'));
+        const moved = regroup();
+        toastUndo('Categories on' + (moved ? ' — spots sorted into their groups' : '') + (loose.length ? ' — ' + loose.length + ' spot' + (loose.length === 1 ? ' needs' : 's need') + ' a category' : ''), () => {
+          M.setMeta(state.model, 'Categories', 'off', 'Center'); blocks().splice(0, blocks().length, ...order);
+        });
       }
       V.catPanel = true;
       break;
@@ -1634,12 +1952,16 @@ $('vlist').addEventListener('click', e => {
       const c = catList().find(x => x.id === id), to = catList().find(x => x.id === V.moveTargets[id]);
       if (!to) return;
       const moved = blocks().filter(b => b.type === 'spot' && M.getField(b, 'category') === c.name);
+      const intro = (computeGroups().groups.find(g => g.cat === c) || {}).intro;
+      const order = blocks().slice();
       moved.forEach(b => M.setField(b, 'Category', to.name));
+      if (intro) blocks().splice(blocks().indexOf(intro), 1);
       const i = catList().indexOf(c);
       catList().splice(i, 1);
       delete V.moveTargets[id];
       toastUndo('Moved ' + moved.length + ' to ' + to.name + ' and deleted ' + c.name, () => {
         catList().splice(i, 0, c); moved.forEach(b => M.setField(b, 'Category', c.name));
+        blocks().splice(0, blocks().length, ...order);
       });
       break;
     }
@@ -1686,17 +2008,12 @@ $('vlist').addEventListener('input', e => {
     const lbl = t.parentNode.querySelector('.lbl'); if (lbl) lbl.textContent = t.value.trim() ? linkLabel(t.value.trim()) : 'New';
   }
   else if (d.spotColor) {
-    M.setField(findBlock(d.spotColor), 'Color', t.value);
-    const hx = t.closest('.pincolor').querySelector('[data-spot-hex]'); if (hx) hx.value = t.value.toUpperCase();
-    const dot = t.closest('.card').querySelector('.pindot'); if (dot) dot.style.background = t.value;
-    syncMarkers();
-  }
-  else if (d.spotHex) {
-    let v = t.value.trim(); if (v && v[0] !== '#') v = '#' + v;
-    if (!HEX.test(v)) return;
-    M.setField(findBlock(d.spotHex), 'Color', v.toLowerCase());
-    const sw = t.closest('.pincolor').querySelector('[data-spot-color]'); if (sw) sw.value = v.toLowerCase();
-    const dot = t.closest('.card').querySelector('.pindot'); if (dot) dot.style.background = v;
+    M.setField(findBlock(d.spotColor), 'Color', t.value.toLowerCase());
+    const card = t.closest('.card');
+    if (card) {
+      const dot = card.querySelector('.cmeta .pindot'); if (dot) dot.style.background = t.value;
+      card.querySelectorAll('.sw.on').forEach(x => x.classList.remove('on'));
+    }
     syncMarkers();
   }
   else if (d.pinDefault != null) {
@@ -1726,7 +2043,9 @@ $('vlist').addEventListener('input', e => {
     }
   } else if (d.catName) {
     const c = catList().find(x => x.id === d.catName), old = c.name;
+    const intro = c._introId && findBlock(c._introId);
     c.name = t.value;
+    if (intro) intro.title = t.value; // the write-up's heading follows the category's name
     blocks().forEach(b => {
       if (b.type === 'spot' && M.getField(b, 'category') === old) M.setField(b, 'Category', t.value);
     });
@@ -1735,6 +2054,16 @@ $('vlist').addEventListener('input', e => {
 });
 $('vlist').addEventListener('change', e => {
   const t = e.target, d = t.dataset;
+  if (d.writeups != null) { setWriteups(t.checked); renderVisual(); afterEdit(); return; }
+  if (d.profilePick != null) {
+    const v = t.value, m = state.model;
+    if (v.startsWith('p:')) { M.setMeta(m, 'Profile', v.slice(2), 'Author'); M.setMeta(m, 'Author Link', ''); V.showAuthorLink = false; }
+    else if (v === 'web') { M.setMeta(m, 'Profile', ''); V.showAuthorLink = true; }
+    else { M.setMeta(m, 'Profile', ''); M.setMeta(m, 'Author Link', ''); V.showAuthorLink = false; }
+    renderVisual(); afterEdit();
+    if (v === 'web') { const inp = $('vlist').querySelector('[data-meta="Author Link"]'); if (inp) inp.focus(); }
+    return;
+  }
   if (d.spotCat) { M.setField(findBlock(d.spotCat), 'Category', t.value); }
   else if (d.spotLoc) {
     const c = t.value.split(',').map(x => parseFloat(x.trim()));
@@ -1743,10 +2072,33 @@ $('vlist').addEventListener('change', e => {
     else if (c.length >= 2 && !isNaN(c[0]) && !isNaN(c[1]) && Math.abs(c[0]) <= 90 && Math.abs(c[1]) <= 180) { M.setLatLng(b, c[0], c[1]); if (map) map.flyTo([c[0], c[1]], 16, { duration: 0.5 }); }
     else { alert('Enter coordinates as two numbers, like 37.9053, -122.5494'); return; }
   } else if (d.catMove) { V.moveTargets[d.catMove] = t.value; return; }
-  else if (d.catColor || d.catHex || d.catName || d.meta === 'Author Link' || d.pinDefault != null || d.pinDefaultHex != null) { /* redraw below */ }
+  else if (d.catColor || d.catHex || d.catName || d.spotColor || d.meta === 'Author Link' || d.pinDefault != null || d.pinDefaultHex != null) { /* redraw below */ }
   else return;
   afterEdit(); scheduleRender();
 });
+// Category write-ups on/off. Turning them off keeps any text you wrote (hidden on the guide);
+// empty ones just go away.
+function setWriteups(on) {
+  const order = blocks().slice(), meta = M.getMeta(state.model, 'Category Intros');
+  const undo = () => { blocks().splice(0, blocks().length, ...order); M.setMeta(state.model, 'Category Intros', meta, 'Categories'); };
+  if (on) {
+    M.setMeta(state.model, 'Category Intros', '');
+    if (!blocks().some(b => introCat(b))) catList().forEach(c => blocks().push({ type: 'section', id: M.newId(), title: c.name, blurb: '' }));
+    regroup();
+    toastUndo('Category write-ups on — add a few words above each group, or leave them blank', undo);
+    return;
+  }
+  const intros = computeGroups().groups.map(g => g.intro).filter(Boolean);
+  if (intros.some(b => (b.blurb || '').trim())) {
+    M.setMeta(state.model, 'Category Intros', 'off', 'Categories');
+    toastUndo('Write-ups hidden on the guide. Your text is kept for if you turn them back on.', undo);
+  } else {
+    intros.forEach(b => blocks().splice(blocks().indexOf(b), 1));
+    M.setMeta(state.model, 'Category Intros', '');
+    toastUndo('Category write-ups off', undo);
+  }
+}
+
 let renderTimer = null;
 function scheduleRender() { clearTimeout(renderTimer); renderTimer = setTimeout(renderVisual, 250); }
 
@@ -1754,7 +2106,8 @@ function scheduleRender() { clearTimeout(renderTimer); renderTimer = setTimeout(
 // replacing the dragged card would cancel the drag in some browsers.
 function markDropTarget() {
   $('vlist').querySelectorAll('.drop-before').forEach(el => el.classList.remove('drop-before'));
-  $('vlist').querySelectorAll('.dropzone.over').forEach(el => el.classList.remove('over'));
+  $('vlist').querySelectorAll('.dropzone.over, .grp.over').forEach(el => el.classList.remove('over'));
+  if (V.overGrp != null) { const g = $('vlist').querySelector('[data-grp="' + V.overGrp + '"]'); if (g) g.classList.add('over'); }
   if (V.overId && V.overId !== V.dragId) { const c = $('vlist').querySelector('[data-card="' + V.overId + '"]'); if (c) c.classList.add('drop-before'); }
   if (V.overZone) { const z = $('vlist').querySelector('[data-zone="' + V.overZone + '"]'); if (z) z.classList.add('over'); }
 }
@@ -1768,24 +2121,48 @@ $('vlist').addEventListener('dragstart', e => {
 });
 $('vlist').addEventListener('dragover', e => {
   if (!V.dragId) return;
+  const grouped = !catsOff();
+  const grp = e.target.closest('[data-grp]');
+  if (grouped && !grp) return; // with categories on, a spot always lands in a group
   const card = e.target.closest('[data-card]'), zone = e.target.closest('[data-zone]');
-  if (!card && !zone) return;
+  if (!card && !zone && !grp) return;
   e.preventDefault();
-  const oId = card ? card.dataset.card : null, oZ = zone ? zone.dataset.zone : null;
-  if (oId !== V.overId || oZ !== V.overZone) { V.overId = oId; V.overZone = oZ; markDropTarget(); }
+  const oId = card ? card.dataset.card : null, oZ = zone ? zone.dataset.zone : (grp ? 'end:' + grp.dataset.grp : null);
+  const oG = grp ? grp.dataset.grp : null;
+  if (oId !== V.overId || oZ !== V.overZone || oG !== V.overGrp) { V.overId = oId; V.overZone = oZ; V.overGrp = oG; markDropTarget(); }
 });
 $('vlist').addEventListener('drop', e => {
   if (!V.dragId) return;
   e.preventDefault();
-  const id = V.dragId;
-  if (V.overId && V.overId !== id) moveBlock(id, V.overId);
-  else if (V.overZone) moveBlock(id, null);
-  V.dragId = V.overId = V.overZone = null;
+  const id = V.dragId, b = findBlock(id);
+  if (catsOff() || !b || b.type !== 'spot') {
+    if (V.overId && V.overId !== id) moveBlock(id, V.overId);
+    else if (V.overZone) moveBlock(id, null);
+  } else {
+    const g = computeGroups().groups[+V.overGrp];
+    if (g) {
+      // Dropping into a group gives the spot that group's category
+      const bs = blocks(), fromCat = M.getField(b, 'category'), fromIdx = bs.indexOf(b);
+      const others = g.items.filter(x => x.type === 'spot' && x !== b);
+      const over = V.overId && findBlock(V.overId);
+      M.setField(b, 'Category', g.name);
+      if (over && over.type === 'spot' && over !== b && others.includes(over)) moveBlock(id, over.id);
+      else if (V.overZone && V.overZone.startsWith('top:') && others.length) moveBlock(id, others[0].id);
+      else if (others.length) { bs.splice(bs.indexOf(b), 1); bs.splice(bs.indexOf(others[others.length - 1]) + 1, 0, b); }
+      if (fromCat !== g.name) {
+        toastUndo('Moved ' + b.name + ' to ' + g.name, () => {
+          M.setField(b, 'Category', fromCat);
+          const list = blocks(); list.splice(list.indexOf(b), 1); list.splice(Math.min(fromIdx, list.length), 0, b);
+        });
+      }
+    }
+  }
+  V.dragId = V.overId = V.overZone = V.overGrp = null;
   renderVisual(); afterEdit();
 });
 $('vlist').addEventListener('dragend', () => {
   if (!V.dragId) return;
-  V.dragId = V.overId = V.overZone = null; renderVisual();
+  V.dragId = V.overId = V.overZone = V.overGrp = null; renderVisual();
 });
 
 // ============================================================
@@ -1865,10 +2242,14 @@ function onMapClick(e) {
   if (p) { M.setLatLng(p, e.latlng.lat, e.latlng.lng); renderVisual(); afterEdit(); return; }
   const box = document.createElement('div');
   box.className = 'addpop';
+  const sel = V.selectedId && findBlock(V.selectedId);
+  const selCat = sel && sel.type === 'spot' ? M.getField(sel, 'category') : '';
   box.innerHTML = '<div class="coords">' + e.latlng.lat.toFixed(5) + ', ' + e.latlng.lng.toFixed(5) + '</div>' +
+    (catsOff() || !catList().length ? '' : '<select aria-label="Category">' + catList().map(c => '<option' + (c.name === selCat ? ' selected' : '') + '>' + esc(c.name) + '</option>').join('') + '</select>') +
     '<button class="primary">Add spot here</button>';
   box.querySelector('button').addEventListener('click', () => {
-    newSpot({ lat: e.latlng.lat, lng: e.latlng.lng });
+    const pick = box.querySelector('select');
+    newSpot({ lat: e.latlng.lat, lng: e.latlng.lng, cat: pick ? pick.value : undefined });
     map.closePopup();
     renderVisual(); afterEdit();
     const inp = $('vlist').querySelector('[data-spot-name="' + V.selectedId + '"]');
@@ -1952,11 +2333,200 @@ $('results').addEventListener('click', e => {
 });
 
 // ============================================================
+// PROFILES — by/<handle>/profile.md, shown at guiides.com/by/<handle>/
+// A guide's byline links to its author's profile ("Profile:" line in places.md).
+// ============================================================
+const HANDLE_RE = /^[a-z0-9]+(-[a-z0-9]+)*$/;
+const oneLine = s => String(s || '').replace(/\s*\n\s*/g, ' ').trim();
+
+async function loadProfiles() {
+  const dirs = (await listDir('by')).filter(x => x.type === 'dir');
+  const list = await Promise.all(dirs.map(async d => {
+    try {
+      const f = await getFile(d.path + '/profile.md');
+      return f ? { handle: d.name, name: parseProfileMd(f.text).name || d.name } : null;
+    } catch (e) { return null; }
+  }));
+  state.profiles = list.filter(Boolean).sort((a, b) => a.name.localeCompare(b.name));
+}
+
+function profilePageHtml(handle, name) {
+  const n = esc(name || handle);
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<!-- Profile page: only the name lines below differ between profiles -->
+<title>${n} — GUIIDES</title>
+<meta name="description" content="Guides by ${n} on GUIIDES">
+<meta property="og:type" content="profile">
+<meta property="og:title" content="${n} — GUIIDES">
+<meta property="og:description" content="Guides by ${n}">
+<meta property="og:url" content="https://guiides.com/by/${handle}/">
+<link rel="canonical" href="https://guiides.com/by/${handle}/">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preconnect" href="https://a.basemaps.cartocdn.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;0,8..60,700;1,8..60,400&family=DM+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"><\/script>
+<link rel="stylesheet" href="/app/profile.css">
+</head>
+<body data-profile="${handle}">
+<script src="/app/parser.js"><\/script>
+<script src="/app/profile.js"><\/script>
+</body>
+</html>
+`;
+}
+
+function serializeProfile(p) {
+  const o = ['Name: ' + oneLine(p.name)];
+  if (oneLine(p.location)) o.push('Location: ' + oneLine(p.location));
+  if (oneLine(p.photo)) o.push('Photo: ' + oneLine(p.photo));
+  if (oneLine(p.banner)) o.push('Banner: ' + oneLine(p.banner));
+  p.links.map(oneLine).filter(Boolean).forEach(l => o.push('Link: ' + l));
+  o.push('', '## Bio', '');
+  const bio = String(p.bio || '').split(/\n\s*\n/).map(oneLine).filter(Boolean);
+  if (bio.length) o.push(bio.join('\n\n'), '');
+  return o.join('\n');
+}
+function profFromForm() {
+  return {
+    name: $('pfName').value, location: $('pfLocation').value, photo: $('pfPhoto').value,
+    banner: state.prof ? state.prof.banner : '',
+    bio: $('pfBio').value,
+    links: [...$('pfLinks').querySelectorAll('input')].map(i => i.value)
+  };
+}
+function profileProblem(p) {
+  if (!oneLine(p.name)) return 'Add a name.';
+  if (oneLine(p.photo) && !/^https?:\/\/\S+$/i.test(oneLine(p.photo))) return 'The photo needs to be a link starting with https://';
+  const bad = p.links.map(oneLine).filter(Boolean).find(l => !/^https?:\/\/\S+$/i.test(l));
+  if (bad) return 'Links need to start with https:// — check "' + bad + '"';
+  return '';
+}
+function profLinkRow(v) {
+  return '<div class="linkrow"><span class="lbl">' + esc(v ? linkLabel(v) : 'New') + '</span>' +
+    '<input value="' + esc(v || '') + '" placeholder="https://… Instagram, a website, a newsletter" spellcheck="false">' +
+    '<button class="icon ghost" data-pf-del aria-label="Remove link" style="width:32px;height:32px"><svg class="i" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>';
+}
+function renderProfileGuides() {
+  const pr = state.prof;
+  if (!pr || pr.isNew) { $('pfGuides').innerHTML = ''; return; }
+  const mine = state.guides.filter(g => g.profile === pr.handle);
+  $('pfGuides').innerHTML = '<h3>Guides on this page</h3>' + (mine.length
+    ? '<ul>' + mine.map(g => '<li><a href="#guide=' + esc(g.slug) + '" data-pf-guide="' + esc(g.slug) + '">' + esc(g.title) + '</a><span class="hint">/' + esc(g.slug) + '/' + (g.published === false ? ' · hidden' : '') + '</span></li>').join('') + '</ul>'
+    : '<p class="hint">None yet. Open a guide and pick this profile from the menu next to the author\'s name.</p>');
+}
+
+async function openProfile(handle, { force = false } = {}) {
+  if (!force && isDirty() && !confirm('You have unsaved changes. Leave anyway?')) { renderPicker(); return; }
+  state.current = null; state.model = null; state.doc = null; state.prof = null;
+  hideAllViews(); show($('profileView')); show($('modeSeg'), false);
+  setStatus($('pfStatus'), '');
+  flashSaveState(handle ? 'Loading…' : '', 'clean');
+  try {
+    const f = handle ? await getFile('by/' + handle + '/profile.md') : null;
+    if (handle && !f) throw new ApiError(404, 'No profile at /by/' + handle + '/');
+    const p = f ? parseProfileMd(f.text) : { name: '', location: '', photo: '', banner: '', links: [], bio: [] };
+    state.prof = { handle: handle || '', sha: f ? f.sha : null, isNew: !handle, banner: p.banner, baseline: '' };
+    $('pfHeading').textContent = handle ? 'Profile' : 'New profile';
+    show($('pfHandleRow'), !handle); show($('pfCreateRow'), !handle);
+    $('pfHandle').value = ''; $('pfAddr').textContent = handle || '…';
+    $('pfName').value = p.name; $('pfLocation').value = p.location; $('pfPhoto').value = p.photo;
+    $('pfBio').value = p.bio.join('\n\n');
+    $('pfLinks').innerHTML = p.links.map(profLinkRow).join('');
+    state.prof.baseline = serializeProfile(profFromForm());
+    renderProfileGuides();
+    $('viewLive').href = SITE + (handle ? '/by/' + handle + '/' : '/');
+    history.replaceState(null, '', '#profile=' + (handle || 'new'));
+    $('saveState').dataset.msg = '';
+    renderPicker(); setSaveState();
+    (handle ? $('pfName') : $('pfHandle')).focus();
+  } catch (e) { state.prof = null; flashSaveState(e.message, 'err'); }
+}
+
+$('pfAddLink').addEventListener('click', () => {
+  $('pfLinks').insertAdjacentHTML('beforeend', profLinkRow(''));
+  $('pfLinks').lastElementChild.querySelector('input').focus();
+  setSaveState();
+});
+$('pfLinks').addEventListener('click', e => {
+  const x = e.target.closest('[data-pf-del]');
+  if (x) { x.closest('.linkrow').remove(); setSaveState(); }
+});
+$('pfLinks').addEventListener('input', e => {
+  const v = e.target.value.trim();
+  const lbl = e.target.parentNode.querySelector('.lbl'); if (lbl) lbl.textContent = v ? linkLabel(v) : 'New';
+});
+$('profileView').addEventListener('input', e => {
+  if (e.target.id === 'pfHandle') {
+    const v = e.target.value.toLowerCase().replace(/[^a-z0-9-]+/g, '-').replace(/^-+/, '');
+    if (v !== e.target.value) e.target.value = v;
+    $('pfAddr').textContent = v || '…';
+  }
+  setStatus($('pfStatus'), '');
+  if (state.prof && !state.prof.isNew) { $('saveState').dataset.msg = ''; setSaveState(); }
+});
+$('pfGuides').addEventListener('click', e => {
+  const a = e.target.closest('[data-pf-guide]');
+  if (a) { e.preventDefault(); openGuide(a.dataset.pfGuide); }
+});
+$('pfCancel').addEventListener('click', () => showHome({ force: true }));
+
+async function saveProfile() {
+  const pr = state.prof;
+  if (!pr || pr.isNew || !isDirty()) return;
+  const p = profFromForm(), bad = profileProblem(p);
+  if (bad) { flashSaveState(bad, 'err'); return; }
+  const text = serializeProfile(p);
+  $('saveBtn').disabled = true; flashSaveState('Saving…', 'clean');
+  try {
+    pr.sha = await putFile('by/' + pr.handle + '/profile.md', text, pr.sha, 'Update ' + pr.handle + ' profile (editor)');
+    pr.baseline = text;
+    // Keep the page's <title> and link preview in step with the name
+    const page = await getFile('by/' + pr.handle + '/index.html'), want = profilePageHtml(pr.handle, oneLine(p.name));
+    if (!page || page.text !== want) await putFile('by/' + pr.handle + '/index.html', want, page ? page.sha : null, 'Sync ' + pr.handle + ' profile page (editor)');
+    const entry = state.profiles.find(x => x.handle === pr.handle); if (entry) entry.name = oneLine(p.name);
+    renderPicker();
+    flashSaveState('Saved · live in about a minute', 'clean');
+  } catch (e) {
+    flashSaveState(e.status === 409 ? 'Not saved — changed on GitHub. Reload first.' : 'Not saved: ' + e.message, 'err');
+  }
+  setSaveState();
+}
+
+$('pfCreate').addEventListener('click', async () => {
+  const handle = $('pfHandle').value.replace(/-+$/, '');
+  const err = m => setStatus($('pfStatus'), m, 'err');
+  if (!HANDLE_RE.test(handle)) return err('Enter a web address using lowercase letters, numbers and dashes.');
+  if (state.profiles.some(x => x.handle === handle)) return err('/by/' + handle + '/ is taken. Pick another address.');
+  const p = profFromForm(), bad = profileProblem(p);
+  if (bad) return err(bad);
+  $('pfCreate').disabled = true;
+  try {
+    setStatus($('pfStatus'), 'Checking the address is free…', 'busy');
+    if (await getFile('by/' + handle + '/profile.md') || await getFile('by/' + handle + '/index.html')) throw new ApiError(0, 'Files already exist at /by/' + handle + '/. Pick another address.');
+    setStatus($('pfStatus'), 'Creating the profile…', 'busy');
+    await putFile('by/' + handle + '/profile.md', serializeProfile(p), null, 'Create ' + handle + ' profile (editor)');
+    await putFile('by/' + handle + '/index.html', profilePageHtml(handle, oneLine(p.name)), null, 'Create ' + handle + ' profile page (editor)');
+    state.profiles.push({ handle, name: oneLine(p.name) });
+    state.profiles.sort((a, b) => a.name.localeCompare(b.name));
+    await openProfile(handle, { force: true });
+    flashSaveState('Profile created · live at guiides.com/by/' + handle + '/ in about a minute', 'clean');
+  } catch (e) { err('Stopped: ' + e.message); }
+  $('pfCreate').disabled = false;
+});
+
+// ============================================================
 // NEW GUIDE
 // ============================================================
 function startNewGuide() {
   if (isDirty() && !confirm('You have unsaved changes. Leave this guide? (Your draft stays saved on this device.)')) { renderPicker(); return; }
-  state.current = null; state.model = null; state.doc = null;
+  state.current = null; state.model = null; state.doc = null; state.prof = null;
   hideAllViews(); show($('newGuideView'));
   setStatus($('ngStatus'), ''); setSaveState();
   $('ngSlug').focus();
