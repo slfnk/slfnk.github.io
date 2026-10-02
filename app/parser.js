@@ -22,7 +22,10 @@ function parsePlacesMd(text) {
         else if (key === 'Subtitle') guide.deck = val;
         else if (key === 'Author') guide.byline = val;
         else if (key === 'Author Link') guide.authorLink = val;
+        else if (key === 'Profile') { if (/^[a-z0-9-]+$/.test(val)) guide.profile = val; }
+        else if (key === 'Banner') guide.banner = val.toLowerCase();
         else if (key === 'Categories') guide.categoriesOff = /^(off|no|none|false)$/i.test(val);
+        else if (key === 'Category Intros') guide.introsOff = /^(off|no|none|false)$/i.test(val);
         else if (key === 'Pin Color') guide.pinColor = val;
         else if (key === 'Locked') guide.locked = val;
         else if (key === 'Updated') guide.updated = val;
@@ -68,7 +71,8 @@ function parsePlacesMd(text) {
       sectionBreaks.push({
         beforeIndex: places.length,
         title: title,
-        content: contentLines.join(' ')
+        content: contentLines.join(' '),
+        category: matchCategory(title, Object.keys(categories))
       });
       return;
     }
@@ -119,6 +123,57 @@ function parsePlacesMd(text) {
   return { guide, categories, places, sectionBreaks };
 }
 
+// A text break titled like a category ("## Landmarks" → Landmark) is that category's write-up.
+// Shared by the viewer and the editor so both agree which category a write-up belongs to.
+function matchCategory(title, names) {
+  const norm = s => String(s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]+/g, ' ').trim();
+  const stem = s => s.replace(/(es|s)$/, '');
+  const t = norm(title);
+  if (!t) return null;
+  return names.find(n => norm(n) === t) || names.find(n => stem(norm(n)) === stem(t)) || null;
+}
+
+// Banner files live at /banners/banner_1.webp … banner_20.webp.
+// A guide's "Banner:" line is a number, "random" (the default) or "none".
+const BANNER_COUNT = 20;
+function bannerChoice(v) {
+  v = String(v || '').trim().toLowerCase();
+  if (v === 'none' || v === 'off') return 'none';
+  const n = parseInt(v, 10);
+  return n >= 1 && n <= BANNER_COUNT ? n : 'random';
+}
+
+// ============================================================
+// PROFILE PAGES — /by/<handle>/profile.md
+//   Name: SL FNK
+//   Location: San Miguel de Allende
+//   Photo: https://…
+//   Link: https://…        (repeat for each link)
+//   ## Bio
+//   Paragraphs, blank line between them.
+// ============================================================
+function parseProfileMd(text) {
+  const out = { name: '', location: '', photo: '', banner: '', links: [], bio: [] };
+  const lines = String(text || '').replace(/\r\n?/g, '\n').split('\n');
+  let inBio = false;
+  const bio = [];
+  lines.forEach(line => {
+    if (/^##\s*Bio\s*$/i.test(line.trim())) { inBio = true; return; }
+    if (inBio) { bio.push(line); return; }
+    const m = line.match(/^(\w[\w\s]*?):\s*(.*)$/);
+    if (!m) return;
+    const k = m[1].trim().toLowerCase(), v = m[2].trim();
+    if (k === 'name') out.name = v;
+    else if (k === 'location') out.location = v;
+    else if (k === 'photo') out.photo = v;
+    else if (k === 'banner') out.banner = v;
+    else if (k === 'link' && /^https?:\/\//i.test(v)) out.links.push(v);
+  });
+  out.bio = bio.join('\n').split(/\n\s*\n/).map(p => p.replace(/\s*\n\s*/g, ' ').trim()).filter(Boolean);
+  return out;
+}
+
 // ============================================================
 // PASSWORD PROTECTION
 // A protected places.md keeps only its title area in plain text. Everything
@@ -126,7 +181,7 @@ function parsePlacesMd(text) {
 //   Locked: v1.<salt>.<iv>.<ciphertext>
 // The site is public, so the encryption is what actually keeps it private.
 // ============================================================
-const LOCK_PUBLIC_KEYS = ['Guide', 'Title', 'Subtitle', 'Author', 'Author Link', 'Updated', 'Center'];
+const LOCK_PUBLIC_KEYS = ['Guide', 'Title', 'Subtitle', 'Author', 'Author Link', 'Profile', 'Banner', 'Updated', 'Center'];
 const LOCK_ITERATIONS = 200000;
 
 function lockB64(bytes) {

@@ -1,0 +1,111 @@
+/* GUIIDES profile page — /by/<handle>/ */
+:root {
+  --bg: #FAF9F6;
+  --text: #1A1A1A;
+  --text-2: #5C5C5C;
+  --text-3: #8A8A8A;
+  --border: #E0DDD8;
+  --hover: #F3F1ED;
+  --accent: #038f9e;
+  --brand: #FF8F8F;
+  --map-bg: #EDEAE4;
+  --serif: 'Source Serif 4', Georgia, serif;
+  --sans: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+html.dark {
+  --bg: #1A1A1A;
+  --text: #E8E4DE;
+  --text-2: #A8A8A8;
+  --text-3: #6B6B6B;
+  --border: #333;
+  --hover: #232323;
+  --map-bg: #262626;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { background: var(--bg); color: var(--text); font-family: var(--sans); line-height: 1.6; -webkit-font-smoothing: antialiased; }
+a { color: inherit; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+
+.pf-wrap { max-width: 700px; margin: 0 auto; padding: 0.5rem 2.5rem 5rem; }
+.pf-top { display: flex; align-items: center; justify-content: space-between; padding: 0.5rem 0; }
+.pf-brand { font-size: 0.62rem; font-weight: 500; letter-spacing: 0.04em; color: var(--brand); text-decoration: none; display: inline-block; transition: transform 0.15s; }
+.pf-brand strong { font-weight: 700; letter-spacing: 0.08em; }
+.pf-brand:hover { transform: scale(1.06); }
+
+/* ---- who ---- */
+.pf-head { text-align: center; padding: 3.25rem 0 0; }
+.pf-photo { width: 92px; height: 92px; border-radius: 50%; object-fit: cover; display: block; margin: 0 auto 1.25rem; background: var(--border); }
+.pf-name {
+  font-family: var(--serif);
+  font-weight: 700;
+  font-size: clamp(2.6rem, 9vw, 4.25rem);
+  line-height: 1;
+  letter-spacing: -0.015em;
+  overflow-wrap: anywhere;
+}
+.pf-where { font-family: var(--serif); font-style: italic; font-size: 1.1rem; color: var(--text-2); margin-top: 0.85rem; }
+.pf-banner {
+  width: min(70%, 300px);
+  aspect-ratio: 1600 / 119;
+  margin: 1.75rem auto 0;
+  background-size: cover;
+  background-position: center;
+  -webkit-clip-path: polygon(0 50%, 14.6% 0, 84.6% 0, 100% 50%, 84.6% 100%, 14.6% 100%);
+  clip-path: polygon(0 50%, 14.6% 0, 84.6% 0, 100% 50%, 84.6% 100%, 14.6% 100%);
+  opacity: 0;
+  transition: opacity 0.4s ease-out;
+}
+.pf-banner.loaded { opacity: 1; }
+.pf-banner.failed { display: none; }
+
+.pf-bio { margin-top: 2.25rem; }
+.pf-bio p { font-family: var(--serif); font-size: 1.06rem; line-height: 1.8; color: var(--text-2); margin-bottom: 1rem; }
+.pf-bio p:last-child { margin-bottom: 0; }
+.pf-bio a { color: var(--text); text-decoration: underline; text-decoration-color: var(--accent); text-decoration-thickness: 1.5px; text-underline-offset: 3px; }
+
+.pf-links { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 1.5rem; }
+.pf-links a {
+  display: inline-flex; align-items: center; gap: 0.35rem;
+  font-size: 0.76rem; font-weight: 600; text-decoration: none; color: var(--text-2);
+  padding: 0.38rem 0.7rem; border: 1px solid var(--border); border-radius: 3px;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+.pf-links a:hover { background: var(--text); color: var(--bg); border-color: var(--text); }
+.pf-links svg { width: 13px; height: 13px; }
+
+/* ---- guides ---- */
+.pf-guides { margin-top: 3.5rem; }
+.pf-guides h2 { font-family: var(--serif); font-size: 1.35rem; font-weight: 700; padding-bottom: 0.7rem; border-bottom: 1px solid var(--border); }
+.pf-list { list-style: none; }
+.pf-row { border-bottom: 1px solid var(--border); }
+.pf-row a {
+  display: grid; grid-template-columns: 168px minmax(0, 1fr); gap: 1.5rem; align-items: center;
+  padding: 1.35rem 0.5rem; margin: 0 -0.5rem; text-decoration: none; transition: background 0.2s;
+}
+.pf-row a:hover { background: var(--hover); }
+.pf-map { position: relative; width: 100%; aspect-ratio: 4 / 3; border-radius: 4px; overflow: hidden; background: var(--map-bg); }
+.pf-map .m { position: absolute; inset: 0; pointer-events: none; }
+.pf-map.locked .m { filter: blur(5px) saturate(0.6); transform: scale(1.1); }
+.pf-map .lock { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; z-index: 500; }
+.pf-map .lock svg { width: 22px; height: 22px; fill: none; stroke: var(--text); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; background: var(--bg); border-radius: 50%; padding: 6px; box-sizing: content-box; }
+.pf-meta { font-size: 0.66rem; font-weight: 600; letter-spacing: 0.13em; text-transform: uppercase; color: var(--accent); margin-bottom: 0.35rem; }
+.pf-meta .dot { display: inline-block; font-size: 0.55em; vertical-align: 0.3em; margin: 0 0.75em; letter-spacing: 0; }
+.pf-title { font-family: var(--serif); font-size: 1.32rem; font-weight: 600; line-height: 1.25; color: var(--text); }
+.pf-row a:hover .pf-title { text-decoration: underline; text-decoration-color: var(--accent); text-decoration-thickness: 1.5px; text-underline-offset: 4px; }
+.pf-deck { font-family: var(--serif); font-style: italic; font-size: 0.98rem; line-height: 1.5; color: var(--text-2); margin-top: 0.3rem; }
+.pf-empty, .pf-msg { font-family: var(--serif); font-style: italic; color: var(--text-2); padding: 1.25rem 0; }
+.pf-msg { text-align: center; padding-top: 4rem; }
+.pf-msg a { color: var(--accent); }
+
+.leaflet-container { background: var(--map-bg); }
+
+@media (max-width: 640px) {
+  .pf-wrap { padding: 0.4rem 1.25rem 4rem; }
+  .pf-head { padding-top: 2.25rem; }
+  .pf-row a { grid-template-columns: 104px minmax(0, 1fr); gap: 1rem; padding: 1.1rem 0.5rem; }
+  .pf-title { font-size: 1.12rem; }
+  .pf-deck { font-size: 0.9rem; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .pf-banner, .pf-row a, .pf-brand { transition: none; }
+}

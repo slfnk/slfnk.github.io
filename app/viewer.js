@@ -47,7 +47,6 @@ document.body.insertAdjacentHTML('afterbegin', `
     <div class="filter-bar" id="filterBar">
       <button class="filter-btn active" data-filter="all">All</button>
       <button class="filter-btn" data-filter="__saved" id="filterSaved" style="display:none"><svg viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" style="width:10px;height:10px;vertical-align:-1px;margin-right:0.15rem"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>Saved</button>
-      <span class="filter-count" id="filterCount"></span>
     </div>
 
     <div id="entries"></div>
@@ -424,7 +423,7 @@ try {
 // BANNER DIVIDER
 // Files live at /banners/banner_1.webp … banner_N.webp
 // ============================================
-const BANNER_COUNT = 20;
+// BANNER_COUNT and bannerChoice() live in /app/parser.js
 const BANNER_DAILY = false; // false = new banner every refresh (testing), true = one banner per day
 
 function pickBanner() {
@@ -442,10 +441,12 @@ function pickBanner() {
   return n;
 }
 
-function loadBanner() {
+function loadBanner(choice) {
   const el = document.getElementById('guideBanner');
   if (!el) return;
-  const src = '/banners/banner_' + pickBanner() + '.webp';
+  const c = bannerChoice(choice);
+  if (c === 'none') { el.classList.add('failed'); return; }
+  const src = '/banners/banner_' + (c === 'random' ? pickBanner() : c) + '.webp';
   const img = new Image();
   img.onload = () => { el.style.backgroundImage = 'url(' + src + ')'; el.classList.add('loaded'); };
   img.onerror = () => el.classList.add('failed'); // missing file: hide instead of leaving a blank gap
@@ -504,7 +505,7 @@ function initLocked(data) {
   });
   const accent = getComputedStyle(document.documentElement).getPropertyValue('--progress').trim() || '#038f9e';
   init({
-    guide: Object.assign({}, g, { intro: [bars(40), bars(30)], center: { lat: c.lat, lng: c.lng, zoom: c.zoom || 15 } }),
+    guide: Object.assign({}, g, { _locked: true, intro: [bars(40), bars(30)], center: { lat: c.lat, lng: c.lng, zoom: c.zoom || 15 } }),
     categories: { Spots: { color: accent } }, places, sectionBreaks: []
   });
   document.body.classList.add('is-locked');
@@ -564,12 +565,13 @@ Object.entries(data.categories).forEach(([k, v]) => {
   CATEGORIES[k] = { color: v.color, label: k };
 });
 function catColor(cat) { return CATEGORIES[cat]?.color || '#888'; }
-// "Categories: off" guides: no tags or category filters, and every pin uses the guide's pin color
+// "Categories: off" guides: no tags or category filters; pins use their own color or the guide's pin color
 const CATS_OFF = !!guide.categoriesOff;
 const DEFAULT_PIN = /^#[0-9a-fA-F]{3,8}$/.test(guide.pinColor || '') ? guide.pinColor : '#038f9e';
 function spotColor(p) {
-  // No categories = one pin color for the whole guide (categories stay in the file for switching back)
-  if (CATS_OFF) return DEFAULT_PIN;
+  // No categories: each spot can pick its own pin color ("- Color:"), else the guide's Pin Color.
+  // With categories on, the category color always wins, so a group's pins can't drift.
+  if (CATS_OFF) return p.color || DEFAULT_PIN;
   return catColor(p.category);
 }
 const places = data.places;
@@ -580,6 +582,7 @@ const sectionBreaks = data.sectionBreaks || [];
 const sectionMap = {};
 sectionBreaks.forEach(sb => {
   if (!sb.title && !sb.content) return;
+  if (guide.introsOff) return; // "Category Intros: off" keeps the write-ups in the file but off the page
   (sectionMap[sb.beforeIndex] = sectionMap[sb.beforeIndex] || []).push(sb);
 });
 function renderBreak(sb, cat) {
@@ -599,6 +602,7 @@ function renderBreak(sb, cat) {
 // Byline, linked when the guide has an "Author Link:" (website, Instagram, X…)
 function bylineHtml(g) {
   const name = g.byline || '';
+  if (g.profile) return '<a class="byline-link" href="/by/' + g.profile + '/">' + name + '</a>';
   const link = (g.authorLink || '').trim();
   if (!/^https?:\/\/[^\s"'<>]+$/i.test(link)) return name;
   return '<a class="byline-link" href="' + link + '" target="_blank" rel="noopener">' + name + '</a>';
@@ -606,15 +610,18 @@ function bylineHtml(g) {
 
 const introSection = document.getElementById('introSection');
 
+// "Updated September 2026 • 97 spots" (no count on a locked guide's stand-in)
+const updatedBits = [guide.updated ? 'Updated ' + guide.updated : '',
+  guide._locked ? '' : places.length + ' spot' + (places.length === 1 ? '' : 's')].filter(Boolean);
 introSection.innerHTML =
-  '<p class="updated-inline">' + 'Updated ' + guide.updated + '</p>' +
+  '<p class="updated-inline">' + updatedBits.join('<span class="meta-dot" aria-hidden="true">•</span>') + '</p>' +
   '<h1>' + guide.title + '</h1>' +
   '<p class="deck">' + guide.deck + '</p>' +
   '<p class="byline">By <strong>' + bylineHtml(guide) + '</strong></p>' +
   '<div class="guide-banner" id="guideBanner" role="presentation"></div>';
 
 document.title = guide.title;
-loadBanner();
+loadBanner(guide.banner);
 
 // Links in write-ups: [text](https://…) or a bare https:// address; always open in a new tab
 function richText(s) {
@@ -839,7 +846,7 @@ places.forEach((p, i) => {
   const col = spotColor(p);
 
   // Insert section break if one exists before this index
-  (sectionMap[i] || []).forEach(sb => entriesEl.appendChild(renderBreak(sb, p.category)));
+  (sectionMap[i] || []).forEach(sb => entriesEl.appendChild(renderBreak(sb, sb.category || p.category)));
 
   // Desktop entry
   const entry = document.createElement('div');
@@ -1099,8 +1106,6 @@ carousel.addEventListener('scroll', () => {
 // ============================================
 // FILTER
 // ============================================
-const filterCount = document.getElementById('filterCount');
-
 function updateFilter() {
   let visible = 0;
 
@@ -1125,8 +1130,6 @@ function updateFilter() {
 
     if (show) visible++;
   });
-
-  filterCount.textContent = visible + ' spot' + (visible !== 1 ? 's' : '');
 
   // Filter section breaks to only show the matching category's blurb
   document.querySelectorAll('.section-break').forEach(sb => {
