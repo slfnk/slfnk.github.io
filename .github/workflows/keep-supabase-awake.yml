@@ -1,0 +1,15 @@
+# Supabase pauses free projects after a quiet week. This asks the database
+# one small question every day so invited authors' guides stay online.
+name: Keep Supabase awake
+on:
+  schedule:
+    - cron: '17 15 * * *'   # daily, 15:17 UTC
+  workflow_dispatch:         # lets you run it by hand from the Actions tab
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Read one guide's address
+        run: >
+          curl -fsS "https://ajomufckopuxwzphlgja.supabase.co/rest/v1/guides?select=slug&limit=1"
+          -H "apikey: sb_publishable_SOk2yTTRMCSKqrWj4WPZNQ_SHG1iCSu"
