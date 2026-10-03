@@ -108,6 +108,8 @@ function parsePlacesMd(text) {
         else if (key === 'instagram') place.instagram = val;
         else if (key === 'facebook') place.facebook = val;
         else if (key === 'color' && /^#[0-9a-fA-F]{3,8}$/.test(val)) place.color = val;
+        else if (key === 'type') { const k = shapeKind(val); if (k) place.kind = k; }
+        else if (key === 'shape') place.shape = parseShape(val);
         else if ((key === 'link' || key === 'website') && /^https?:\/\//i.test(val)) place.links.push(val);
         return;
       }
@@ -117,6 +119,12 @@ function parsePlacesMd(text) {
 
     place.description = descLines.join('\n').split(/\n\n+/)
       .map(p => p.trim()).filter(Boolean).join(' ');
+    if (place.kind) {
+      // Areas and routes sit outside the category system; their pin goes where the shape says
+      delete place.category; delete place.price;
+      place.shape = place.shape || [];
+      if (!place.lat) { const a = shapeAnchor(place.kind, place.shape); if (a) { place.lat = a[0]; place.lng = a[1]; } }
+    }
     if (place.name && place.lat) places.push(place);
   });
 
@@ -132,6 +140,70 @@ function matchCategory(title, names) {
   const t = norm(title);
   if (!t) return null;
   return names.find(n => norm(n) === t) || names.find(n => stem(norm(n)) === stem(t)) || null;
+}
+
+// ============================================================
+// AREAS AND ROUTES — entries with "- Type: Area" or "- Type: Route" and a
+// "- Shape: lat, lng; lat, lng; …" line. Their Location is the pin: an area's
+// middle, a route's start.
+// ============================================================
+function shapeKind(v) {
+  v = String(v || '').trim().toLowerCase();
+  if (/^(area|region|neighbou?rhood|zone)$/.test(v)) return 'area';
+  if (/^(route|path|walk|hike|trail)$/.test(v)) return 'route';
+  return '';
+}
+function parseShape(v) {
+  return String(v || '').split(';').map(s => s.split(',').map(x => parseFloat(x)))
+    .filter(c => c.length === 2 && c[0] && !isNaN(c[0]) && !isNaN(c[1]));
+}
+function formatShape(pts) { return pts.map(p => (+p[0]).toFixed(5) + ', ' + (+p[1]).toFixed(5)).join('; '); }
+function shapeDrawable(kind, pts) { return (pts || []).length >= (kind === 'area' ? 3 : 2); }
+function shapeAnchor(kind, pts) {
+  if (!pts || !pts.length) return null;
+  if (kind === 'route' || pts.length < 3) return pts[0];
+  // Area: center of mass of the polygon (falls back to the average of its corners)
+  let a = 0, x = 0, y = 0;
+  for (let i = 0; i < pts.length; i++) {
+    const [y0, x0] = pts[i], [y1, x1] = pts[(i + 1) % pts.length];
+    const f = x0 * y1 - x1 * y0;
+    a += f; x += (x0 + x1) * f; y += (y0 + y1) * f;
+  }
+  if (Math.abs(a) < 1e-12) return [pts.reduce((s, p) => s + p[0], 0) / pts.length, pts.reduce((s, p) => s + p[1], 0) / pts.length];
+  return [y / (3 * a), x / (3 * a)];
+}
+function routeMeters(pts) {
+  const R = 6371000, rad = d => d * Math.PI / 180;
+  let m = 0;
+  for (let i = 1; i < (pts || []).length; i++) {
+    const [la1, lo1] = pts[i - 1], [la2, lo2] = pts[i];
+    const h = Math.sin(rad(la2 - la1) / 2) ** 2 + Math.cos(rad(la1)) * Math.cos(rad(la2)) * Math.sin(rad(lo2 - lo1) / 2) ** 2;
+    m += 2 * R * Math.asin(Math.sqrt(h));
+  }
+  return m;
+}
+function formatDistance(m) {
+  const km = m / 1000, mi = m / 1609.344;
+  if (km < 1) return Math.round(m / 10) * 10 + ' m / ' + mi.toFixed(1) + ' mi';
+  return (km < 10 ? km.toFixed(1) : Math.round(km)) + ' km / ' + (mi < 10 ? mi.toFixed(1) : Math.round(mi)) + ' mi';
+}
+// "AREA" or "ROUTE · 2.4 km / 1.5 mi" — the tag a guide shows for one
+function shapeLabel(p) {
+  if (p.kind === 'area') return 'Area';
+  return 'Route' + (shapeDrawable('route', p.shape) ? ' · ' + formatDistance(routeMeters(p.shape)) : '');
+}
+// A tiny drawing of the shape, for list thumbnails
+function shapeSvg(kind, pts, color, w, h) {
+  if (!shapeDrawable(kind, pts)) return '';
+  const lat0 = pts.reduce((s, p) => s + p[0], 0) / pts.length, k = Math.cos(lat0 * Math.PI / 180);
+  const xs = pts.map(p => p[1] * k), ys = pts.map(p => -p[0]);
+  const minX = Math.min(...xs), maxX = Math.max(...xs), minY = Math.min(...ys), maxY = Math.max(...ys);
+  const pad = 8, sc = Math.min((w - 2 * pad) / ((maxX - minX) || 1e-9), (h - 2 * pad) / ((maxY - minY) || 1e-9));
+  const ox = (w - (maxX - minX) * sc) / 2, oy = (h - (maxY - minY) * sc) / 2;
+  const P = xs.map((x, i) => [(ox + (x - minX) * sc).toFixed(1), (oy + (ys[i] - minY) * sc).toFixed(1)]);
+  const d = 'M' + P.map(q => q.join(' ')).join(' L') + (kind === 'area' ? ' Z' : '');
+  return '<svg viewBox="0 0 ' + w + ' ' + h + '" aria-hidden="true"><path d="' + d + '" fill="' + (kind === 'area' ? color : 'none') + '" fill-opacity="0.18" stroke="' + color + '" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"' + (kind === 'area' ? ' stroke-dasharray="5 4"' : '') + '/>' +
+    (kind === 'route' ? '<circle cx="' + P[0][0] + '" cy="' + P[0][1] + '" r="3.5" fill="' + color + '"/><circle cx="' + P[P.length - 1][0] + '" cy="' + P[P.length - 1][1] + '" r="3.5" fill="#fff" stroke="' + color + '" stroke-width="2"/>' : '') + '</svg>';
 }
 
 // Banner files live at /banners/banner_1.webp … banner_20.webp.

@@ -8,7 +8,7 @@
 (function () {
   let uid = 0;
   const newId = () => 'b' + (++uid);
-  const FIELD_ORDER = ['category', 'price', 'color', 'location', 'image', 'google maps', 'instagram', 'facebook', 'link', 'website'];
+  const FIELD_ORDER = ['type', 'category', 'price', 'color', 'location', 'shape', 'image', 'google maps', 'instagram', 'facebook', 'link', 'website'];
   const fieldRank = k => { const r = FIELD_ORDER.indexOf(String(k).trim().toLowerCase()); return r < 0 ? 99 : r; };
 
   // ---------- fields (the "- Key: value" lines on a spot) ----------

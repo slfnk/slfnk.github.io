@@ -118,8 +118,10 @@
     get('/' + g.slug + '/places.md').then(text => {
       const data = parsePlacesMd(text), gd = data.guide;
       const locked = !!gd.locked;
-      const n = data.places.length;
-      const meta = [locked ? 'Password protected' : n + (n === 1 ? ' spot' : ' spots'), gd.updated ? 'Updated ' + gd.updated : ''].filter(Boolean);
+      const nk = k => data.places.filter(p => (p.kind || 'spot') === k).length;
+      const pl = (c, w) => c ? c + ' ' + w + (c === 1 ? '' : 's') : '';
+      const counts = locked ? ['Password protected'] : [pl(nk('spot'), 'spot'), pl(nk('area'), 'area'), pl(nk('route'), 'route')];
+      const meta = counts.concat([gd.updated ? 'Updated ' + gd.updated : '']).filter(Boolean);
       document.getElementById('pfmeta-' + g.slug).innerHTML = meta.map(esc).join('<span class="dot" aria-hidden="true">•</span>');
       document.getElementById('pfdeck-' + g.slug).textContent = gd.deck || '';
       drawMap(g.slug, data, locked);
@@ -134,7 +136,7 @@
     const box = document.getElementById('pfm-' + slug);
     const gd = data.guide;
     const offColor = /^#[0-9a-fA-F]{3,8}$/.test(gd.pinColor || '') ? gd.pinColor : '#038f9e';
-    const color = p => gd.categoriesOff ? (p.color || offColor) : ((data.categories[p.category] || {}).color || '#888888');
+    const color = p => gd.categoriesOff || p.kind ? (p.color || offColor) : ((data.categories[p.category] || {}).color || '#888888');
     const m = L.map(box.querySelector('.m'), {
       zoomControl: false, attributionControl: false, dragging: false, scrollWheelZoom: false, doubleClickZoom: false,
       boxZoom: false, keyboard: false, touchZoom: false, tap: false, zoomSnap: 0.25, fadeAnimation: false

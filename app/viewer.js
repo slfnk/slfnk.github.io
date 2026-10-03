@@ -571,7 +571,7 @@ const DEFAULT_PIN = /^#[0-9a-fA-F]{3,8}$/.test(guide.pinColor || '') ? guide.pin
 function spotColor(p) {
   // No categories: each spot can pick its own pin color ("- Color:"), else the guide's Pin Color.
   // With categories on, the category color always wins, so a group's pins can't drift.
-  if (CATS_OFF) return p.color || DEFAULT_PIN;
+  if (CATS_OFF || p.kind) return p.color || DEFAULT_PIN; // areas/routes always use their own color
   return catColor(p.category);
 }
 const places = data.places;
@@ -611,8 +611,10 @@ function bylineHtml(g) {
 const introSection = document.getElementById('introSection');
 
 // "Updated September 2026 • 97 spots" (no count on a locked guide's stand-in)
-const updatedBits = [guide.updated ? 'Updated ' + guide.updated : '',
-  guide._locked ? '' : places.length + ' spot' + (places.length === 1 ? '' : 's')].filter(Boolean);
+const nOf = k => places.filter(p => (p.kind || 'spot') === k).length;
+const plural = (n, w) => n ? n + ' ' + w + (n === 1 ? '' : 's') : '';
+const updatedBits = [guide.updated ? 'Updated ' + guide.updated : ''].concat(guide._locked ? [] :
+  [plural(nOf('spot'), 'spot') || (places.length ? '' : '0 spots'), plural(nOf('area'), 'area'), plural(nOf('route'), 'route')]).filter(Boolean);
 introSection.innerHTML =
   '<p class="updated-inline">' + updatedBits.join('<span class="meta-dot" aria-hidden="true">•</span>') + '</p>' +
   '<h1>' + guide.title + '</h1>' +
@@ -854,18 +856,22 @@ places.forEach((p, i) => {
   entry.id = 'entry-' + p.slug;
   entry.dataset.index = i;
   entry.dataset.cat = p.category;
+  if (p.kind) entry.dataset.kind = p.kind;
 
   const price = p.price ? '<span class="entry-price">[' + p.price + ']</span>' : '';
   const thumbHtml = p.image
     ? '<div class="entry-thumb-wrap"><img class="entry-thumb" src="' + p.image + '" alt="' + p.name + '" loading="lazy"/></div>'
     : (p.showThumb !== false
-      ? '<div class="entry-thumb-wrap"><div class="entry-thumb-placeholder"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg></div></div>'
-      : '');
+      ? (p.kind && shapeDrawable(p.kind, p.shape)
+        ? '<div class="entry-thumb-wrap"><div class="entry-thumb-placeholder entry-thumb-shape">' + shapeSvg(p.kind, p.shape, col, 140, 70) + '</div></div>'
+        : '<div class="entry-thumb-wrap"><div class="entry-thumb-placeholder"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg></div></div>'
+      ) : '');
 
   const isHearted = savedSlugs.has(p.slug);
   entry.innerHTML =
     '<button class="entry-heart' + (isHearted ? ' hearted' : '') + '" data-slug="' + p.slug + '" onclick="toggleHeart(this)">' + (isHearted ? I.bookmarkFill : I.bookmark) + '</button>' +
-    '<div class="entry-head">' + (CATS_OFF || !p.category ? '' : '<span class="entry-tag" style="background:' + col + ';--tag-color:' + col + '">' + p.category + '</span>') + price + '</div>' +
+    '<div class="entry-head">' + (p.kind ? '<span class="entry-tag kind-tag" style="background:' + col + ';--tag-color:' + col + '">' + shapeLabel(p) + '</span>' :
+      (CATS_OFF || !p.category ? '' : '<span class="entry-tag" style="background:' + col + ';--tag-color:' + col + '">' + p.category + '</span>')) + price + '</div>' +
     '<div class="entry-title-row"><h2>' + p.name + '</h2>' +
     '<button class="share-link" onclick="copyShareLink(\'' + p.slug + '\',this)" title="Copy link">' +
     I.share + '<span class="copied-tip">Copied!</span></button></div>' +
@@ -895,7 +901,7 @@ places.forEach((p, i) => {
     '<button class="entry-heart card-heart' + (isHearted ? ' hearted' : '') + '" data-slug="' + p.slug + '" onclick="toggleHeart(this)">' + (isHearted ? I.bookmarkFill : I.bookmark) + '</button>' +
     '<div class="card-body">' +
     thumb +
-    (function () { const bits = [CATS_OFF ? '' : (p.category || ''), p.price || ''].filter(Boolean); return bits.length ? '<div class="card-cat">' + bits.join(' &middot; ') + '</div>' : ''; })() +
+    (function () { const bits = p.kind ? [shapeLabel(p)] : [CATS_OFF ? '' : (p.category || ''), p.price || ''].filter(Boolean); return bits.length ? '<div class="card-cat">' + bits.join(' &middot; ') + '</div>' : ''; })() +
     '<h3>' + p.name + '</h3>' +
     '<p class="card-desc">' + richText(p.description) + '</p>' +
     '<div class="card-action-row"><button class="card-expand-btn">Read more ▾</button>' +
@@ -981,7 +987,7 @@ places.forEach((p, i) => {
   const icon = L.divIcon({
     className: '',
     html: '<div class="pin-wrap">' +
-      '<div class="pin" id="pin-' + i + '" style="background:' + col + '" data-index="' + i + '"></div>' +
+      '<div class="pin' + (p.kind ? ' pin-' + p.kind : '') + '" id="pin-' + i + '" style="background:' + col + ';--pin-c:' + col + '" data-index="' + i + '"></div>' +
       '<div class="pin-label">' + p.name + '</div>' +
       '</div>',
     iconSize: [16, 16],
@@ -991,6 +997,26 @@ places.forEach((p, i) => {
   marker.on('click', () => setActive(i, 'map'));
   markerRefs.push(marker);
 });
+
+// Areas and routes stay off the map until their entry is the active one
+const shapeLayer = L.layerGroup().addTo(map);
+let shapeShown = -1;
+function showShape(index) {
+  if (index === shapeShown) return;
+  shapeShown = index;
+  shapeLayer.clearLayers();
+  const p = places[index];
+  if (!p || !p.kind || !shapeDrawable(p.kind, p.shape)) return;
+  const col = spotColor(p), dark = document.body.classList.contains('dark');
+  if (p.kind === 'area') {
+    L.polygon(p.shape, { color: col, weight: 2.5, dashArray: '6 5', fillColor: col, fillOpacity: 0.16, interactive: false }).addTo(shapeLayer);
+  } else {
+    L.polyline(p.shape, { color: dark ? '#111' : '#fff', weight: 8, opacity: 0.85, lineCap: 'round', lineJoin: 'round', interactive: false }).addTo(shapeLayer);
+    L.polyline(p.shape, { color: col, weight: 4.5, lineCap: 'round', lineJoin: 'round', interactive: false }).addTo(shapeLayer);
+    const end = p.shape[p.shape.length - 1];
+    L.circleMarker(end, { radius: 5, weight: 2.5, color: col, fillColor: '#fff', fillOpacity: 1, interactive: false }).addTo(shapeLayer);
+  }
+}
 
 // ============================================
 // SYNC LOGIC
@@ -1021,9 +1047,16 @@ function setActive(index, source) {
   const targetPin = document.getElementById('pin-' + index);
   if (targetPin) targetPin.classList.add('active');
 
+  showShape(index);
+
   // Fly map — on mobile map view, offset southward so pin sits above card carousel
   const isMobileMap = window.innerWidth <= 768 && document.body.classList.contains('view-map');
-  if (isMobileMap) {
+  const sp = places[index];
+  if (sp.kind && shapeDrawable(sp.kind, sp.shape)) {
+    // Frame the whole area or route (above the card carousel on mobile)
+    const pad = isMobileMap ? { paddingTopLeft: [28, 70], paddingBottomRight: [28, Math.round(window.innerHeight * 0.36)] } : { padding: [50, 50] };
+    map.flyToBounds(L.latLngBounds(sp.shape), Object.assign({ maxZoom: 17, duration: 0.7 }, pad));
+  } else if (isMobileMap) {
     const targetZoom = map.getZoom() < 14 ? 16 : map.getZoom();
     const targetPoint = map.project([places[index].lat, places[index].lng], targetZoom);
     targetPoint.y += window.innerHeight * 0.18; // push center south so pin rises
@@ -1162,6 +1195,7 @@ function updateFilter() {
     midEl.style.setProperty('--c-active', spotColor(places[midIdx]));
     const pin = document.getElementById('pin-' + midIdx);
     if (pin) pin.classList.add('active');
+    showShape(midIdx);
 
     if (activeFilter === 'all') {
       setTimeout(() => midEl.scrollIntoView({ behavior: 'smooth', block: 'center' }), 50);

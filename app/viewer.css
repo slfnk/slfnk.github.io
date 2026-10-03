@@ -736,6 +736,11 @@
     .pin { transition: transform 0.25s, box-shadow 0.25s; }
     cursor: pointer;
   }
+  /* Areas: a ring in the area's color. Routes: a dot with a white center (the start). */
+  .pin.pin-area { background: #fff !important; border: 4px solid var(--pin-c); }
+  .pin.pin-route { background: radial-gradient(circle, #fff 0 26%, var(--pin-c) 30%) !important; }
+  .entry-thumb-shape { background: transparent !important; border: 1px solid var(--border); }
+  .entry-thumb-shape svg { width: 100%; height: 100%; display: block; opacity: 1; }
   .pin.active {
     transform: scale(1.6);
     box-shadow: 0 3px 14px rgba(0,0,0,0.35);
