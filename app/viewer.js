@@ -480,7 +480,28 @@ function loadBanner(choice) {
   img.src = src;
 }
 
+// Guides by invited authors live in the database, not in a folder. GitHub Pages
+// shows /404.html for any address without a folder; that page sets
+// data-source="db" and the guide is looked up by its address.
+const FROM_DB = document.body.dataset.source === 'db';
+function loadGuideFromDb() {
+  const cfg = window.GUIIDES || {};
+  const parts = location.pathname.split('/').filter(Boolean);
+  if (parts.length !== 1 || !/^[a-z0-9]+(-[a-z0-9]+)*$/.test(GUIDE_SLUG) || !cfg.supabaseUrl) {
+    return Promise.reject(new Error("There's nothing at this address."));
+  }
+  // The publishable key goes in the apikey header only (it isn't a sign-in token)
+  return fetch(cfg.supabaseUrl + '/rest/v1/guides?select=markdown&slug=eq.' + encodeURIComponent(GUIDE_SLUG),
+    { headers: { apikey: cfg.supabaseKey }, cache: 'no-cache' })
+    .then(r => r.ok ? r.json() : Promise.reject(new Error("This guide couldn't be loaded right now. Try again in a minute.")))
+    .then(rows => {
+      if (rows && rows[0] && rows[0].markdown) return rows[0].markdown;
+      throw new Error("There's no guide at guiides.org/" + GUIDE_SLUG + '/.');
+    });
+}
+
 function loadGuideText() {
+  if (FROM_DB) return loadGuideFromDb();
   // no-cache: always ask the server whether places.md changed (cheap when it hasn't),
   // so edits show up as soon as GitHub finishes publishing
   return fetch('/' + GUIDE_SLUG + '/places.md', { cache: 'no-cache' }).then(r => {
@@ -568,7 +589,8 @@ loadGuideText()
   .then(async text => {
     // Guard against a wrong file pasted into places.md (e.g. index.html)
     if (/^\s*</.test(text) || !/^Title:/m.test(text)) {
-      throw new Error('/' + GUIDE_SLUG + '/places.md doesn\'t look like a guide file — it may contain HTML or be missing its Title: line.');
+      throw new Error(FROM_DB ? "This guide's text is missing its Title: line, so it can't be shown."
+        : '/' + GUIDE_SLUG + '/places.md doesn\'t look like a guide file — it may contain HTML or be missing its Title: line.');
     }
     const data = parsePlacesMd(text);
     if (data.guide.locked) {
