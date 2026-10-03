@@ -6,7 +6,7 @@ Guiides is a free tool to build and share mapped local knowledge and opinions. T
 
 ## Why .Org?
 
-Guiides is spiritually aligned with an older age on the internet, where data-mining and revenue flow isn't the primary mission.
+Guiides is spiritually aligned with an older age on the internet, where data-mining and revenue flow isn't the primary mission. 
 
 ## Why not just share Google Maps or docs with friends and followers?
 
@@ -14,4 +14,4 @@ There are some frustrating limitations to Google Maps, My Maps and Google Docs t
 
 ## When can I try Guiides myself?
 
-The tool is currently in the testing trials and should be open for general users soon. Please get in touch if you would like early access to the platform.
+The tool is currently in testing trials and should be open for general users soon. Please get in touch if you would like early access to the platform.
