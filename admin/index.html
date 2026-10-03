@@ -330,6 +330,15 @@
   .mhint { position: absolute; left: 12px; bottom: 26px; z-index: 790; padding: 7px 11px; border-radius: 8px; background: rgba(255,255,255,0.93); font-size: 12px; color: var(--text-2); pointer-events: none; }
   .vpin { border-radius: 50%; border: 2.5px solid #fff; box-shadow: 0 2px 7px rgba(0,0,0,0.28); box-sizing: border-box; }
   .vpin.sel { box-shadow: 0 3px 14px rgba(0,0,0,0.4); }
+  .vpin.kind-area { background: #fff !important; border: 4px solid var(--c); }
+  .vpin.kind-route { background: radial-gradient(circle, #fff 0 26%, var(--c) 30%) !important; }
+  .vtx { width: 14px; height: 14px; border-radius: 50%; background: #fff; border: 2.5px solid var(--c); box-shadow: 0 1px 4px rgba(0,0,0,0.3); box-sizing: border-box; cursor: move; }
+  .vtx.start { background: var(--c); border-color: #fff; }
+  .vmid { width: 12px; height: 12px; border-radius: 50%; background: rgba(255,255,255,0.75); border: 1.5px solid rgba(0,0,0,0.35); box-sizing: border-box; cursor: copy; }
+  .vmid:hover { background: #fff; transform: scale(1.25); }
+  #drawBanner button:disabled { opacity: 0.4; }
+  .card.shape .cname { font-style: italic; }
+  .grp .sechead .addspot + .addspot { margin-left: 2px; }
   .addpop { display: flex; flex-direction: column; gap: 8px; min-width: 210px; font-family: var(--sans); }
   .addpop .coords { font-size: 11px; color: var(--text-3); font-family: var(--mono); }
   .addpop select { height: 34px; font-size: 13px; padding: 0 6px; }
@@ -432,7 +441,8 @@
           <div class="results hidden" id="results"></div>
         </div>
         <div class="mbanner hidden" id="placeBanner"><span id="placeText"></span><button id="placeCancel">Cancel</button></div>
-        <div class="mhint">Click the map to add a spot · drag a pin to move it</div>
+        <div class="mbanner hidden" id="drawBanner"><span id="drawText"></span><button id="drawUndo">Undo</button><button id="drawDone" style="background:#fff;color:#1A1A1A">Done</button></div>
+        <div class="mhint" id="mapHint">Click the map to add a spot · drag a pin to move it</div>
         <div class="mtools"><button id="fitBtn">Show all</button></div>
       </div>
     </div>
@@ -719,17 +729,19 @@ function checkGuide(text) {
   const headings = (body.match(/^# .+$/gm) || []).map(h => h.replace(/^#\s*/, '').trim());
   const shown = new Set(parsed.places.map(p => p.name));
   const hidden = headings.filter(h => !shown.has(h));
-  const uncategorized = parsed.places.filter(p => !parsed.categories[p.category]).map(p => p.name);
+  const uncategorized = parsed.places.filter(p => !p.kind && !parsed.categories[p.category]).map(p => p.name);
   const noWriteup = parsed.places.filter(p => !p.description || /^\[write-up coming soon\]$/i.test(p.description)).length;
 
-  out.stats.push({ kind: 'ok', text: parsed.places.length + ' spots on the map' });
+  const nk = k => parsed.places.filter(p => (p.kind || 'spot') === k).length;
+  out.stats.push({ kind: 'ok', text: nk('spot') + ' spots on the map' });
+  if (nk('area') || nk('route')) out.stats.push({ kind: 'ok', text: [nk('area') ? nk('area') + ' area' + (nk('area') === 1 ? '' : 's') : '', nk('route') ? nk('route') + ' route' + (nk('route') === 1 ? '' : 's') : ''].filter(Boolean).join(', ') });
   const off = !!parsed.guide.categoriesOff;
   out.stats.push(off ? { kind: 'ok', text: 'Categories off' } : { kind: cats.length ? 'ok' : 'warn', text: cats.length + ' categories' });
   const wu = parsed.sectionBreaks.filter(b => b.title || b.content).length;
   if (wu && !off) out.stats.push({ kind: 'ok', text: parsed.guide.introsOff ? 'Category write-ups hidden' : wu + ' category write-up' + (wu === 1 ? '' : 's') });
   if (noWriteup) out.stats.push({ kind: 'warn', text: noWriteup + ' without a write-up' });
 
-  if (hidden.length) out.issues.push(hidden.length + ' entr' + (hidden.length === 1 ? 'y has' : 'ies have') + ' no usable Location, so ' + (hidden.length === 1 ? "it won't" : "they won't") + ' appear: ' + hidden.slice(0, 5).join(', ') + (hidden.length > 5 ? '…' : ''));
+  if (hidden.length) out.issues.push(hidden.length + ' entr' + (hidden.length === 1 ? 'y has' : 'ies have') + ' no usable Location (or isn\'t drawn yet), so ' + (hidden.length === 1 ? "it won't" : "they won't") + ' appear: ' + hidden.slice(0, 5).join(', ') + (hidden.length > 5 ? '…' : ''));
   if (uncategorized.length && !off) out.issues.push('Category not listed under "## Categories" (pin will be gray): ' + [...new Set(uncategorized.map(n => parsed.places.find(p => p.name === n).category || '(none)'))].join(', '));
   const slugs = parsed.places.map(p => p.slug);
   const dupes = slugs.filter((s, i) => slugs.indexOf(s) !== i);
@@ -765,7 +777,7 @@ const V = {             // visual-editor UI state
   selectedId: null, expandedId: null, catPanel: false,
   dragId: null, overId: null, overZone: null,
   toast: null, catNotes: {}, hexDrafts: {}, moveTargets: {}, showAuthorLink: false, lockForm: false,
-  bannerPanel: false, overGrp: null
+  bannerPanel: false, overGrp: null, drawId: null, drawHist: []
 };
 const draftKey = slug => 'gg-draft:' + slug;
 
@@ -868,7 +880,7 @@ function renderHome() {
       const data = parsePlacesMd(f.text), gd = data.guide;
       const locked = !!gd.locked;
       const offColor = HEX.test(gd.pinColor || '') ? gd.pinColor : DEFAULT_PIN;
-      const pts = data.places.map(p => ({ lat: p.lat, lng: p.lng, color: gd.categoriesOff ? (p.color || offColor) : ((data.categories[p.category] || {}).color || '#888888') }));
+      const pts = data.places.map(p => ({ lat: p.lat, lng: p.lng, color: gd.categoriesOff || p.kind ? (p.color || offColor) : ((data.categories[p.category] || {}).color || '#888888') }));
       const meta = [g.city, locked ? 'Protected' : pts.length + (pts.length === 1 ? ' spot' : ' spots'), gd.updated ? 'Updated ' + gd.updated : ''].filter(Boolean);
       document.getElementById('gmeta-' + g.slug).textContent = meta.join(' · ');
       if (locked) {
@@ -999,7 +1011,7 @@ async function openGuide(slug, { force = false } = {}) {
       originalSpots: check.parsed ? check.parsed.places.length : 0,
       password, lockDirty: false
     };
-    Object.assign(V, { selectedId: null, expandedId: null, toast: null, catPanel: false, catNotes: {}, hexDrafts: {}, moveTargets: {}, showAuthorLink: false, lockForm: false, bannerPanel: false });
+    Object.assign(V, { selectedId: null, expandedId: null, toast: null, catPanel: false, catNotes: {}, hexDrafts: {}, moveTargets: {}, showAuthorLink: false, lockForm: false, bannerPanel: false, drawId: null, drawHist: [] });
     $('editor').value = f.text;
     $('viewLive').href = SITE + '/' + slug + '/';
     history.replaceState(null, '', '#guide=' + slug);
@@ -1348,7 +1360,7 @@ const defaultPin = () => { const v = (M.getMeta(state.model, 'Pin Color') || '')
 function spotColor(b) {
   // Same rule as the live guide: with categories on, the category color always wins.
   // Off: the spot's own color, else the guide's pin color. Categories stay in the file while off.
-  if (!catsOff()) return catColor(M.getField(b, 'category'));
+  if (!catsOff() && !kindOf(b)) return catColor(M.getField(b, 'category'));
   const own = M.getField(b, 'color');
   return HEX.test(own) ? own : defaultPin();
 }
@@ -1362,6 +1374,170 @@ const toHex6 = c => HEX.test(c) ? c.toLowerCase() : '#' + rgb(c).map(v => v.toSt
 const mix = (hex, to, t) => 'rgb(' + rgb(hex).map((v, i) => Math.round(v + (to[i] - v) * t)).join(',') + ')';
 // Same as the live guide's tags: solid category color, white text
 const chipStyle = n => 'background:' + catColor(n) + ';color:#fff';
+
+// ============================================================
+// AREAS AND ROUTES — entries with "Type: Area/Route" and a "Shape:" line.
+// They have their own color and sit outside the categories. On the map they
+// show as a pin until selected; then the shape appears. Drawing happens on
+// the editor map while one is in draw mode (V.drawId).
+// ============================================================
+const kindOf = b => b && b.type === 'spot' ? shapeKind(M.getField(b, 'type')) : '';
+const shapePts = b => parseShape(M.getField(b, 'shape'));
+// Where the pin goes: the Location line, or (in a hand-written file without one) the shape's anchor
+function pinLatLng(b) {
+  const ll = M.getLatLng(b); if (ll || !kindOf(b)) return ll;
+  const a = shapeAnchor(kindOf(b), shapePts(b));
+  return a ? { lat: a[0], lng: a[1] } : null;
+}
+function setShapePts(b, pts) {
+  M.setField(b, 'Shape', pts.length ? formatShape(pts) : '');
+  const a = shapeAnchor(kindOf(b), pts);
+  if (a) M.setLatLng(b, a[0], a[1]); else M.setLatLng(b, null);
+}
+function shapeStatus(b) {
+  const k = kindOf(b), pts = shapePts(b);
+  if (!shapeDrawable(k, pts)) return '';
+  return k === 'route' ? formatDistance(routeMeters(pts)) : pts.length + ' corners';
+}
+function newShape(kind) {
+  const b = { type: 'spot', id: M.newId(), name: kind === 'area' ? 'New area' : 'New route', fields: [], paragraphs: ['[Write-Up Coming Soon]'] };
+  M.setField(b, 'Type', kind === 'area' ? 'Area' : 'Route');
+  const bs = blocks();
+  let at = insertIndex();
+  if (!catsOff()) { let last = -1; bs.forEach((x, i) => { if (kindOf(x)) last = i; }); at = last + 1; }
+  bs.splice(at, 0, b);
+  V.selectedId = b.id; V.expandedId = b.id; V.drawId = b.id; V.drawHist = [];
+  return b;
+}
+function drawPush(b) { V.drawHist.push(M.getField(b, 'shape')); if (V.drawHist.length > 300) V.drawHist.shift(); }
+function shapeEdited() { renderVisual(); afterEdit(); }
+let lastHandleDrag = 0; // a drag ends with a click on some browsers; don't treat it as one
+
+function renderShapeCard(b, pos) {
+  const k = kindOf(b), pts = shapePts(b), ok = shapeDrawable(k, pts), col = spotColor(b);
+  const sel = b.id === V.selectedId, exp = b.id === V.expandedId, drawing = V.drawId === b.id;
+  const writeup = b.paragraphs.join('\n\n');
+  const label = k === 'area' ? 'Area' : 'Route';
+  let h = '<div class="card shape' + (sel ? ' sel' : '') + (V.dragId === b.id ? ' dragging' : '') + '" data-card="' + b.id + '" draggable="' + (exp ? 'false' : 'true') + '">' +
+    '<button class="grip" aria-label="Drag to reorder ' + val(b.name) + '" title="Drag to reorder">' + ICON.grip + '</button>' +
+    '<div class="cbody"><div class="cmeta">' +
+    '<span class="chip" style="background:' + val(col) + ';color:#fff">' + label + '</span>' +
+    '<span class="price">' + val(shapeStatus(b)) + '</span>' +
+    '<span class="loc" style="color:' + (ok ? 'var(--ok)' : 'var(--warn)') + '">' + (k === 'area' ? ICON.area : ICON.route) + (ok ? 'Drawn' : 'Needs drawing') + '</span>' +
+    '<button class="icon ghost del" data-act="del-spot" data-id="' + b.id + '" aria-label="Delete ' + val(b.name) + '" title="Delete">' + ICON.trash + '</button></div>' +
+    '<button class="cname" data-act="select" data-id="' + b.id + '">' + val(b.name) + '</button>';
+  if (!exp) {
+    h += '<div class="preview' + (isPlaceholder(writeup) ? ' placeholder' : '') + '">' + val(isPlaceholder(writeup) ? '[Write-Up Coming Soon]' : writeup.replace(/\[([^\]\n]+)\]\((https?:[^)\s]+)\)/g, '$1')) + '</div>';
+  } else {
+    const need = k === 'area' ? 3 : 2;
+    h += '<div class="cform">' +
+      '<label class="f">Name<input data-spot-name="' + b.id + '" value="' + val(b.name) + '"></label>' +
+      renderSwatches(b, 'Color') +
+      '<div class="locbox">' + (k === 'area' ? ICON.area : ICON.route) +
+      '<span class="grow">' + (drawing
+        ? (pts.length < need ? 'Click the map to add ' + (k === 'area' ? 'corners' : 'points') + ' (' + pts.length + ' of at least ' + need + ')' : 'Drawing · ' + pts.length + ' points' + (k === 'route' ? ' · ' + formatDistance(routeMeters(pts)) : ''))
+        : (ok ? pts.length + ' points' + (k === 'route' ? ' · ' + formatDistance(routeMeters(pts)) : '') : 'Not drawn yet')) + '</span>' +
+      (drawing ? '<button class="primary" data-act="draw-done">Done drawing</button>'
+               : '<button data-act="draw-start" data-id="' + b.id + '">' + ICON.pen + (ok ? 'Edit shape' : 'Draw on map') + '</button>') +
+      (k === 'route' && ok && !drawing ? '<button class="ghost" data-act="route-reverse" data-id="' + b.id + '" title="Swap the start and end">Reverse</button>' : '') +
+      '</div>' +
+      '<div class="f" style="display:flex;flex-direction:column;gap:2px;font-size:11px;font-weight:600;color:var(--text-2)"><div style="display:flex;align-items:center">Write-up<span class="grow"></span><span class="textbar"><button data-act="insert-link" data-target="[data-spot-writeup=&quot;' + b.id + '&quot;]">' + ICON.link + 'Link</button></span></div>' +
+      '<textarea class="writeup" data-spot-writeup="' + b.id + '" aria-label="Write-up" placeholder="' + (k === 'area' ? 'What is this part of town like? What should people look for here?' : 'Where does it start, how long does it take, what will people pass?') + ' (blank line = new paragraph)">' + val(writeup) + '</textarea></div>' +
+      '<label class="f">Image<input data-spot-field="Image" data-id="' + b.id + '" value="' + val(M.getField(b, 'image')) + '" placeholder="images/photo.jpg" spellcheck="false"></label>' +
+      renderLinks(b) +
+      '<div class="cactions"><button class="danger" data-act="del-spot" data-id="' + b.id + '">Delete ' + label.toLowerCase() + '</button>' +
+      '<button class="icon ghost" data-act="item-up" data-id="' + b.id + '" aria-label="Move up"' + (pos.first ? ' disabled' : '') + '>' + ICON.up + '</button>' +
+      '<button class="icon ghost" data-act="item-down" data-id="' + b.id + '" aria-label="Move down"' + (pos.last ? ' disabled' : '') + '>' + ICON.down + '</button>' +
+      '<span class="grow"></span><button data-act="done" style="background:#1A1A1A;color:#fff;border-color:#1A1A1A">Done</button></div></div>';
+  }
+  return h + '</div></div>';
+}
+
+function renderShapesGroup(g) {
+  let h = '<div class="grp" data-grp="s"><div class="sechead" data-zone="top:s">' +
+    '<span class="dot" style="background:transparent;border:2px solid var(--text-3)"></span><span class="sectitle">Areas &amp; routes</span>' +
+    '<span class="count">Outside the categories</span><span class="grow"></span>' +
+    '<button class="addspot" data-act="add-shape" data-kind="area">' + ICON.plus + 'Area</button>' +
+    '<button class="addspot" data-act="add-shape" data-kind="route">' + ICON.plus + 'Route</button></div>';
+  const list = g.items.filter(b => b.type === 'spot');
+  let si = 0;
+  g.items.forEach(b => {
+    if (b.type === 'spot') { h += renderCard(b, { first: si === 0, last: si === list.length - 1 }); si++; }
+    else h += renderExtra(b);
+  });
+  return h + '<div class="dropzone" data-zone="end:s" data-label="Drop here to move to the end"></div></div>';
+}
+
+// ---- editor map: the selected area/route, plus handles while drawing
+let shapeLayer = null;
+function syncShapes() {
+  if (!map) return;
+  if (!shapeLayer) shapeLayer = L.layerGroup().addTo(map);
+  shapeLayer.clearLayers();
+  const b = V.selectedId && findBlock(V.selectedId), k = kindOf(b);
+  if (!k) return;
+  const pts = shapePts(b), col = spotColor(b), drawing = V.drawId === b.id;
+  const lines = [];
+  if (k === 'area') {
+    if (pts.length >= 3) lines.push(L.polygon(pts, { color: col, weight: 2.5, dashArray: '6 5', fillColor: col, fillOpacity: 0.16, interactive: false }).addTo(shapeLayer));
+    else if (pts.length === 2) lines.push(L.polyline(pts, { color: col, weight: 2.5, dashArray: '6 5', interactive: false }).addTo(shapeLayer));
+  } else if (pts.length >= 2) {
+    lines.push(L.polyline(pts, { color: '#fff', weight: 8, opacity: 0.85, lineCap: 'round', lineJoin: 'round', interactive: false }).addTo(shapeLayer));
+    lines.push(L.polyline(pts, { color: col, weight: 4.5, lineCap: 'round', lineJoin: 'round', interactive: false }).addTo(shapeLayer));
+    if (!drawing) L.circleMarker(pts[pts.length - 1], { radius: 5, weight: 2.5, color: col, fillColor: '#fff', fillOpacity: 1, interactive: false }).addTo(shapeLayer);
+  }
+  if (!drawing) return;
+  pts.forEach((p, i) => {
+    const start = k === 'route' && i === 0, end = k === 'route' && i === pts.length - 1 && i > 0;
+    const hnd = L.marker(p, {
+      draggable: true, keyboard: false, zIndexOffset: 3000,
+      title: (start ? 'Start · ' : end ? 'End · ' : '') + 'drag to move, click to remove',
+      icon: L.divIcon({ className: '', html: '<div class="vtx' + (start ? ' start' : '') + '" style="--c:' + esc(col) + '"></div>', iconSize: [14, 14], iconAnchor: [7, 7] })
+    }).addTo(shapeLayer);
+    hnd.on('dragstart', () => drawPush(b));
+    hnd.on('drag', ev => { const ll = ev.target.getLatLng(); pts[i] = [ll.lat, ll.lng]; lines.forEach(l => l.setLatLngs(pts)); });
+    hnd.on('dragend', ev => { lastHandleDrag = Date.now(); const ll = ev.target.getLatLng(); pts[i] = [ll.lat, ll.lng]; setShapePts(b, pts); shapeEdited(); });
+    hnd.on('click', () => {
+      if (Date.now() - lastHandleDrag < 400) return;
+      drawPush(b); pts.splice(i, 1); setShapePts(b, pts); shapeEdited();
+    });
+  });
+  // A faint handle halfway along each side: click it to add a point there
+  const sides = k === 'area' && pts.length >= 3 ? pts.length : pts.length - 1;
+  for (let i = 0; i < sides; i++) {
+    const a = pts[i], c = pts[(i + 1) % pts.length], mid = [(a[0] + c[0]) / 2, (a[1] + c[1]) / 2];
+    const m = L.marker(mid, { keyboard: false, zIndexOffset: 2500, title: 'Click to add a point here',
+      icon: L.divIcon({ className: '', html: '<div class="vmid"></div>', iconSize: [12, 12], iconAnchor: [6, 6] }) }).addTo(shapeLayer);
+    m.on('click', () => { drawPush(b); pts.splice(i + 1, 0, mid); setShapePts(b, pts); shapeEdited(); });
+  }
+}
+function drawClick(latlng) {
+  const b = findBlock(V.drawId);
+  if (!b || Date.now() - lastHandleDrag < 400) return;
+  drawPush(b);
+  const pts = shapePts(b); pts.push([latlng.lat, latlng.lng]);
+  setShapePts(b, pts); shapeEdited();
+}
+function updateDrawBanner() {
+  const b = V.drawId && findBlock(V.drawId), k = kindOf(b);
+  show($('drawBanner'), !!k);
+  show($('mapHint'), !k);
+  if (!k) return;
+  const n = shapePts(b).length, need = k === 'area' ? 3 : 2;
+  $('drawText').textContent = n < need
+    ? 'Click the map to ' + (n ? 'add the next ' + (k === 'area' ? 'corner' : 'point') : 'start “' + b.name + '”')
+    : 'Click to add · drag to move · click a point to remove';
+  $('drawUndo').disabled = !V.drawHist.length;
+}
+$('drawUndo').addEventListener('click', () => {
+  const b = findBlock(V.drawId);
+  if (!b || !V.drawHist.length) return;
+  setShapePts(b, parseShape(V.drawHist.pop())); shapeEdited();
+});
+$('drawDone').addEventListener('click', () => { V.drawId = null; renderVisual(); });
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape' && V.drawId && state.model) { V.drawId = null; renderVisual(); }
+});
 
 // The list is one ordered run of spots and text breaks (a text break is a "## Title" block in the file)
 function insertIndex() {
@@ -1420,6 +1596,9 @@ const ICON = {
   down: '<svg class="i" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg>',
   plus: '<svg class="i" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>',
   link: '<svg class="i" viewBox="0 0 24 24" style="width:12px;height:12px"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>',
+  area: '<svg class="i" viewBox="0 0 24 24" style="width:13px;height:13px"><path d="M5 7l6-3 8 4-1 9-8 3-6-5z" stroke-dasharray="3 2.5"/></svg>',
+  route: '<svg class="i" viewBox="0 0 24 24" style="width:13px;height:13px"><circle cx="5" cy="18" r="2"/><circle cx="19" cy="6" r="2"/><path d="M7 18h7a3 3 0 0 0 0-6H10a3 3 0 0 1 0-6h7"/></svg>',
+  pen: '<svg class="i" viewBox="0 0 24 24" style="width:13px;height:13px"><path d="M4 20l4-1 11-11-3-3L5 16z"/></svg>',
   shuffle: '<svg class="i" viewBox="0 0 24 24" style="width:13px;height:13px"><path d="M16 3h5v5M4 20L21 3M21 16v5h-5M15 15l6 6M4 4l5 5"/></svg>',
   palette: '<svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="8.5" cy="10" r="1.2"/><circle cx="12" cy="7.5" r="1.2"/><circle cx="15.5" cy="10" r="1.2"/><path d="M12 21a2.5 2.5 0 0 1 0-5h1.5a2.5 2.5 0 0 0 0-5"/></svg>'
 };
@@ -1471,10 +1650,11 @@ function computeGroups() {
   const groups = cats.map(c => ({ cat: c, name: c.name, intro: null, items: [] }));
   const byName = new Map(groups.map(g => [g.name, g]));
   const loose = { cat: null, name: '', intro: null, items: [] };
+  const shapes = { cat: null, name: '', intro: null, items: [] };
   let pending = [];
   blocks().forEach(b => {
     if (b.type === 'spot') {
-      const g = byName.get(M.getField(b, 'category')) || loose;
+      const g = kindOf(b) ? shapes : (byName.get(M.getField(b, 'category')) || loose);
       g.items.push(...pending, b); pending = [];
       return;
     }
@@ -1483,7 +1663,7 @@ function computeGroups() {
     pending.push(b);
   });
   cats.forEach((c, i) => { c._introId = groups[i].intro ? groups[i].intro.id : null; });
-  return { groups, loose, trailing: pending };
+  return { groups, loose, shapes, trailing: pending };
 }
 
 // Put every block where its group says it goes. Returns true if anything moved.
@@ -1494,8 +1674,8 @@ function regroup() {
       if (!g.intro) blocks().push({ type: 'section', id: M.newId(), title: g.name, blurb: '' });
     });
   }
-  const { groups, loose, trailing } = computeGroups();
-  const next = [];
+  const { groups, loose, shapes, trailing } = computeGroups();
+  const next = shapes.items.slice(); // areas and routes lead the list
   groups.forEach(g => { if (g.intro) next.push(g.intro); next.push(...g.items); });
   next.push(...loose.items, ...trailing);
   const bs = blocks();
@@ -1522,7 +1702,12 @@ function loadModel(text) { return orderCatsByFile(M.parseGuideModel(text)); }
 // Spots and loose text blocks in the order a no-categories guide lists them.
 // Category write-ups stay in the file but sit out while categories are off.
 const flatBlocks = () => blocks().filter(b => b.type === 'spot' || !introCat(b));
-const spotCount = () => blocks().filter(b => b.type === 'spot' && M.getLatLng(b)).length;
+const countBits = () => {
+  const n = k => blocks().filter(b => b.type === 'spot' && pinLatLng(b) && (kindOf(b) || 'spot') === k).length;
+  const pl = (c, w) => c ? c + ' ' + w + (c === 1 ? '' : 's') : '';
+  const out = [pl(n('spot'), 'spot'), pl(n('area'), 'area'), pl(n('route'), 'route')].filter(Boolean);
+  return out.length ? out : ['0 spots'];
+};
 const bannerUrl = n => '/banners/banner_' + n + '.webp';
 const bannerPreview = 1 + Math.floor(Math.random() * BANNER_COUNT); // stands in for "Shuffle" while editing
 
@@ -1568,11 +1753,11 @@ function renderVisual() {
   if (!catsOff()) regroup();
   let h = '';
 
+  if (V.drawId && V.drawId !== V.selectedId) V.drawId = null;
   // ---- guide header (same order as the live page)
-  const n = spotCount();
   h += '<div class="ghead">' +
     '<div class="updated-ro" title="Updated is set automatically each time you save">Updated ' + val(M.getMeta(m, 'Updated') || monthYear()) +
-    '<span style="font-size:0.55em;vertical-align:0.3em;margin:0 0.8em">•</span>' + n + (n === 1 ? ' spot' : ' spots') + '</div>' +
+    countBits().map(x => '<span style="font-size:0.55em;vertical-align:0.3em;margin:0 0.8em">•</span>' + x).join('') + '</div>' +
     '<textarea class="ie title" data-meta="Title" rows="1" placeholder="Guide title" aria-label="Guide title">' + val(M.getMeta(m, 'Title')) + '</textarea>' +
     '<input class="ie subtitle" data-meta="Subtitle" value="' + val(M.getMeta(m, 'Subtitle')) + '" placeholder="Add an italic subtitle…" aria-label="Subtitle">' +
     renderByline(m) + renderBannerRow() +
@@ -1609,12 +1794,15 @@ function renderVisual() {
     h += '<div class="dropzone' + (!vis.length ? ' empty' : '') + '" data-zone="end" data-label="Drop here to move to the end">' + (!vis.length ? '<span>No spots yet</span>' : '') + '</div>';
   } else {
     const G = computeGroups(), on = writeupsOn();
+    if (G.shapes.items.length) h += renderShapesGroup(G.shapes);
     G.groups.forEach((g, gi) => { h += renderGroup(g, gi, on); });
     if (G.loose.items.length) h += renderGroup(G.loose, -1, false);
     G.trailing.forEach(b => { h += renderExtra(b); });
   }
   h += '</div>';
-  h += '<div class="addrow"><button data-act="add-spot">' + ICON.plus + 'Add spot</button></div>';
+  h += '<div class="addrow"><button data-act="add-spot">' + ICON.plus + 'Add spot</button>' +
+    '<button data-act="add-shape" data-kind="area">' + ICON.area + 'Add area</button>' +
+    '<button data-act="add-shape" data-kind="route">' + ICON.route + 'Add route</button></div>';
   h += '<div class="hint" style="margin-top:6px;text-align:center">' + (catsOff() ? 'New spots go below the selected one, or at the end.' : 'New spots join the selected spot\'s group, or the first group.') + '</div>';
 
   if (V.toast) h += '<div class="toast"><span>' + val(V.toast.text) + '</span>' + (V.toast.undo ? '<button class="undo" data-act="undo">Undo</button>' : '') + '<button class="x icon" data-act="toast-x" aria-label="Dismiss"><svg class="i" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>';
@@ -1625,7 +1813,9 @@ function renderVisual() {
   autosize($('vlist').querySelector('.title'));
   $('vlist').querySelectorAll('.secblurb').forEach(autosize);
   syncMarkers();
+  syncShapes();
   updatePlaceBanner();
+  updateDrawBanner();
 }
 
 function renderGroup(g, gi, on) {
@@ -1658,6 +1848,7 @@ function renderExtra(b) {
 }
 
 function renderCard(b, pos) {
+  if (kindOf(b)) return renderShapeCard(b, pos);
   const cat = M.getField(b, 'category');
   const ll = M.getLatLng(b);
   const sel = b.id === V.selectedId, exp = b.id === V.expandedId;
@@ -1701,10 +1892,10 @@ function renderCard(b, pos) {
 }
 
 // Pin color for one spot when categories are off
-function renderSwatches(b) {
+function renderSwatches(b, label) {
   const own = (M.getField(b, 'color') || '').toLowerCase();
   const ownOk = HEX.test(own);
-  return '<div class="f" style="display:flex;flex-direction:column;gap:5px;font-size:11px;font-weight:600;color:var(--text-2)">Pin color<div class="swatches">' +
+  return '<div class="f" style="display:flex;flex-direction:column;gap:5px;font-size:11px;font-weight:600;color:var(--text-2)">' + (label || 'Pin color') + '<div class="swatches">' +
     '<button class="sw dflt' + (!ownOk ? ' on' : '') + '" data-act="spot-color" data-id="' + b.id + '" data-color=""><span class="pindot" style="background:' + val(defaultPin()) + '"></span>Guide color</button>' +
     PALETTE.map(c => '<button class="sw' + (ownOk && own === c.toLowerCase() ? ' on' : '') + '" data-act="spot-color" data-id="' + b.id + '" data-color="' + c + '" style="background:' + c + '" aria-label="Pin color ' + c + '" title="' + c + '"></button>').join('') +
     '<input type="color" data-spot-color="' + b.id + '" value="' + val(toHex6(ownOk ? own : defaultPin())) + '" aria-label="Pick any pin color" title="Any color">' +
@@ -1768,8 +1959,9 @@ function select(id, { expand = true, fly = true } = {}) {
   renderVisual();
   const card = $('vlist').querySelector('[data-card="' + id + '"]');
   if (card) card.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
-  const b = findBlock(id), ll = b && M.getLatLng(b);
-  if (fly && ll && map) map.flyTo([ll.lat, ll.lng], Math.max(map.getZoom(), 16), { duration: 0.5 });
+  const b = findBlock(id), ll = b && M.getLatLng(b), k = kindOf(b), pts = k ? shapePts(b) : [];
+  if (fly && map && k && shapeDrawable(k, pts)) map.flyToBounds(L.latLngBounds(pts), { padding: [70, 70], maxZoom: 17, duration: 0.5 });
+  else if (fly && ll && map) map.flyTo([ll.lat, ll.lng], Math.max(map.getZoom(), 16), { duration: 0.5 });
 }
 
 $('vlist').addEventListener('click', e => {
@@ -1796,7 +1988,7 @@ $('vlist').addEventListener('click', e => {
       let seq = flatBlocks();
       if (!catsOff()) {
         const G = computeGroups();
-        seq = (G.groups.concat([G.loose]).map(g => g.items.filter(x => x.type === 'spot')).find(l => l.some(x => x.id === id))) || [];
+        seq = (G.groups.concat([G.loose, G.shapes]).map(g => g.items.filter(x => x.type === 'spot')).find(l => l.some(x => x.id === id))) || [];
       }
       const k = seq.findIndex(b => b.id === id), j = act === 'item-up' ? k - 1 : k + 1;
       if (k < 0 || j < 0 || j >= seq.length) return;
@@ -1820,6 +2012,16 @@ $('vlist').addEventListener('click', e => {
       break;
     }
     case 'banner-open': V.bannerPanel = !V.bannerPanel; renderVisual(); return;
+    case 'add-shape': {
+      const sh = newShape(btn.dataset.kind);
+      renderVisual(); afterEdit();
+      const inp = $('vlist').querySelector('[data-spot-name="' + sh.id + '"]');
+      if (inp) { inp.scrollIntoView({ block: 'center' }); inp.select(); }
+      return;
+    }
+    case 'draw-start': V.selectedId = id; V.expandedId = id; V.drawId = id; V.drawHist = []; renderVisual(); return;
+    case 'draw-done': V.drawId = null; renderVisual(); return;
+    case 'route-reverse': { const b = findBlock(id); setShapePts(b, shapePts(b).reverse()); break; }
     case 'banner-pick': {
       const v = btn.dataset.v;
       M.setMeta(state.model, 'Banner', v === 'random' ? '' : v, 'Center');
@@ -1880,7 +2082,7 @@ $('vlist').addEventListener('click', e => {
     case 'cats-on': {
       const order = blocks().slice();
       M.setMeta(state.model, 'Categories', '');
-      const loose = blocks().filter(b => b.type === 'spot' && !catByName(M.getField(b, 'category')));
+      const loose = blocks().filter(b => b.type === 'spot' && !kindOf(b) && !catByName(M.getField(b, 'category')));
       if (!catList().length) {
         // A guide needs at least one category to show tags and filters
         catList().push({ id: M.newId(), name: 'Spots', color: defaultPin() });
@@ -2124,6 +2326,7 @@ $('vlist').addEventListener('dragover', e => {
   const grouped = !catsOff();
   const grp = e.target.closest('[data-grp]');
   if (grouped && !grp) return; // with categories on, a spot always lands in a group
+  if (grouped && (grp.dataset.grp === 's') !== !!kindOf(findBlock(V.dragId))) return; // areas/routes stay in their own group
   const card = e.target.closest('[data-card]'), zone = e.target.closest('[data-zone]');
   if (!card && !zone && !grp) return;
   e.preventDefault();
@@ -2138,6 +2341,14 @@ $('vlist').addEventListener('drop', e => {
   if (catsOff() || !b || b.type !== 'spot') {
     if (V.overId && V.overId !== id) moveBlock(id, V.overId);
     else if (V.overZone) moveBlock(id, null);
+  } else if (kindOf(b)) {
+    if (V.overGrp === 's') {
+      const others = computeGroups().shapes.items.filter(x => x.type === 'spot' && x !== b);
+      const over = V.overId && findBlock(V.overId);
+      if (over && others.includes(over)) moveBlock(id, over.id);
+      else if (V.overZone === 'top:s' && others.length) moveBlock(id, others[0].id);
+      else if (others.length) { const bs = blocks(); bs.splice(bs.indexOf(b), 1); bs.splice(bs.indexOf(others[others.length - 1]) + 1, 0, b); }
+    }
   } else {
     const g = computeGroups().groups[+V.overGrp];
     if (g) {
@@ -2176,22 +2387,22 @@ function ensureMap() {
   L.tileLayer(TILE_URL, { maxZoom: 19, attribution: '&copy; <a href="https://openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/">CARTO</a>' }).addTo(map);
   map.on('click', onMapClick);
 }
-function pinIcon(color, sel) {
+function pinIcon(color, sel, kind) {
   const s = sel ? 22 : 16;
-  return L.divIcon({ className: '', html: '<div class="vpin' + (sel ? ' sel' : '') + '" style="width:' + s + 'px;height:' + s + 'px;background:' + esc(color) + '"></div>', iconSize: [s, s], iconAnchor: [s / 2, s / 2] });
+  return L.divIcon({ className: '', html: '<div class="vpin' + (sel ? ' sel' : '') + (kind ? ' kind-' + kind : '') + '" style="width:' + s + 'px;height:' + s + 'px;background:' + esc(color) + ';--c:' + esc(color) + '"></div>', iconSize: [s, s], iconAnchor: [s / 2, s / 2] });
 }
 function syncMarkers() {
   if (!map || !state.model) return;
   const seen = new Set();
   blocks().forEach(b => {
     if (b.type !== 'spot') return;
-    const ll = M.getLatLng(b);
+    const ll = pinLatLng(b);
     if (!ll) return;
     seen.add(b.id);
     const sel = b.id === V.selectedId;
     let mk = markers[b.id];
     if (!mk) {
-      mk = L.marker([ll.lat, ll.lng], { draggable: true, autoPan: true, keyboard: true, title: b.name }).addTo(map);
+      mk = L.marker([ll.lat, ll.lng], { draggable: !kindOf(b), autoPan: true, keyboard: true, title: b.name }).addTo(map);
       mk.on('click', () => select(b.id, { fly: false }));
       mk.on('dragstart', () => { V.selectedId = b.id; });
       mk.on('dragend', ev => {
@@ -2205,7 +2416,7 @@ function syncMarkers() {
       const p = mk.getLatLng();
       if (Math.abs(p.lat - ll.lat) > 1e-9 || Math.abs(p.lng - ll.lng) > 1e-9) mk.setLatLng([ll.lat, ll.lng]);
     }
-    mk.setIcon(pinIcon(spotColor(b), sel));
+    mk.setIcon(pinIcon(spotColor(b), sel, kindOf(b)));
     mk.setZIndexOffset(sel ? 1000 : 0);
     mk.unbindTooltip();
     mk.bindTooltip(esc(b.name), { direction: 'top', offset: [0, sel ? -12 : -9], className: 'vtip', permanent: sel });
@@ -2226,18 +2437,19 @@ $('fitBtn').addEventListener('click', fitAll);
 
 function pendingSpot() {
   const b = V.selectedId && findBlock(V.selectedId);
-  return b && b.type === 'spot' && !M.getLatLng(b) ? b : null;
+  return b && b.type === 'spot' && !kindOf(b) && !M.getLatLng(b) ? b : null;
 }
 function updatePlaceBanner() {
   const p = pendingSpot();
   show($('placeBanner'), !!p);
   if (p) $('placeText').textContent = 'Click the map to place “' + p.name + '”';
-  $('map').style.cursor = p ? 'crosshair' : '';
+  $('map').style.cursor = p || V.drawId ? 'crosshair' : '';
 }
 $('placeCancel').addEventListener('click', () => { V.selectedId = null; renderVisual(); });
 
 function onMapClick(e) {
   if (!state.model) return;
+  if (V.drawId) { drawClick(e.latlng); return; }
   const p = pendingSpot();
   if (p) { M.setLatLng(p, e.latlng.lat, e.latlng.lng); renderVisual(); afterEdit(); return; }
   const box = document.createElement('div');
