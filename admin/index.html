@@ -414,7 +414,7 @@
         <div id="profileCards" style="display:flex;gap:10px;flex-wrap:wrap"></div>
       </div>
       <div class="home-pages"><h2>Site pages</h2>
-        <a class="pcard" href="#page=faq" data-open-page="faq"><svg class="i" viewBox="0 0 24 24"><path d="M7 3h7l5 5v13H7z"/><path d="M14 3v5h5"/></svg>FAQ page <span class="hint">guiides.com/faq/</span></a>
+        <a class="pcard" href="#page=faq" data-open-page="faq"><svg class="i" viewBox="0 0 24 24"><path d="M7 3h7l5 5v13H7z"/><path d="M14 3v5h5"/></svg>FAQ page <span class="hint">guiides.org/faq/</span></a>
       </div>
       <p class="home-credit">Map thumbnails © <a href="https://openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> © <a href="https://carto.com/" target="_blank" rel="noopener">CARTO</a></p>
     </div>
@@ -465,7 +465,7 @@
 
   <div id="docView" class="hidden">
     <textarea id="docEditor" spellcheck="true" aria-label="FAQ page (Markdown)"></textarea>
-    <div id="docPreview"><div class="dochead">Preview · guiides.com/faq/</div><div id="docPreviewBody"></div></div>
+    <div id="docPreview"><div class="dochead">Preview · guiides.org/faq/</div><div id="docPreviewBody"></div></div>
   </div>
 
   <div id="deleteView" class="hidden">
@@ -486,7 +486,7 @@
   <div id="profileView" class="hidden">
     <div class="panel wide">
       <h2 id="pfHeading">Profile</h2>
-      <div class="hint" style="margin-top:4px">guiides.com/by/<b id="pfAddr">…</b>/ · the guide byline links here</div>
+      <div class="hint" style="margin-top:4px">guiides.org/by/<b id="pfAddr">…</b>/ · the guide byline links here</div>
       <div id="pfHandleRow">
         <label class="f" for="pfHandle">Web address</label>
         <input id="pfHandle" placeholder="slfnk" spellcheck="false">
@@ -517,7 +517,7 @@
       <h2>New guide</h2>
       <label class="f" for="ngSlug">Web address</label>
       <input id="ngSlug" placeholder="cdmx-cantinas" spellcheck="false">
-      <div class="hint">guiides.com/<b id="ngSlugPreview">…</b>/ · lowercase letters, numbers and dashes</div>
+      <div class="hint">guiides.org/<b id="ngSlugPreview">…</b>/ · lowercase letters, numbers and dashes</div>
       <label class="f" for="ngTitle">Title</label>
       <input id="ngTitle" placeholder="Cantinas of Mexico City">
       <label class="f" for="ngSubtitle">Subtitle</label>
@@ -544,7 +544,7 @@
 // CONFIG
 // ============================================================
 const REPO = { owner: 'slfnk', name: 'slfnk.github.io', branch: 'main' };
-const SITE = 'https://guiides.com';
+const SITE = 'https://guiides.org';
 const RESERVED = ['app', 'admin', 'banners', 'by', 'faq', 'vibe-guide-sma', 'favicon', 'images', 'assets'];
 const API = 'https://api.github.com';
 
@@ -635,8 +635,8 @@ function guidePageHtml(slug, title, subtitle) {
 <meta property="og:type" content="website">
 <meta property="og:title" content="${t}">
 <meta property="og:description" content="${s}">
-<meta property="og:url" content="https://guiides.com/${slug}/">
-<link rel="canonical" href="https://guiides.com/${slug}/">
+<meta property="og:url" content="https://guiides.org/${slug}/">
+<link rel="canonical" href="https://guiides.org/${slug}/">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -860,7 +860,7 @@ $('homeBtn').addEventListener('click', () => showHome());
 function renderHome() {
   homeMaps.forEach(m => m.remove()); homeMaps = [];
   const PERSON = '<svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/></svg>';
-  $('profileCards').innerHTML = state.profiles.map(p => '<a class="pcard" href="#profile=' + esc(p.handle) + '" data-open-profile="' + esc(p.handle) + '">' + PERSON + esc(p.name) + ' <span class="hint">guiides.com/by/' + esc(p.handle) + '/</span></a>').join('') +
+  $('profileCards').innerHTML = state.profiles.map(p => '<a class="pcard" href="#profile=' + esc(p.handle) + '" data-open-profile="' + esc(p.handle) + '">' + PERSON + esc(p.name) + ' <span class="hint">guiides.org/by/' + esc(p.handle) + '/</span></a>').join('') +
     '<button class="pcard" data-new-profile style="height:auto;border-style:dashed;color:var(--brand-dark)">＋ New profile</button>';
   const LOCK = '<svg class="i" viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>';
   $('guideGrid').innerHTML =
@@ -1156,7 +1156,7 @@ $('deleteGuideBtn').addEventListener('click', () => {
   if (!state.current) return;
   const g = state.guides.find(x => x.slug === state.current.slug);
   $('delTitle').textContent = (g && g.title) || state.current.slug;
-  $('delAddr').textContent = 'guiides.com/' + state.current.slug + '/';
+  $('delAddr').textContent = 'guiides.org/' + state.current.slug + '/';
   $('delSlug').textContent = state.current.slug;
   $('delConfirm').value = ''; setStatus($('delStatus'), '');
   show($('editorView'), false); show($('deleteView'));
@@ -1269,7 +1269,7 @@ function renderLockRow() {
 }
 
 // ============================================================
-// FAQ PAGE (faq/faq.md, shown at guiides.com/faq/)
+// FAQ PAGE (faq/faq.md, shown at guiides.org/faq/)
 // ============================================================
 const FAQ_PATH = 'faq/faq.md';
 function renderFaqPreview() {
@@ -2545,7 +2545,7 @@ $('results').addEventListener('click', e => {
 });
 
 // ============================================================
-// PROFILES — by/<handle>/profile.md, shown at guiides.com/by/<handle>/
+// PROFILES — by/<handle>/profile.md, shown at guiides.org/by/<handle>/
 // A guide's byline links to its author's profile ("Profile:" line in places.md).
 // ============================================================
 const HANDLE_RE = /^[a-z0-9]+(-[a-z0-9]+)*$/;
@@ -2575,8 +2575,8 @@ function profilePageHtml(handle, name) {
 <meta property="og:type" content="profile">
 <meta property="og:title" content="${n} — GUIIDES">
 <meta property="og:description" content="Guides by ${n}">
-<meta property="og:url" content="https://guiides.com/by/${handle}/">
-<link rel="canonical" href="https://guiides.com/by/${handle}/">
+<meta property="og:url" content="https://guiides.org/by/${handle}/">
+<link rel="canonical" href="https://guiides.org/by/${handle}/">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -2728,7 +2728,7 @@ $('pfCreate').addEventListener('click', async () => {
     state.profiles.push({ handle, name: oneLine(p.name) });
     state.profiles.sort((a, b) => a.name.localeCompare(b.name));
     await openProfile(handle, { force: true });
-    flashSaveState('Profile created · live at guiides.com/by/' + handle + '/ in about a minute', 'clean');
+    flashSaveState('Profile created · live at guiides.org/by/' + handle + '/ in about a minute', 'clean');
   } catch (e) { err('Stopped: ' + e.message); }
   $('pfCreate').disabled = false;
 });
@@ -2787,7 +2787,7 @@ $('ngCreate').addEventListener('click', async () => {
     ['ngSlug', 'ngTitle', 'ngSubtitle', 'ngAuthor', 'ngCity', 'ngCenter'].forEach(id => $(id).value = '');
     $('ngSlugPreview').textContent = '…';
     await openGuide(slug, { force: true });
-    flashSaveState('Guide created · live at guiides.com/' + slug + '/ in about a minute', 'clean');
+    flashSaveState('Guide created · live at guiides.org/' + slug + '/ in about a minute', 'clean');
   } catch (e) {
     err('Stopped: ' + e.message + (done.length ? ' Already created: ' + done.join(', ') + '.' : ''));
   }
