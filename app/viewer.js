@@ -357,12 +357,39 @@ document.getElementById('copyPageLink').addEventListener('click', function() {
 // ============================================
 // MISC
 // ============================================
+let introOpened = false; // the reader pressed "Read more"
 function toggleIntro() {
   const body = document.getElementById('introBody');
   const btn = document.getElementById('introToggle');
   const label = btn.querySelector('span');
   body.classList.toggle('collapsed');
-  label.textContent = body.classList.contains('collapsed') ? 'Read more' : 'Less';
+  introOpened = !body.classList.contains('collapsed');
+  label.textContent = introOpened ? 'Less' : 'Read more';
+}
+
+// "Read more" only for intros longer than 10 lines as they appear on screen,
+// counting each gap between paragraphs as a line. Rechecked whenever the
+// intro's width or text size changes, since that changes the line count.
+const INTRO_MAX_LINES = 10;
+let introLong = null;
+function introLineCount(body) {
+  const ps = body.querySelectorAll('p');
+  let lines = Math.max(0, ps.length - 1);
+  ps.forEach(p => {
+    const lh = parseFloat(getComputedStyle(p).lineHeight) || 24;
+    lines += Math.max(1, Math.round(p.getBoundingClientRect().height / lh));
+  });
+  return lines;
+}
+function updateIntroFold() {
+  const body = document.getElementById('introBody'), wrap = document.getElementById('introToggleWrap');
+  if (!body || !wrap || !body.getClientRects().length || !body.querySelector('p')) return; // hidden or empty
+  const long = introLineCount(body) > INTRO_MAX_LINES;
+  if (long === introLong) return;
+  introLong = long;
+  wrap.classList.toggle('no-fold', !long);
+  if (!long) body.classList.remove('collapsed');
+  else if (!introOpened) body.classList.add('collapsed');
 }
 
 // Restore persisted settings — bidirectional (respects HTML defaults)
@@ -640,6 +667,18 @@ function newTabLinks(root) {
 document.getElementById('introBody').innerHTML = guide.intro.map((p, i) =>
   '<p' + (i === 0 ? ' class="drop-cap"' : '') + '>' + richText(p) + '</p>'
 ).join('');
+updateIntroFold();
+if (window.ResizeObserver) {
+  // Width changes, text-size setting, fonts arriving, list view becoming visible
+  let lastW = 0, lastFs = '';
+  new ResizeObserver(() => {
+    const p = document.querySelector('#introBody p'), body = document.getElementById('introBody');
+    const w = body.clientWidth, fs = p ? getComputedStyle(p).fontSize : '';
+    if (w === lastW && fs === lastFs) return; // height changes from folding itself don't count
+    lastW = w; lastFs = fs; introLong = null; updateIntroFold();
+  }).observe(document.getElementById('introBody'));
+}
+if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { introLong = null; updateIntroFold(); });
 
 // ============================================
 // SVG ICONS
@@ -1052,7 +1091,9 @@ function setActive(index, source) {
   // Fly map — on mobile map view, offset southward so pin sits above card carousel
   const isMobileMap = window.innerWidth <= 768 && document.body.classList.contains('view-map');
   const sp = places[index];
-  if (sp.kind && shapeDrawable(sp.kind, sp.shape)) {
+  if (!document.getElementById('map').offsetWidth) {
+    // Map hidden (phone list view): nothing to move. Switching to Map frames the active entry.
+  } else if (sp.kind && shapeDrawable(sp.kind, sp.shape)) {
     // Frame the whole area or route (above the card carousel on mobile)
     const pad = isMobileMap ? { paddingTopLeft: [28, 70], paddingBottomRight: [28, Math.round(window.innerHeight * 0.36)] } : { padding: [50, 50] };
     map.flyToBounds(L.latLngBounds(sp.shape), Object.assign({ maxZoom: 17, duration: 0.7 }, pad));
@@ -1259,7 +1300,13 @@ window.setView = function(mode) {
         if (activeIndex >= 0) {
           const p = places[activeIndex];
           const isMobile = window.innerWidth <= 768;
-          if (isMobile) {
+          if (p.kind && shapeDrawable(p.kind, p.shape)) {
+            // An area or route: frame the whole shape above the cards
+            showShape(activeIndex);
+            map.fitBounds(L.latLngBounds(p.shape), isMobile
+              ? { paddingTopLeft: [28, 70], paddingBottomRight: [28, Math.round(window.innerHeight * 0.36)], maxZoom: 17, animate: false }
+              : { padding: [50, 50], maxZoom: 17, animate: false });
+          } else if (isMobile) {
             const targetZoom = 16;
             const targetPoint = map.project([p.lat, p.lng], targetZoom);
             targetPoint.y += window.innerHeight * 0.18;

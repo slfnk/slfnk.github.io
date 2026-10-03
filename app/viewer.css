@@ -120,7 +120,7 @@
     display: inline-block;
     font-size: 0.5em;
     vertical-align: 0.3em;
-    margin: 0 0.75em;
+    margin: 0 0.75rem 0 0.65rem; /* the text's letter-spacing adds a hair on the left */
     letter-spacing: 0;
     opacity: 0.8;
   }
@@ -371,6 +371,9 @@
   .intro-body:not(.collapsed) + .intro-toggle-wrap {
     margin-top: 0;
   }
+  /* Short intros: no button, just the divider line under the intro */
+  .intro-toggle-wrap.no-fold { padding-bottom: 0.5rem; }
+  .intro-toggle-wrap.no-fold .intro-toggle { display: none; }
 
   /* =================== FILTER BAR =================== */
   .filter-bar {

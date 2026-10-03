@@ -89,7 +89,7 @@ a { color: inherit; }
 .pf-map .lock { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; z-index: 500; }
 .pf-map .lock svg { width: 22px; height: 22px; fill: none; stroke: var(--text); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; background: var(--bg); border-radius: 50%; padding: 6px; box-sizing: content-box; }
 .pf-meta { font-size: 0.66rem; font-weight: 600; letter-spacing: 0.13em; text-transform: uppercase; color: var(--accent); margin-bottom: 0.35rem; }
-.pf-meta .dot { display: inline-block; font-size: 0.55em; vertical-align: 0.3em; margin: 0 0.75em; letter-spacing: 0; }
+.pf-meta .dot { display: inline-block; font-size: 0.55em; vertical-align: 0.3em; margin: 0 0.75rem 0 0.65rem; letter-spacing: 0; }
 .pf-title { font-family: var(--serif); font-size: 1.32rem; font-weight: 600; line-height: 1.25; color: var(--text); }
 .pf-row a:hover .pf-title { text-decoration: underline; text-decoration-color: var(--accent); text-decoration-thickness: 1.5px; text-underline-offset: 4px; }
 .pf-deck { font-family: var(--serif); font-style: italic; font-size: 0.98rem; line-height: 1.5; color: var(--text-2); margin-top: 0.3rem; }
