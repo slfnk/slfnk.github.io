@@ -14,6 +14,8 @@
 <script src="/app/parser.js"></script>
 <script src="/app/model.js"></script>
 <script src="/app/markdown.js"></script>
+<script src="/app/config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2/dist/umd/supabase.js"></script>
 <style>
   :root {
     --bg: #FAF9F6; --panel: #FFFFFF; --text: #1A1A1A; --text-2: #5C5C5C; --text-3: #6B6B6B;
@@ -81,6 +83,11 @@
   .login p { color: var(--text-2); margin-bottom: 0.6rem; }
   .login ol { color: var(--text-2); margin: 0.4rem 0 1rem 1.2rem; }
   .login li { margin-bottom: 0.25rem; }
+  .login .tokenbox { margin-top: 2.4rem; border-top: 1px solid var(--border); padding-top: 1rem; }
+  .login .tokenbox summary { cursor: pointer; font-size: 13px; font-weight: 600; color: var(--text-2); }
+  .login .tokenbox h2 { font-family: var(--serif); font-size: 1.2rem; margin: 0.9rem 0 0.4rem; }
+  .login #codeInput { font-size: 22px; letter-spacing: 0.25em; font-variant-numeric: tabular-nums; max-width: 260px; }
+  .login #codeStep { margin-top: 1.2rem; }
   .row { display: flex; gap: 0.5rem; align-items: center; margin-top: 0.6rem; }
   .row label { display: flex; gap: 0.35rem; align-items: center; font-weight: 500; }
   .row input[type=checkbox] { width: auto; }
@@ -377,7 +384,7 @@
     <div class="menuwrap">
       <button id="moreBtn" class="icon" aria-label="More options" aria-haspopup="true" aria-expanded="false"><svg class="i" viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.3"/><circle cx="12" cy="12" r="1.3"/><circle cx="19" cy="12" r="1.3"/></svg></button>
       <div class="menu hidden" id="moreMenu" role="menu">
-        <button id="reloadBtn" role="menuitem">Reload latest from GitHub</button>
+        <button id="reloadBtn" role="menuitem">Reload latest version</button>
         <button id="deleteGuideBtn" role="menuitem" class="danger-item">Delete this guide…</button>
         <div class="menusep"></div>
         <div class="menunote">Signed in to <span id="whoText"></span></div>
@@ -389,7 +396,21 @@
 
 <!-- ============ LOGIN ============ -->
 <section class="login hidden" id="loginView">
-  <h1>Sign in with a GitHub token</h1>
+  <div id="emailLogin">
+    <h1>Sign in to GUIIDES</h1>
+    <p>Enter the email address you were invited with, and we'll send you a sign-in code.</p>
+    <label class="f" for="emailInput">Email</label>
+    <input id="emailInput" type="email" autocomplete="email" spellcheck="false" placeholder="you@example.com">
+    <div class="row"><button class="primary" id="sendCode">Send code</button><span class="status" id="emailStatus"></span></div>
+    <div id="codeStep" class="hidden">
+      <label class="f" for="codeInput">Code from the email</label>
+      <input id="codeInput" inputmode="numeric" autocomplete="one-time-code" maxlength="10" spellcheck="false" placeholder="123456">
+      <div class="row"><button class="primary" id="verifyCode">Sign in</button><button class="ghost" id="resendCode">Send a new code</button></div>
+    </div>
+  </div>
+  <details class="tokenbox" id="tokenLogin">
+  <summary>Site owner? Sign in with a GitHub token</summary>
+  <h2>Sign in with a GitHub token</h2>
   <p>The editor saves straight to your site's GitHub repo. It needs a token that can only touch that one repo.</p>
   <ol>
     <li>Open <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener">GitHub → new fine-grained token</a>.</li>
@@ -402,6 +423,7 @@
   <input id="tokenInput" type="password" autocomplete="off" spellcheck="false" placeholder="github_pat_…">
   <div class="row"><label><input type="checkbox" id="rememberToken" checked> Remember on this device</label></div>
   <div class="row"><button class="primary" id="signIn">Sign in</button><span class="status" id="loginStatus"></span></div>
+  </details>
 </section>
 
 <!-- ============ APP ============ -->
@@ -765,6 +787,8 @@ const TILE_URL = 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/
 const PHOTON = 'https://photon.komoot.io/api/';
 
 const state = {
+  backend: 'github',    // 'github' (site owner, token) or 'db' (invited author, email)
+  user: null,           // { id, email } when signed in by email
   guides: [], guidesSha: null,
   profiles: [],         // [{ handle, name }] from by/<handle>/profile.md
   prof: null,           // the profile open in the profile editor
@@ -796,10 +820,130 @@ function isDirty() {
 }
 
 // ============================================================
+// DATABASE — guides by invited authors, who sign in by email
+// Their guides live in the Supabase "guides" table: one row per guide,
+// holding the same places.md text the GitHub files hold. The site owner's
+// guides stay files on GitHub. state.backend says which sign-in is active.
+// ============================================================
+const CFG = window.GUIIDES || {};
+let sbClient = null;
+function supa() {
+  if (!sbClient && window.supabase && CFG.supabaseUrl && CFG.supabaseKey) {
+    sbClient = window.supabase.createClient(CFG.supabaseUrl, CFG.supabaseKey, {
+      auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true }
+    });
+    // A session that can't be refreshed any more: back to the sign-in screen
+    sbClient.auth.onAuthStateChange(ev => { if (ev === 'SIGNED_OUT' && state.backend === 'db') location.reload(); });
+  }
+  return sbClient;
+}
+const isDb = () => state.backend === 'db';
+function dbError(error, fallback) {
+  const code = error && error.code, msg = (error && error.message) || '';
+  if (code === '23505') return new ApiError(409, 'That web address is already taken. Pick another.');
+  if (code === '23514') return new ApiError(400, /slug_free/.test(msg) ? 'That web address is used by the site itself. Pick another.'
+    : /slug_format/.test(msg) ? 'Use lowercase letters, numbers and dashes for the web address.' : 'That guide is too large to save.');
+  if (/JWT|token/i.test(msg)) return new ApiError(401, 'Your sign-in expired. Reload the page and sign in again.');
+  return new ApiError(0, msg || fallback);
+}
+async function dbList() {
+  const { data, error } = await supa().from('guides')
+    .select('slug, title, city, published')
+    .eq('owner', state.user.id).order('created_at', { ascending: true });
+  if (error) throw dbError(error, "Couldn't load your guides.");
+  return data.map(r => ({ slug: r.slug, title: r.title || r.slug, city: r.city || '', published: r.published }));
+}
+async function dbLoad(slug) {
+  const { data, error } = await supa().from('guides').select('markdown, version').eq('slug', slug).maybeSingle();
+  if (error) throw dbError(error, "Couldn't load this guide.");
+  return data ? { text: data.markdown, sha: String(data.version) } : null;
+}
+// Saves only if nobody saved since this copy was opened (the version still matches)
+async function dbSave(slug, text, version, title) {
+  const { data, error } = await supa().from('guides')
+    .update({ markdown: text, title: title || slug })
+    .eq('slug', slug).eq('version', Number(version)).select('version');
+  if (error) throw dbError(error, "Couldn't save.");
+  if (!data || !data.length) throw new ApiError(409, 'This guide changed since you opened it.');
+  return String(data[0].version);
+}
+async function dbCreate(slug, text, title, city) {
+  const { error } = await supa().from('guides').insert({ slug, markdown: text, title, city });
+  if (error) throw dbError(error, "Couldn't create the guide.");
+}
+async function dbDelete(slug) {
+  const { data, error } = await supa().from('guides').delete().eq('slug', slug).select('slug');
+  if (error) throw dbError(error, "Couldn't delete the guide.");
+  if (!data || !data.length) throw new ApiError(404, 'That guide was already gone.');
+}
+// Guide text, from wherever this sign-in keeps it
+function loadGuideFile(slug) { return isDb() ? dbLoad(slug) : getFile(slug + '/places.md'); }
+function saveGuideFile(slug, text, sha, message, title) {
+  return isDb() ? dbSave(slug, text, sha, title) : putFile(slug + '/places.md', text, sha, message);
+}
+// Is a web address in use by a GitHub guide (asks the live site) or a database guide?
+async function addressTaken(slug) {
+  try { const r = await fetch('/' + slug + '/places.md', { method: 'HEAD', cache: 'no-cache' }); if (r.ok) return true; } catch (e) {}
+  const s = supa();
+  if (s) { const { data } = await s.from('guides').select('slug').eq('slug', slug).maybeSingle(); if (data) return true; }
+  return false;
+}
+
+// ---- email sign-in: a one-time code, no password
+let pendingEmail = '';
+function authProblem(error) {
+  const m = (error && error.message) || '';
+  if (/signups? not allowed|not allowed for otp|user not found/i.test(m)) return "That email isn't on the invite list yet. Ask the site owner to add you.";
+  if (/rate limit|too many|security purposes|after \d+ seconds/i.test(m)) return 'Too many tries in a row. Wait a minute, then try again.';
+  if (/expired|invalid|otp/i.test(m)) return "That code didn't work. It may have expired, so send a new one.";
+  return m || 'Something went wrong. Try again.';
+}
+async function sendCode() {
+  const email = $('emailInput').value.trim().toLowerCase();
+  if (!/^\S+@\S+\.\S+$/.test(email)) { setStatus($('emailStatus'), 'Enter your email address.', 'err'); return; }
+  const s = supa();
+  if (!s) { setStatus($('emailStatus'), "Email sign-in didn't load. Check your connection and reload the page.", 'err'); return; }
+  $('sendCode').disabled = true; $('resendCode').disabled = true;
+  setStatus($('emailStatus'), 'Sending…', 'busy');
+  const { error } = await s.auth.signInWithOtp({ email, options: { shouldCreateUser: false, emailRedirectTo: SITE + '/admin/' } });
+  $('sendCode').disabled = false; $('resendCode').disabled = false;
+  if (error) { setStatus($('emailStatus'), authProblem(error), 'err'); return; }
+  pendingEmail = email;
+  setStatus($('emailStatus'), 'Sent. Check your inbox (and spam) for the code.', 'ok');
+  show($('codeStep')); $('codeInput').value = ''; $('codeInput').focus();
+}
+async function verifyCode() {
+  const code = $('codeInput').value.replace(/\D/g, '');
+  if (code.length < 6) { setStatus($('emailStatus'), 'Enter the code from the email.', 'err'); return; }
+  $('verifyCode').disabled = true;
+  setStatus($('emailStatus'), 'Checking…', 'busy');
+  const { data, error } = await supa().auth.verifyOtp({ email: pendingEmail, token: code, type: 'email' });
+  $('verifyCode').disabled = false;
+  if (error || !data || !data.session) { setStatus($('emailStatus'), authProblem(error), 'err'); return; }
+  setStatus($('emailStatus'), '');
+  await enterAsAuthor(data.session.user);
+}
+async function enterAsAuthor(user) {
+  state.backend = 'db';
+  state.user = { id: user.id, email: user.email };
+  $('whoText').textContent = user.email;
+  show($('loginView'), false); show($('topControls')); show($('appView'));
+  try { await loadGuideIndex(); }
+  catch (e) { showHome({ force: true }); setStatus($('appStatus'), e.message, 'err'); }
+}
+$('sendCode').addEventListener('click', sendCode);
+$('resendCode').addEventListener('click', sendCode);
+$('emailInput').addEventListener('keydown', e => { if (e.key === 'Enter') sendCode(); });
+$('emailInput').addEventListener('input', () => setStatus($('emailStatus'), ''));
+$('verifyCode').addEventListener('click', verifyCode);
+$('codeInput').addEventListener('keydown', e => { if (e.key === 'Enter') verifyCode(); });
+
+// ============================================================
 // SIGN IN
 // ============================================================
 async function signIn(t, remember) {
   token = t;
+  state.backend = 'github';
   const res = await gh(`/repos/${REPO.owner}/${REPO.name}`);
   if (res.status === 404) throw new ApiError(404, "This token can't see " + REPO.owner + '/' + REPO.name + '. Make sure you picked that repository under "Repository access".');
   (remember ? localStorage : sessionStorage).setItem('gg-token', t);
@@ -809,8 +953,9 @@ async function signIn(t, remember) {
   show($('appView'));
   await loadGuideIndex();
 }
-function signOut() {
+async function signOut() {
   if (isDirty() && !confirm('You have unsaved changes. Sign out anyway? (Your draft stays saved on this device.)')) return;
+  if (isDb()) { try { await supa().auth.signOut(); } catch (e) {} }
   localStorage.removeItem('gg-token'); sessionStorage.removeItem('gg-token');
   location.reload();
 }
@@ -829,6 +974,14 @@ $('signOut').addEventListener('click', signOut);
 // GUIDE PICKER
 // ============================================================
 async function loadGuideIndex() {
+  if (isDb()) {
+    state.guides = await dbList(); state.profiles = [];
+    renderPicker();
+    const want = new URLSearchParams(location.hash.slice(1)).get('guide');
+    if (want && state.guides.some(g => g.slug === want)) openGuide(want, { force: true });
+    else showHome({ force: true });
+    return;
+  }
   const f = await getFile('guides.json');
   state.guides = f ? (JSON.parse(f.text).guides || []) : [];
   state.guidesSha = f ? f.sha : null;
@@ -859,6 +1012,7 @@ $('homeBtn').addEventListener('click', () => showHome());
 
 function renderHome() {
   homeMaps.forEach(m => m.remove()); homeMaps = [];
+  document.querySelectorAll('.home-pages').forEach(el => show(el, !isDb()));
   const PERSON = '<svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/></svg>';
   $('profileCards').innerHTML = state.profiles.map(p => '<a class="pcard" href="#profile=' + esc(p.handle) + '" data-open-profile="' + esc(p.handle) + '">' + PERSON + esc(p.name) + ' <span class="hint">guiides.org/by/' + esc(p.handle) + '/</span></a>').join('') +
     '<button class="pcard" data-new-profile style="height:auto;border-style:dashed;color:var(--brand-dark)">＋ New profile</button>';
@@ -874,9 +1028,9 @@ function renderHome() {
   state.guides.forEach(async g => {
     const thumb = document.getElementById('gthumb-' + g.slug);
     try {
-      const f = await getFile(g.slug + '/places.md');
+      const f = await loadGuideFile(g.slug);
       if (!thumb || !thumb.isConnected) return;
-      if (!f) { document.getElementById('gmeta-' + g.slug).textContent = 'No places.md found for /' + g.slug + '/'; return; }
+      if (!f) { document.getElementById('gmeta-' + g.slug).textContent = isDb() ? 'This guide is missing' : 'No places.md found for /' + g.slug + '/'; return; }
       const data = parsePlacesMd(f.text), gd = data.guide;
       const locked = !!gd.locked;
       const offColor = HEX.test(gd.pinColor || '') ? gd.pinColor : DEFAULT_PIN;
@@ -924,16 +1078,16 @@ function renderPicker() {
   $('guidePicker').innerHTML = '<option value=""' + (cur ? '' : ' selected') + '>Choose a guide…</option>' +
     '<optgroup label="Guides">' +
     state.guides.map(g => '<option value="' + esc(g.slug) + '"' + (g.slug === cur ? ' selected' : '') + '>' + esc(g.title) + '</option>').join('') +
-    '<option value="__new">＋ New guide…</option></optgroup>' +
+    '<option value="__new">＋ New guide…</option></optgroup>' + (isDb() ? '' :
     '<optgroup label="Profiles">' + state.profiles.map(p => '<option value="__p:' + esc(p.handle) + '"' + (cur === '__p:' + p.handle ? ' selected' : '') + '>' + esc(p.name) + '</option>').join('') +
     '<option value="__newprof"' + (cur === '__newprof' ? ' selected' : '') + '>＋ New profile…</option></optgroup>' +
-    '<optgroup label="Site pages"><option value="__faq"' + (cur === '__faq' ? ' selected' : '') + '>FAQ page</option></optgroup>';
+    '<optgroup label="Site pages"><option value="__faq"' + (cur === '__faq' ? ' selected' : '') + '>FAQ page</option></optgroup>');
 }
 $('guidePicker').addEventListener('change', () => {
   const v = $('guidePicker').value;
   if (v === '__new') { startNewGuide(); return; }
-  if (v === '__faq') { openFaq(); return; }
-  if (v === '__newprof') { openProfile(null); return; }
+  if (v === '__faq' && !isDb()) { openFaq(); return; }
+  if (v === '__newprof' && !isDb()) { openProfile(null); return; }
   if (v.startsWith('__p:')) { openProfile(v.slice(4)); return; }
   if (v) openGuide(v); else showHome();
 });
@@ -992,8 +1146,8 @@ async function openGuide(slug, { force = false } = {}) {
   state.doc = null; state.prof = null;
   flashSaveState('Loading…', 'clean');
   try {
-    const f = await getFile(slug + '/places.md');
-    if (!f) throw new ApiError(404, 'No file at /' + slug + '/places.md');
+    const f = await loadGuideFile(slug);
+    if (!f) throw new ApiError(404, isDb() ? 'That guide is gone, or isn\'t yours.' : 'No file at /' + slug + '/places.md');
     // Password-protected: decrypt before anything else sees the file
     let password = null;
     const lockedLine = (f.text.match(/^Locked:\s*(.+)$/m) || [])[1];
@@ -1036,7 +1190,7 @@ function offerDraft(slug, file) {
   try { d = JSON.parse(localStorage.getItem(draftKey(slug)) || 'null'); } catch (e) {}
   if (!d || d.text === file.text || d.text === state.current.baseline) { localStorage.removeItem(draftKey(slug)); show($('draftNote'), false); return; }
   $('draftText').textContent = 'You have unsaved edits from ' + new Date(d.savedAt).toLocaleString() +
-    (d.baseSha !== file.sha ? '. The guide has changed on GitHub since then — restoring would undo those changes.' : '.');
+    (d.baseSha !== file.sha ? '. The guide has been saved ' + (isDb() ? 'somewhere else' : 'on GitHub') + ' since then — restoring would undo those changes.' : '.');
   show($('draftNote'));
 }
 $('restoreDraft').addEventListener('click', () => {
@@ -1077,19 +1231,20 @@ async function save() {
   try {
     const pw = state.current.password;
     const fileText = pw ? await lockGuideText(text, pw) : text;
-    const newSha = await putFile(slug + '/places.md', fileText, state.current.sha, 'Update ' + slug + ' guide (editor)' + (pw ? ' [protected]' : ''));
+    const newSha = await saveGuideFile(slug, fileText, state.current.sha, 'Update ' + slug + ' guide (editor)' + (pw ? ' [protected]' : ''), check.parsed.guide.title);
     Object.assign(state.current, { sha: newSha, original: text, originalSpots: after, lockDirty: false });
     if (pw) { try { sessionStorage.setItem('gg-pw:' + slug, pw); } catch (e) {} }
     state.current.baseline = state.mode === 'visual' ? text : M.serializeGuideModel(M.parseGuideModel(text));
     if (state.mode === 'text') state.model = loadModel(text);
     localStorage.removeItem(draftKey(slug));
-    const synced = await syncGuideMeta(slug, check.parsed.guide);
-    flashSaveState('Saved' + (synced ? ' · page details updated' : '') + ' · live in about a minute', 'clean');
+    const synced = isDb() ? false : await syncGuideMeta(slug, check.parsed.guide);
+    if (isDb()) { const g = state.guides.find(x => x.slug === slug); if (g && check.parsed.guide.title) { g.title = check.parsed.guide.title; renderPicker(); } }
+    flashSaveState('Saved' + (synced ? ' · page details updated' : '') + (isDb() ? ' · live now' : ' · live in about a minute'), 'clean');
     if (state.mode === 'visual') renderVisual();
   } catch (e) {
     if (e.status === 409) {
-      flashSaveState('Not saved — changed on GitHub', 'err');
-      alert("Not saved: this guide changed on GitHub after you opened it, and saving would overwrite that.\n\nYour edits are kept as a draft on this device. Click Reload to get the latest version, then Restore draft only if your version should win.");
+      flashSaveState('Not saved — changed ' + (isDb() ? 'elsewhere' : 'on GitHub'), 'err');
+      alert("Not saved: this guide was saved " + (isDb() ? "somewhere else (another tab or device)" : "on GitHub") + " after you opened it, and saving would overwrite that.\n\nYour edits are kept as a draft on this device. Click Reload to get the latest version, then Restore draft only if your version should win.");
     } else {
       flashSaveState('Not saved: ' + e.message, 'err');
     }
@@ -1132,7 +1287,7 @@ $('reloadBtn').addEventListener('click', () => {
     openFaq({ force: true }); return;
   }
   if (!state.current) return;
-  if (isDirty() && !confirm('Reload the latest version from GitHub? Your current edits stay saved as a draft you can restore.')) return;
+  if (isDirty() && !confirm('Reload the latest saved version? Your current edits stay saved as a draft you can restore.')) return;
   openGuide(state.current.slug, { force: true });
 });
 window.addEventListener('beforeunload', e => { if (isDirty()) { e.preventDefault(); e.returnValue = ''; } });
@@ -1181,6 +1336,18 @@ $('delGo').addEventListener('click', async () => {
   $('delGo').disabled = true;
   const step = m => setStatus($('delStatus'), m, 'busy');
   try {
+    if (isDb()) {
+      step('Deleting…');
+      await dbDelete(slug);
+      state.guides = state.guides.filter(g => g.slug !== slug);
+      localStorage.removeItem(draftKey(slug));
+      state.current = null; state.model = null;
+      history.replaceState(null, '', location.pathname);
+      showHome({ force: true });
+      setStatus($('appStatus'), 'Deleted ' + slug + '. Its page is gone now.', 'ok');
+      $('delGo').disabled = false;
+      return;
+    }
     // 1. Take it off the guide list first, so it disappears from listings even if a later step fails
     step('Removing it from the guide list…');
     const f = await getFile('guides.json');
@@ -2767,9 +2934,25 @@ $('ngCreate').addEventListener('click', async () => {
   $('ngCreate').disabled = true;
   const step = m => setStatus($('ngStatus'), m, 'busy');
   const done = [];
+  if (isDb()) {
+    try {
+      step('Checking the address is free…');
+      if (await addressTaken(slug)) throw new ApiError(409, 'A guide already uses /' + slug + '/. Pick another address.');
+      step('Creating your guide…');
+      await dbCreate(slug, starterPlacesMd({ title, subtitle, author: author || 'Anonymous', center: [c[0], c[1]], cats: $('ngCats').checked }), title, city);
+      state.guides = await dbList(); renderPicker();
+      ['ngSlug', 'ngTitle', 'ngSubtitle', 'ngAuthor', 'ngCity', 'ngCenter'].forEach(id => $(id).value = '');
+      $('ngSlugPreview').textContent = '…';
+      await openGuide(slug, { force: true });
+      flashSaveState('Guide created · live at guiides.org/' + slug + '/', 'clean');
+    } catch (e) { err('Stopped: ' + e.message); }
+    $('ngCreate').disabled = false;
+    return;
+  }
   try {
     step('Checking the address is free…');
     if (await getFile(slug + '/index.html') || await getFile(slug + '/places.md')) throw new ApiError(0, 'Files already exist at /' + slug + '/ on GitHub. Pick another address.');
+    if (await addressTaken(slug)) throw new ApiError(0, 'An invited author already has a guide at /' + slug + '/. Pick another address.');
     step('Creating ' + slug + '/places.md…');
     await putFile(slug + '/places.md', starterPlacesMd({ title, subtitle, author: author || 'Anonymous', center: [c[0], c[1]], cats: $('ngCats').checked }), null, 'Create ' + slug + ' guide content (editor)');
     done.push(slug + '/places.md');
@@ -2801,9 +2984,23 @@ $('repoName1').textContent = REPO.owner + '/' + REPO.name;
 window.addEventListener('resize', () => layoutStrip());
 (async function start() {
   const saved = localStorage.getItem('gg-token') || sessionStorage.getItem('gg-token');
-  if (!saved) { show($('loginView')); $('tokenInput').focus(); return; }
-  try { await signIn(saved, !!localStorage.getItem('gg-token')); }
-  catch (e) { token = null; show($('loginView')); setStatus($('loginStatus'), e.message, 'err'); }
+  if (saved) {
+    try { await signIn(saved, !!localStorage.getItem('gg-token')); }
+    catch (e) { token = null; show($('loginView')); $('tokenLogin').open = true; setStatus($('loginStatus'), e.message, 'err'); }
+    return;
+  }
+  const s = supa();
+  if (!s) {
+    // The email sign-in library didn't load (offline, or blocked): token sign-in still works
+    show($('emailLogin'), false); $('tokenLogin').open = true;
+    show($('loginView')); $('tokenInput').focus();
+    return;
+  }
+  try {
+    const { data } = await s.auth.getSession(); // also picks up a sign-in link clicked in the email
+    if (data && data.session) { await enterAsAuthor(data.session.user); return; }
+  } catch (e) {}
+  show($('loginView')); $('emailInput').focus();
 })();
 </script>
 </body>
