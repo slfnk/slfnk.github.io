@@ -1757,7 +1757,7 @@ function renderVisual() {
   // ---- guide header (same order as the live page)
   h += '<div class="ghead">' +
     '<div class="updated-ro" title="Updated is set automatically each time you save">Updated ' + val(M.getMeta(m, 'Updated') || monthYear()) +
-    countBits().map(x => '<span style="font-size:0.55em;vertical-align:0.3em;margin:0 0.8em">•</span>' + x).join('') + '</div>' +
+    countBits().map(x => '<span style="display:inline-block;font-size:0.55em;vertical-align:0.3em;margin:0 0.75rem 0 0.65rem;letter-spacing:0">•</span>' + x).join('') + '</div>' +
     '<textarea class="ie title" data-meta="Title" rows="1" placeholder="Guide title" aria-label="Guide title">' + val(M.getMeta(m, 'Title')) + '</textarea>' +
     '<input class="ie subtitle" data-meta="Subtitle" value="' + val(M.getMeta(m, 'Subtitle')) + '" placeholder="Add an italic subtitle…" aria-label="Subtitle">' +
     renderByline(m) + renderBannerRow() +
