@@ -2,7 +2,7 @@
 
 ## What is Guiides?
 
-Guiides is a free tool to build and share mapped local knowledge and opinions. The emphasis is on authored personal writing to share opinions, and less on photos and videos. The tool aims to be a speedy and lightweight web-app that is instantly usable on a friend's phone with no logins or app downloads.
+Guiides is a free tool to build and share mapped local knowledge. The emphasis is on authored personal writing to share opinions, and less on photos and videos. The tool aims to be a speedy and lightweight web-app that is instantly usable on a friend's phone with no logins or app downloads.
 
 ## Why .Org?
 
