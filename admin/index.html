@@ -66,7 +66,7 @@
   #guidePicker { width: auto; max-width: 280px; height: 36px; font-weight: 600; font-size: 13px; }
   .seg { display: flex; padding: 3px; background: #EFECE6; border-radius: 9px; gap: 2px; }
   header { position: sticky; }
-  #modeSeg { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); }
+  #modeSeg { position: static; transform: none; } /* left, beside All guides; the mark holds the center */
   .seg button { height: 30px; border: none; background: transparent; color: var(--text-2); border-radius: 7px; padding: 0 12px; }
   .seg button.on { background: #fff; color: var(--text); }
   .grow { flex-grow: 1; }
@@ -152,7 +152,9 @@
   .tokenbox ol { margin: 0.4rem 0 1rem 1.2rem; }
   .tokenbox li { margin-bottom: 0.25rem; }
   /* Editor bar: the same salmon mark, in place of the old logo */
-  .brand.tent { gap: 0; color: #FF8F8F; font-size: 13px; letter-spacing: 0.06em; }
+  .brand.tent { gap: 0; color: #FF8F8F; font-size: 13px; letter-spacing: 0.06em;
+    position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); z-index: 2; }
+  @media (max-width: 860px) { header .brand.tent { display: none; } }
   .brand.tent strong { letter-spacing: 0.1em; margin: 0 0.35em; }
   .brand.tent:hover { color: #F26B6B; }
   .row { display: flex; gap: 0.5rem; align-items: center; margin-top: 0.6rem; }
@@ -274,6 +276,11 @@
   .swatches input[type=color] { width: 30px; height: 28px; padding: 1px; border-radius: 6px; cursor: pointer; }
 
   /* ---------- banner ---------- */
+  .newaddr { display: flex; align-items: baseline; justify-content: center; flex-wrap: wrap; gap: 0 2px; font-size: 13px; color: var(--text-3); margin-top: -2px; }
+  .newaddr input { width: auto; min-width: 9ch; max-width: 260px; height: auto; padding: 1px 4px; border: none; border-bottom: 1px dashed #C9C4BB; border-radius: 0; background: transparent; font: inherit; font-weight: 600; color: var(--text); box-shadow: none; field-sizing: content; }
+  .newaddr input:focus { outline: none; border-bottom-color: var(--text-3); }
+  .newaddr-note { flex-basis: 100%; text-align: center; font-size: 12px; margin-top: 2px; }
+  .newaddr-note .good { color: #1E7A46; } .newaddr-note .bad { color: #A33A28; }
   .bshape { -webkit-clip-path: polygon(0 50%, 14.6% 0, 84.6% 0, 100% 50%, 84.6% 100%, 14.6% 100%); clip-path: polygon(0 50%, 14.6% 0, 84.6% 0, 100% 50%, 84.6% 100%, 14.6% 100%); }
   .bprev { display: block; width: 62%; max-width: 300px; aspect-ratio: 1600 / 119; height: auto; padding: 0; border: none; border-radius: 0; background-size: cover; background-position: center; margin: 4px auto 0; }
   .bprev.none { background: repeating-linear-gradient(90deg, #E6E2DB 0 6px, transparent 6px 10px); }
@@ -438,8 +445,7 @@
   <a class="brand tent" href="/">⛺︎<strong>GUIIDES</strong>⛺︎</a>
   <div id="topControls" class="hidden" style="display:flex;align-items:center;gap:10px;flex:1 1 auto;min-width:0">
     <button id="homeBtn" class="ghost" title="All guides"><svg class="i" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>All guides</button>
-    <label class="sr" for="guidePicker">Guide</label>
-    <select id="guidePicker"></select>
+    <select id="guidePicker" class="hidden" aria-hidden="true" tabindex="-1"></select>
     <div class="seg" id="modeSeg">
       <button data-mode="visual" class="on">Visual</button>
       <button data-mode="text">Markdown</button>
@@ -1351,6 +1357,14 @@ $('guidePicker').addEventListener('change', () => {
 // ============================================================
 function setSaveState() {
   const el = $('saveState');
+  if (state.current && state.current.isNew && !state.prof && !state.doc) {
+    const title = state.model && (M.getMeta(state.model, 'Title') || '').trim();
+    $('saveBtn').disabled = !(title && !newSlugProblem(state.current.newSlug));
+    if (!el.dataset.msg) { el.textContent = 'New guide · not saved yet'; el.className = 'dirty'; }
+    show($('viewLive'), false);
+    return;
+  }
+  show($('viewLive'));
   if (state.prof && state.prof.isNew) { el.textContent = ''; $('saveBtn').disabled = true; return; }
   if (state.doc || state.prof) {
     const dd = isDirty();
@@ -1382,6 +1396,12 @@ let checkTimer = null;
 function afterEdit({ now = false } = {}) {
   if (!state.current) return;
   const text = currentText();
+  if (state.current.isNew) {
+    setSaveState(); clearTimeout(checkTimer);
+    const run = () => { state.lastCheck = checkCurrent(); renderChecks(state.lastCheck); layoutStrip(); setSaveState(); };
+    if (now) run(); else checkTimer = setTimeout(run, 350);
+    return;
+  }
   if (isDirty()) {
     try { localStorage.setItem(draftKey(state.current.slug), JSON.stringify({ text, baseSha: state.current.sha, savedAt: Date.now() })); } catch (e) {}
     $('saveState').dataset.msg = '';
@@ -1472,6 +1492,7 @@ async function save() {
   if (state.prof) { saveProfile(); return; }
   if (state.doc) { saveFaq(); return; }
   if (!state.current || !isDirty()) return;
+  if (state.current.isNew) { await createFromEditor(); return; }
   stampUpdated();
   const text = currentText();
   const check = checkGuide(text);
@@ -1553,7 +1574,8 @@ function toggleMenu(open) {
   const on = open != null ? open : $('moreMenu').classList.contains('hidden');
   show($('moreMenu'), on);
   $('moreBtn').setAttribute('aria-expanded', on ? 'true' : 'false');
-  $('deleteGuideBtn').disabled = !state.current;
+  $('deleteGuideBtn').disabled = !state.current || !!state.current.isNew;
+  if (state.current && state.current.isNew) $('reloadBtn').disabled = true;
   $('reloadBtn').disabled = !state.current && !state.doc && !(state.prof && !state.prof.isNew);
 }
 $('moreBtn').addEventListener('click', e => { e.stopPropagation(); toggleMenu(); });
@@ -2166,6 +2188,29 @@ function renderByline(m) {
   return h;
 }
 
+// While a guide is new: guiides.org/…/<address>, filled from the title until edited
+function renderNewAddress() {
+  const cur = state.current;
+  if (!cur || !cur.isNew) return '';
+  const prefix = 'guiides.org/' + (isDb() ? 'by/' + myHandle() + '/' : '');
+  return '<div class="newaddr"><span class="pre">' + esc(prefix) + '</span><input data-new-slug value="' + val(cur.newSlug) + '" placeholder="your-guide" aria-label="Web address for this guide" spellcheck="false" autocomplete="off">' +
+    '<span class="newaddr-note" id="newAddrNote">' + newAddrNote() + '</span></div>';
+}
+function newAddrNote() {
+  const cur = state.current;
+  if (!cur.newSlug) return '<span class="hint">The address fills in from the title</span>';
+  const pb = newSlugProblem(cur.newSlug);
+  return pb ? '<span class="bad">' + esc(pb) + '</span>' : '<span class="good">✓ Free · locks in when you first save</span>';
+}
+function setNewSlug(v, touched) {
+  const cur = state.current;
+  cur.newSlug = v; if (touched) cur.slugTouched = true;
+  const inp = $('vlist').querySelector('[data-new-slug]');
+  if (inp && inp.value !== v) inp.value = v;
+  const note = document.getElementById('newAddrNote'); if (note) note.innerHTML = newAddrNote();
+  setSaveState();
+}
+
 function renderVisual() {
   clearTimeout(renderTimer);
   if (!state.model) return;
@@ -2181,7 +2226,7 @@ function renderVisual() {
     countBits().map(x => '<span style="display:inline-block;font-size:0.55em;vertical-align:0.3em;margin:0 0.75rem 0 0.65rem;letter-spacing:0">•</span>' + x).join('') + '</div>' +
     '<textarea class="ie title" data-meta="Title" rows="1" placeholder="Guide title" aria-label="Guide title">' + val(M.getMeta(m, 'Title')) + '</textarea>' +
     '<input class="ie subtitle" data-meta="Subtitle" value="' + val(M.getMeta(m, 'Subtitle')) + '" placeholder="Add an italic subtitle…" aria-label="Subtitle">' +
-    renderByline(m) + renderBannerRow() +
+    renderByline(m) + renderNewAddress() + renderBannerRow() +
     '<div style="width:100%"><div class="textbar"><button data-act="insert-link" data-target="[data-intro]">' + ICON.link + 'Link</button></div>' +
     renderLockRow() +
     '<textarea class="ie intro" data-intro rows="4" placeholder="Write an intro that sets the scene… (blank line = new paragraph)" aria-label="Intro">' + val(m.intro.join('\n\n')) + '</textarea></div>' +
@@ -2605,6 +2650,12 @@ $('vlist').addEventListener('focusin', e => {
 // Text-ish edits update the model without redrawing (keeps the cursor where it is)
 $('vlist').addEventListener('input', e => {
   const t = e.target, d = t.dataset, m = state.model;
+  if (d.newSlug != null) {
+    const v = t.value.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+    if (v !== t.value) t.value = v;
+    setNewSlug(v, true); return;
+  }
+  if (d.meta === 'Title' && state.current && state.current.isNew && !state.current.slugTouched) setTimeout(() => setNewSlug(slugify(t.value), false), 0);
   if (d.meta) {
     const v = d.meta === 'Title' ? t.value.replace(/\n/g, ' ') : t.value;
     M.setMeta(m, d.meta, v, d.meta === 'Author Link' ? 'Author' : null);
@@ -3203,7 +3254,100 @@ $('pfCreate').addEventListener('click', async () => {
 // ============================================================
 // NEW GUIDE
 // ============================================================
+// A new guide opens straight in the visual editor. Nothing is created until the
+// first Save; the web address follows the title until then (or until edited).
+function blankGuideMd() {
+  const who = isDb() ? ((state.myProfile && (state.myProfile.name || state.myProfile.handle)) || '') : '';
+  return 'Title: \nSubtitle: \nAuthor: ' + (who || 'Your name') + '\n' + (isDb() ? 'Profile: ' + myHandle() + '\n' : '') +
+    'Updated: ' + monthYear() + '\nCategories: off\nPin Color: #038f9e\n\n## Intro\n\n## Categories\n\n===\n';
+}
+function slugify(t) {
+  return String(t || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 60).replace(/-+$/, '');
+}
+// Is this address free? (instant checks; Save confirms against the server)
+function newSlugProblem(slug) {
+  if (!slug) return 'Give your guide a title, or type an address.';
+  if (!/^[a-z0-9]+(-[a-z0-9]+)*$/.test(slug) || slug.length < 2) return 'Use lowercase letters, numbers and dashes.';
+  if (!isDb() && RESERVED.includes(slug)) return '"' + slug + '" is used by the site itself.';
+  if (state.guides.some(g => g.slug === slug)) return 'You already have a guide at that address.';
+  return '';
+}
 function startNewGuide() {
+  if (isDirty() && !confirm('You have unsaved changes. Leave this guide? (Your draft stays saved on this device.)')) { renderPicker(); return; }
+  state.doc = null; state.prof = null;
+  hideAllViews(); show($('editorView'));
+  state.model = loadModel(blankGuideMd());
+  state.current = { slug: '', isNew: true, newSlug: '', slugTouched: false, sha: null, original: '',
+    baseline: M.serializeGuideModel(state.model), originalSpots: 0, password: null, lockDirty: false };
+  Object.assign(V, { selectedId: null, expandedId: null, toast: null, catPanel: false, catNotes: {}, hexDrafts: {}, moveTargets: {}, showAuthorLink: false, lockForm: false, bannerPanel: false, drawId: null, drawHist: [] });
+  $('editor').value = currentText();
+  history.replaceState(null, '', '#new');
+  $('saveState').dataset.msg = '';
+  setMode('visual', { convert: false });
+  state.lastCheck = checkCurrent(); renderChecks(state.lastCheck);
+  renderPicker(); setSaveState(); layoutStrip();
+  if (map) map.setView([20, 0], 2);
+  setTimeout(() => { const t = $('vlist').querySelector('.ie.title'); if (t) t.focus(); }, 0);
+}
+// Guide checks, minus "missing title" while a brand-new guide is still blank
+function checkCurrent() {
+  const c = checkGuide(currentText());
+  if (state.current && state.current.isNew) {
+    c.issues = c.issues.filter(i => !/Title/.test(i));
+    if (!c.issues.length) c.ok = true;
+  }
+  return c;
+}
+async function createFromEditor() {
+  const cur = state.current;
+  const slug = cur.newSlug, title = (M.getMeta(state.model, 'Title') || '').trim();
+  if (!title) { flashSaveState('Give your guide a title first', 'err'); return; }
+  const problem = newSlugProblem(slug);
+  if (problem) { flashSaveState(problem, 'err'); return; }
+  // The map's starting view: wherever it was left (only if the guide doesn't set one)
+  if (map && !M.getMeta(state.model, 'Center')) {
+    const c = map.getCenter();
+    M.setMeta(state.model, 'Center', c.lat.toFixed(4) + ', ' + c.lng.toFixed(4) + ', ' + Math.round(map.getZoom()), 'Updated');
+  }
+  stampUpdated();
+  const text = currentText(), check = checkGuide(text);
+  state.lastCheck = check; renderChecks(check); layoutStrip();
+  if (!check.ok) { flashSaveState('Fix the problems above first', 'err'); return; }
+  $('saveBtn').disabled = true; flashSaveState('Creating your guide…', 'clean');
+  try {
+    const pw = cur.password, fileText = pw ? await lockGuideText(text, pw) : text;
+    let sha;
+    if (isDb()) {
+      await dbCreate(slug, fileText, title, '');
+      sha = '1';
+      state.guides = await dbList();
+    } else {
+      if (await getFile(slug + '/index.html') || await getFile(slug + '/places.md')) throw new ApiError(409, 'Something already exists at /' + slug + '/. Change the address and save again.');
+      sha = await putFile(slug + '/places.md', fileText, null, 'Create ' + slug + ' guide (editor)');
+      await putFile(slug + '/index.html', guidePageHtml(slug, title, M.getMeta(state.model, 'Subtitle') || ''), null, 'Create ' + slug + ' guide page (editor)');
+      const f = await getFile('guides.json');
+      const idx = f ? JSON.parse(f.text) : { guides: [] };
+      idx.guides = idx.guides || [];
+      idx.guides.push({ slug, title, city: '', published: true });
+      state.guidesSha = await putFile('guides.json', JSON.stringify(idx, null, 2) + '\n', f ? f.sha : null, 'Add ' + slug + ' to guide list (editor)');
+      state.guides = idx.guides;
+    }
+    Object.assign(cur, { slug, isNew: false, sha, original: text, originalSpots: check.parsed.places.length, lockDirty: false });
+    cur.baseline = state.mode === 'visual' ? text : M.serializeGuideModel(M.parseGuideModel(text));
+    if (pw) { try { sessionStorage.setItem('gg-pw:' + slug, pw); } catch (e) {} }
+    history.replaceState(null, '', '#guide=' + slug);
+    $('viewLive').href = liveUrl(slug);
+    renderPicker();
+    if (state.mode === 'visual') renderVisual();
+    flashSaveState('Guide created · live at ' + liveUrl(slug).replace(/^https:\/\//, '') + (isDb() ? '' : ' in about a minute'), 'clean');
+  } catch (e) {
+    flashSaveState(e.status === 409 ? e.message : 'Not created: ' + e.message, 'err');
+  }
+  setSaveState();
+}
+
+function startNewGuideForm() {
   if (isDirty() && !confirm('You have unsaved changes. Leave this guide? (Your draft stays saved on this device.)')) { renderPicker(); return; }
   state.current = null; state.model = null; state.doc = null; state.prof = null;
   hideAllViews(); show($('newGuideView'));
