@@ -508,6 +508,7 @@
   <div id="profileView" class="hidden">
     <div class="panel wide">
       <h2 id="pfHeading">Profile</h2>
+      <p class="hint hidden" id="pfIntro" style="font-size:13px;margin-top:6px"></p>
       <div class="hint" style="margin-top:4px">guiides.org/by/<b id="pfAddr">…</b>/ · the guide byline links here</div>
       <div id="pfHandleRow">
         <label class="f" for="pfHandle">Web address</label>
@@ -539,7 +540,7 @@
       <h2>New guide</h2>
       <label class="f" for="ngSlug">Web address</label>
       <input id="ngSlug" placeholder="cdmx-cantinas" spellcheck="false">
-      <div class="hint">guiides.org/<b id="ngSlugPreview">…</b>/ · lowercase letters, numbers and dashes</div>
+      <div class="hint"><span id="ngPrefix">guiides.org/</span><b id="ngSlugPreview">…</b>/ · lowercase letters, numbers and dashes</div>
       <label class="f" for="ngTitle">Title</label>
       <input id="ngTitle" placeholder="Cantinas of Mexico City">
       <label class="f" for="ngSubtitle">Subtitle</label>
@@ -789,6 +790,7 @@ const PHOTON = 'https://photon.komoot.io/api/';
 const state = {
   backend: 'github',    // 'github' (site owner, token) or 'db' (invited author, email)
   user: null,           // { id, email } when signed in by email
+  myProfile: null,      // that author's { handle, name } once they've chosen an address
   guides: [], guidesSha: null,
   profiles: [],         // [{ handle, name }] from by/<handle>/profile.md
   prof: null,           // the profile open in the profile editor
@@ -840,9 +842,11 @@ function supa() {
 const isDb = () => state.backend === 'db';
 function dbError(error, fallback) {
   const code = error && error.code, msg = (error && error.message) || '';
-  if (code === '23505') return new ApiError(409, 'That web address is already taken. Pick another.');
-  if (code === '23514') return new ApiError(400, /slug_free/.test(msg) ? 'That web address is used by the site itself. Pick another.'
-    : /slug_format/.test(msg) ? 'Use lowercase letters, numbers and dashes for the web address.' : 'That guide is too large to save.');
+  if (code === '23505') return new ApiError(409, /profiles/.test(msg) ? 'That address is taken. Pick another.' : 'You already have a guide at that address. Pick another.');
+  if (code === '23514') return new ApiError(400, /handle_free/.test(msg) ? 'That address is reserved. Pick another.'
+    : /format/.test(msg) ? 'Use lowercase letters, numbers and dashes for the address.'
+    : /sizes|title_size/.test(msg) ? 'Something in it is too long. Shorten the bio, name or links.' : 'That guide is too large to save.');
+  if (/Choose your web address/.test(msg)) return new ApiError(400, 'Choose your web address first.');
   if (/JWT|token/i.test(msg)) return new ApiError(401, 'Your sign-in expired. Reload the page and sign in again.');
   return new ApiError(0, msg || fallback);
 }
@@ -853,8 +857,12 @@ async function dbList() {
   if (error) throw dbError(error, "Couldn't load your guides.");
   return data.map(r => ({ slug: r.slug, title: r.title || r.slug, city: r.city || '', published: r.published }));
 }
+const myHandle = () => (state.myProfile || {}).handle || '';
+// Where a guide lives on the site: authors' guides sit under their handle
+function guidePath(slug) { return isDb() ? 'by/' + myHandle() + '/' + slug : slug; }
+function liveUrl(slug) { return SITE + '/' + guidePath(slug) + '/'; }
 async function dbLoad(slug) {
-  const { data, error } = await supa().from('guides').select('markdown, version').eq('slug', slug).maybeSingle();
+  const { data, error } = await supa().from('guides').select('markdown, version').eq('handle', myHandle()).eq('slug', slug).maybeSingle();
   if (error) throw dbError(error, "Couldn't load this guide.");
   return data ? { text: data.markdown, sha: String(data.version) } : null;
 }
@@ -862,7 +870,7 @@ async function dbLoad(slug) {
 async function dbSave(slug, text, version, title) {
   const { data, error } = await supa().from('guides')
     .update({ markdown: text, title: title || slug })
-    .eq('slug', slug).eq('version', Number(version)).select('version');
+    .eq('handle', myHandle()).eq('slug', slug).eq('version', Number(version)).select('version');
   if (error) throw dbError(error, "Couldn't save.");
   if (!data || !data.length) throw new ApiError(409, 'This guide changed since you opened it.');
   return String(data[0].version);
@@ -872,7 +880,7 @@ async function dbCreate(slug, text, title, city) {
   if (error) throw dbError(error, "Couldn't create the guide.");
 }
 async function dbDelete(slug) {
-  const { data, error } = await supa().from('guides').delete().eq('slug', slug).select('slug');
+  const { data, error } = await supa().from('guides').delete().eq('handle', myHandle()).eq('slug', slug).select('slug');
   if (error) throw dbError(error, "Couldn't delete the guide.");
   if (!data || !data.length) throw new ApiError(404, 'That guide was already gone.');
 }
@@ -881,11 +889,36 @@ function loadGuideFile(slug) { return isDb() ? dbLoad(slug) : getFile(slug + '/p
 function saveGuideFile(slug, text, sha, message, title) {
   return isDb() ? dbSave(slug, text, sha, title) : putFile(slug + '/places.md', text, sha, message);
 }
-// Is a web address in use by a GitHub guide (asks the live site) or a database guide?
-async function addressTaken(slug) {
-  try { const r = await fetch('/' + slug + '/places.md', { method: 'HEAD', cache: 'no-cache' }); if (r.ok) return true; } catch (e) {}
+// ---- profiles: one per author, at guiides.org/by/<handle>/
+const PROFILE_COLS = 'handle, name, location, photo, bio, links';
+function rowToProfile(r) {
+  return { name: r.name || '', location: r.location || '', photo: r.photo || '', banner: '', links: r.links || [],
+    bio: String(r.bio || '').split(/\n\s*\n/).map(x => x.replace(/\s*\n\s*/g, ' ').trim()).filter(Boolean) };
+}
+function profileToRow(p) {
+  return { name: oneLine(p.name), location: oneLine(p.location), photo: oneLine(p.photo),
+    bio: String(p.bio || '').split(/\n\s*\n/).map(oneLine).filter(Boolean).join('\n\n'),
+    links: p.links.map(oneLine).filter(Boolean) };
+}
+async function dbMyProfile() {
+  const { data, error } = await supa().from('profiles').select(PROFILE_COLS).eq('user_id', state.user.id).maybeSingle();
+  if (error) throw dbError(error, "Couldn't load your profile.");
+  return data;
+}
+async function dbCreateProfile(handle, p) {
+  const { error } = await supa().from('profiles').insert(Object.assign({ handle }, profileToRow(p)));
+  if (error) throw dbError(error, "Couldn't create your profile.");
+}
+async function dbSaveProfile(p) {
+  const { data, error } = await supa().from('profiles').update(profileToRow(p)).eq('user_id', state.user.id).select('handle');
+  if (error) throw dbError(error, "Couldn't save your profile.");
+  if (!data || !data.length) throw new ApiError(0, "Your profile couldn't be found. Reload and try again.");
+}
+// Is /by/<handle>/ already somebody's? (a GitHub profile page, or a database profile)
+async function handleTaken(handle) {
+  try { const r = await fetch('/by/' + handle + '/profile.md', { method: 'HEAD', cache: 'no-cache' }); if (r.ok) return true; } catch (e) {}
   const s = supa();
-  if (s) { const { data } = await s.from('guides').select('slug').eq('slug', slug).maybeSingle(); if (data) return true; }
+  if (s) { const { data } = await s.from('profiles').select('handle').eq('handle', handle).maybeSingle(); if (data) return true; }
   return false;
 }
 
@@ -928,7 +961,11 @@ async function enterAsAuthor(user) {
   state.user = { id: user.id, email: user.email };
   $('whoText').textContent = user.email;
   show($('loginView'), false); show($('topControls')); show($('appView'));
-  try { await loadGuideIndex(); }
+  try {
+    const mine = await dbMyProfile();
+    state.myProfile = mine ? { handle: mine.handle, name: mine.name } : null;
+    await loadGuideIndex();
+  }
   catch (e) { showHome({ force: true }); setStatus($('appStatus'), e.message, 'err'); }
 }
 $('sendCode').addEventListener('click', sendCode);
@@ -975,7 +1012,9 @@ $('signOut').addEventListener('click', signOut);
 // ============================================================
 async function loadGuideIndex() {
   if (isDb()) {
-    state.guides = await dbList(); state.profiles = [];
+    if (!state.myProfile) { state.guides = []; state.profiles = []; openProfile(null, { force: true }); return; }
+    state.guides = await dbList();
+    state.profiles = [{ handle: state.myProfile.handle, name: state.myProfile.name || state.myProfile.handle }];
     renderPicker();
     const want = new URLSearchParams(location.hash.slice(1)).get('guide');
     if (want && state.guides.some(g => g.slug === want)) openGuide(want, { force: true });
@@ -1001,6 +1040,7 @@ async function loadGuideIndex() {
 let homeMaps = [];
 function showHome({ force = false } = {}) {
   if (!force && isDirty() && !confirm('You have unsaved changes. Leave anyway? (Your draft stays saved on this device.)')) return;
+  if (isDb() && !state.myProfile) { openProfile(null, { force: true }); return; } // address first
   state.current = null; state.model = null; state.doc = null; state.prof = null;
   hideAllViews(); show($('emptyState')); show($('modeSeg'), false);
   history.replaceState(null, '', location.pathname);
@@ -1012,10 +1052,10 @@ $('homeBtn').addEventListener('click', () => showHome());
 
 function renderHome() {
   homeMaps.forEach(m => m.remove()); homeMaps = [];
-  document.querySelectorAll('.home-pages').forEach(el => show(el, !isDb()));
+  document.querySelectorAll('.home-pages').forEach(el => show(el, !isDb() || el.contains($('profileCards'))));
   const PERSON = '<svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/></svg>';
   $('profileCards').innerHTML = state.profiles.map(p => '<a class="pcard" href="#profile=' + esc(p.handle) + '" data-open-profile="' + esc(p.handle) + '">' + PERSON + esc(p.name) + ' <span class="hint">guiides.org/by/' + esc(p.handle) + '/</span></a>').join('') +
-    '<button class="pcard" data-new-profile style="height:auto;border-style:dashed;color:var(--brand-dark)">＋ New profile</button>';
+    (isDb() ? '' : '<button class="pcard" data-new-profile style="height:auto;border-style:dashed;color:var(--brand-dark)">＋ New profile</button>');
   const LOCK = '<svg class="i" viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>';
   $('guideGrid').innerHTML =
     '<button class="gnew" data-new><span class="plus">＋</span>New guide<span class="sub">A city, a neighborhood, a whole country</span></button>' +
@@ -1078,7 +1118,7 @@ function renderPicker() {
   $('guidePicker').innerHTML = '<option value=""' + (cur ? '' : ' selected') + '>Choose a guide…</option>' +
     '<optgroup label="Guides">' +
     state.guides.map(g => '<option value="' + esc(g.slug) + '"' + (g.slug === cur ? ' selected' : '') + '>' + esc(g.title) + '</option>').join('') +
-    '<option value="__new">＋ New guide…</option></optgroup>' + (isDb() ? '' :
+    '<option value="__new">＋ New guide…</option></optgroup>' + (isDb() ? (state.myProfile ? '<optgroup label="Profile"><option value="__p:' + esc(myHandle()) + '"' + (cur === '__p:' + myHandle() ? ' selected' : '') + '>' + esc(state.myProfile.name || myHandle()) + '</option></optgroup>' : '') :
     '<optgroup label="Profiles">' + state.profiles.map(p => '<option value="__p:' + esc(p.handle) + '"' + (cur === '__p:' + p.handle ? ' selected' : '') + '>' + esc(p.name) + '</option>').join('') +
     '<option value="__newprof"' + (cur === '__newprof' ? ' selected' : '') + '>＋ New profile…</option></optgroup>' +
     '<optgroup label="Site pages"><option value="__faq"' + (cur === '__faq' ? ' selected' : '') + '>FAQ page</option></optgroup>');
@@ -1167,7 +1207,7 @@ async function openGuide(slug, { force = false } = {}) {
     };
     Object.assign(V, { selectedId: null, expandedId: null, toast: null, catPanel: false, catNotes: {}, hexDrafts: {}, moveTargets: {}, showAuthorLink: false, lockForm: false, bannerPanel: false, drawId: null, drawHist: [] });
     $('editor').value = f.text;
-    $('viewLive').href = SITE + '/' + slug + '/';
+    $('viewLive').href = liveUrl(slug);
     history.replaceState(null, '', '#guide=' + slug);
     state.lastCheck = check; renderChecks(check);
     $('saveState').dataset.msg = '';
@@ -1311,7 +1351,7 @@ $('deleteGuideBtn').addEventListener('click', () => {
   if (!state.current) return;
   const g = state.guides.find(x => x.slug === state.current.slug);
   $('delTitle').textContent = (g && g.title) || state.current.slug;
-  $('delAddr').textContent = 'guiides.org/' + state.current.slug + '/';
+  $('delAddr').textContent = liveUrl(state.current.slug).replace(/^https:\/\//, '');
   $('delSlug').textContent = state.current.slug;
   $('delConfirm').value = ''; setStatus($('delStatus'), '');
   show($('editorView'), false); show($('deleteView'));
@@ -2795,10 +2835,10 @@ function profLinkRow(v) {
 function renderProfileGuides() {
   const pr = state.prof;
   if (!pr || pr.isNew) { $('pfGuides').innerHTML = ''; return; }
-  const mine = state.guides.filter(g => g.profile === pr.handle);
+  const mine = isDb() ? state.guides : state.guides.filter(g => g.profile === pr.handle);
   $('pfGuides').innerHTML = '<h3>Guides on this page</h3>' + (mine.length
-    ? '<ul>' + mine.map(g => '<li><a href="#guide=' + esc(g.slug) + '" data-pf-guide="' + esc(g.slug) + '">' + esc(g.title) + '</a><span class="hint">/' + esc(g.slug) + '/' + (g.published === false ? ' · hidden' : '') + '</span></li>').join('') + '</ul>'
-    : '<p class="hint">None yet. Open a guide and pick this profile from the menu next to the author\'s name.</p>');
+    ? '<ul>' + mine.map(g => '<li><a href="#guide=' + esc(g.slug) + '" data-pf-guide="' + esc(g.slug) + '">' + esc(g.title) + '</a><span class="hint">/' + esc(guidePath(g.slug)) + '/' + (g.published === false ? ' · hidden' : '') + '</span></li>').join('') + '</ul>'
+    : '<p class="hint">' + (isDb() ? 'None yet. Your guides appear here once you make them.' : 'None yet. Open a guide and pick this profile from the menu next to the author\'s name.') + '</p>');
 }
 
 async function openProfile(handle, { force = false } = {}) {
@@ -2808,12 +2848,24 @@ async function openProfile(handle, { force = false } = {}) {
   setStatus($('pfStatus'), '');
   flashSaveState(handle ? 'Loading…' : '', 'clean');
   try {
-    const f = handle ? await getFile('by/' + handle + '/profile.md') : null;
-    if (handle && !f) throw new ApiError(404, 'No profile at /by/' + handle + '/');
-    const p = f ? parseProfileMd(f.text) : { name: '', location: '', photo: '', banner: '', links: [], bio: [] };
+    let f = null, p = { name: '', location: '', photo: '', banner: '', links: [], bio: [] };
+    if (isDb()) {
+      handle = state.myProfile ? myHandle() : null; // authors only ever open their own
+      if (handle) { const row = await dbMyProfile(); if (row) p = rowToProfile(row); }
+    } else {
+      f = handle ? await getFile('by/' + handle + '/profile.md') : null;
+      if (handle && !f) throw new ApiError(404, 'No profile at /by/' + handle + '/');
+      if (f) p = parseProfileMd(f.text);
+    }
     state.prof = { handle: handle || '', sha: f ? f.sha : null, isNew: !handle, banner: p.banner, baseline: '' };
-    $('pfHeading').textContent = handle ? 'Profile' : 'New profile';
+    const firstTime = isDb() && !handle;
+    $('pfHeading').textContent = handle ? 'Profile' : firstTime ? 'Choose your web address' : 'New profile';
+    $('pfIntro').textContent = firstTime ? "Your profile and guides will live under this address. It can't be changed later, so pick one you'll keep." : '';
+    show($('pfIntro'), firstTime);
     show($('pfHandleRow'), !handle); show($('pfCreateRow'), !handle);
+    show($('pfCancel'), !firstTime);
+    $('pfHandle').placeholder = isDb() ? 'your-name' : 'slfnk';
+    $('pfCreate').textContent = firstTime ? 'Create my page' : 'Create profile';
     $('pfHandle').value = ''; $('pfAddr').textContent = handle || '…';
     $('pfName').value = p.name; $('pfLocation').value = p.location; $('pfPhoto').value = p.photo;
     $('pfBio').value = p.bio.join('\n\n');
@@ -2863,6 +2915,17 @@ async function saveProfile() {
   if (bad) { flashSaveState(bad, 'err'); return; }
   const text = serializeProfile(p);
   $('saveBtn').disabled = true; flashSaveState('Saving…', 'clean');
+  if (isDb()) {
+    try {
+      await dbSaveProfile(p);
+      pr.baseline = text;
+      state.myProfile.name = oneLine(p.name); state.profiles = [{ handle: myHandle(), name: state.myProfile.name || myHandle() }];
+      renderPicker();
+      flashSaveState('Saved · live now', 'clean');
+    } catch (e) { flashSaveState('Not saved: ' + e.message, 'err'); }
+    setSaveState();
+    return;
+  }
   try {
     pr.sha = await putFile('by/' + pr.handle + '/profile.md', text, pr.sha, 'Update ' + pr.handle + ' profile (editor)');
     pr.baseline = text;
@@ -2886,8 +2949,22 @@ $('pfCreate').addEventListener('click', async () => {
   const p = profFromForm(), bad = profileProblem(p);
   if (bad) return err(bad);
   $('pfCreate').disabled = true;
+  if (isDb()) {
+    try {
+      setStatus($('pfStatus'), 'Checking the address is free…', 'busy');
+      if (await handleTaken(handle)) throw new ApiError(409, 'guiides.org/by/' + handle + '/ is taken. Pick another address.');
+      setStatus($('pfStatus'), 'Creating your page…', 'busy');
+      await dbCreateProfile(handle, p);
+      state.myProfile = { handle, name: oneLine(p.name) };
+      await loadGuideIndex();
+      setStatus($('appStatus'), 'Your page is live at guiides.org/by/' + handle + '/. Now make your first guide.', 'ok');
+    } catch (e) { err(e.message); }
+    $('pfCreate').disabled = false;
+    return;
+  }
   try {
     setStatus($('pfStatus'), 'Checking the address is free…', 'busy');
+    if (await handleTaken(handle)) throw new ApiError(0, 'An invited author already uses /by/' + handle + '/. Pick another address.');
     if (await getFile('by/' + handle + '/profile.md') || await getFile('by/' + handle + '/index.html')) throw new ApiError(0, 'Files already exist at /by/' + handle + '/. Pick another address.');
     setStatus($('pfStatus'), 'Creating the profile…', 'busy');
     await putFile('by/' + handle + '/profile.md', serializeProfile(p), null, 'Create ' + handle + ' profile (editor)');
@@ -2908,6 +2985,8 @@ function startNewGuide() {
   state.current = null; state.model = null; state.doc = null; state.prof = null;
   hideAllViews(); show($('newGuideView'));
   setStatus($('ngStatus'), ''); setSaveState();
+  $('ngPrefix').textContent = 'guiides.org/' + (isDb() ? 'by/' + myHandle() + '/' : '');
+  if (isDb() && !$('ngAuthor').value) $('ngAuthor').value = (state.myProfile && state.myProfile.name) || '';
   $('ngSlug').focus();
 }
 $('ngCancel').addEventListener('click', () => showHome({ force: true }));
@@ -2926,7 +3005,7 @@ $('ngCreate').addEventListener('click', async () => {
   const c = $('ngCenter').value.split(',').map(x => parseFloat(x.trim()));
   const err = m => setStatus($('ngStatus'), m, 'err');
   if (!/^[a-z0-9]+(-[a-z0-9]+)*$/.test(slug)) return err('Enter a web address using lowercase letters, numbers and dashes.');
-  if (RESERVED.includes(slug)) return err('"' + slug + '" is used by the site itself. Pick another address.');
+  if (!isDb() && RESERVED.includes(slug)) return err('"' + slug + '" is used by the site itself. Pick another address.');
   if (state.guides.some(g => g.slug === slug)) return err('A guide already uses /' + slug + '/.');
   if (!title) return err('Enter a title.');
   if (c.length < 2 || isNaN(c[0]) || isNaN(c[1]) || Math.abs(c[0]) > 90 || Math.abs(c[1]) > 180) return err('Enter the map center as two numbers, like 19.4326, -99.1332.');
@@ -2936,15 +3015,16 @@ $('ngCreate').addEventListener('click', async () => {
   const done = [];
   if (isDb()) {
     try {
-      step('Checking the address is free…');
-      if (await addressTaken(slug)) throw new ApiError(409, 'A guide already uses /' + slug + '/. Pick another address.');
       step('Creating your guide…');
-      await dbCreate(slug, starterPlacesMd({ title, subtitle, author: author || 'Anonymous', center: [c[0], c[1]], cats: $('ngCats').checked }), title, city);
+      // The byline links to the author's page from the start
+      const text = starterPlacesMd({ title, subtitle, author: author || (state.myProfile && state.myProfile.name) || 'Anonymous', center: [c[0], c[1]], cats: $('ngCats').checked })
+        .replace(/^(Author:.*)$/m, '$1\nProfile: ' + myHandle());
+      await dbCreate(slug, text, title, city);
       state.guides = await dbList(); renderPicker();
       ['ngSlug', 'ngTitle', 'ngSubtitle', 'ngAuthor', 'ngCity', 'ngCenter'].forEach(id => $(id).value = '');
       $('ngSlugPreview').textContent = '…';
       await openGuide(slug, { force: true });
-      flashSaveState('Guide created · live at guiides.org/' + slug + '/', 'clean');
+      flashSaveState('Guide created · live at ' + liveUrl(slug).replace(/^https:\/\//, ''), 'clean');
     } catch (e) { err('Stopped: ' + e.message); }
     $('ngCreate').disabled = false;
     return;
@@ -2952,7 +3032,6 @@ $('ngCreate').addEventListener('click', async () => {
   try {
     step('Checking the address is free…');
     if (await getFile(slug + '/index.html') || await getFile(slug + '/places.md')) throw new ApiError(0, 'Files already exist at /' + slug + '/ on GitHub. Pick another address.');
-    if (await addressTaken(slug)) throw new ApiError(0, 'An invited author already has a guide at /' + slug + '/. Pick another address.');
     step('Creating ' + slug + '/places.md…');
     await putFile(slug + '/places.md', starterPlacesMd({ title, subtitle, author: author || 'Anonymous', center: [c[0], c[1]], cats: $('ngCats').checked }), null, 'Create ' + slug + ' guide content (editor)');
     done.push(slug + '/places.md');

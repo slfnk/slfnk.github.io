@@ -58,8 +58,22 @@
 
   const get = url => fetch(url, { cache: 'no-cache' }).then(r => r.ok ? r.text() : Promise.reject(new Error(r.status)));
 
-  get('/by/' + HANDLE + '/profile.md')
-    .then(text => render(parseProfileMd(text)))
+  // Authors who sign in by email keep their profile in the database; this page
+  // then arrives through /404.html with data-source="db". GitHub profiles are files.
+  const FROM_DB = document.body.dataset.source === 'db';
+  const CFG = window.GUIIDES || {};
+  const db = q => fetch(CFG.supabaseUrl + '/rest/v1/' + q, { headers: { apikey: CFG.supabaseKey }, cache: 'no-cache' })
+    .then(r => r.ok ? r.json() : Promise.reject(new Error(r.status)));
+  const loadProfile = FROM_DB
+    ? db('profiles?select=handle,name,location,photo,bio,links&handle=eq.' + encodeURIComponent(HANDLE)).then(rows => {
+        const r = rows && rows[0];
+        if (!r) throw new Error('none');
+        return { name: r.name, location: r.location, photo: r.photo, banner: '', links: r.links || [],
+          bio: String(r.bio || '').split(/\n\s*\n/).map(x => x.replace(/\s*\n\s*/g, ' ').trim()).filter(Boolean) };
+      })
+    : get('/by/' + HANDLE + '/profile.md').then(parseProfileMd);
+  loadProfile
+    .then(render)
     .catch(() => {
       main.innerHTML = '<p class="pf-msg">There\'s no profile at this address. <a href="/">Back to GUIIDES</a></p>';
     });
@@ -97,25 +111,42 @@
 
   function loadGuides() {
     const list = document.getElementById('pfList');
+    if (FROM_DB) {
+      db('guides?select=slug,title,markdown&published=eq.true&order=created_at.asc&handle=eq.' + encodeURIComponent(HANDLE))
+        .then(rows => {
+          if (!rows.length) { list.innerHTML = '<li class="pf-empty">No guides published yet.</li>'; return; }
+          list.innerHTML = rows.map(g => guideRow(g, '/by/' + HANDLE + '/' + g.slug + '/')).join('');
+          rows.forEach(g => fillFromText(g, g.markdown));
+        })
+        .catch(() => { list.innerHTML = '<li class="pf-empty">The guide list couldn\'t be loaded. Try again in a moment.</li>'; });
+      return;
+    }
     get('/guides.json')
       .then(t => JSON.parse(t).guides || [])
       .then(all => {
         const mine = all.filter(g => g.profile === HANDLE && g.published !== false);
         if (!mine.length) { list.innerHTML = '<li class="pf-empty">No guides published yet.</li>'; return; }
-        list.innerHTML = mine.map(g =>
-          '<li class="pf-row"><a href="/' + esc(g.slug) + '/">' +
-          '<div class="pf-map" id="pfm-' + esc(g.slug) + '"><div class="m"></div></div>' +
-          '<div><p class="pf-meta" id="pfmeta-' + esc(g.slug) + '">&nbsp;</p>' +
-          '<h3 class="pf-title">' + esc(g.title) + '</h3>' +
-          '<p class="pf-deck" id="pfdeck-' + esc(g.slug) + '"></p></div>' +
-          '</a></li>').join('');
+        list.innerHTML = mine.map(g => guideRow(g, '/' + g.slug + '/')).join('');
         mine.forEach(fillGuide);
       })
       .catch(() => { list.innerHTML = '<li class="pf-empty">The guide list couldn\'t be loaded. Try again in a moment.</li>'; });
   }
 
+  function guideRow(g, href) {
+    return '<li class="pf-row"><a href="' + esc(href) + '">' +
+      '<div class="pf-map" id="pfm-' + esc(g.slug) + '"><div class="m"></div></div>' +
+      '<div><p class="pf-meta" id="pfmeta-' + esc(g.slug) + '">&nbsp;</p>' +
+      '<h3 class="pf-title">' + esc(g.title || g.slug) + '</h3>' +
+      '<p class="pf-deck" id="pfdeck-' + esc(g.slug) + '"></p></div>' +
+      '</a></li>';
+  }
   function fillGuide(g) {
-    get('/' + g.slug + '/places.md').then(text => {
+    get('/' + g.slug + '/places.md').then(text => fillFromText(g, text)).catch(() => {
+      document.getElementById('pfmeta-' + g.slug).textContent = '';
+    });
+  }
+  function fillFromText(g, text) {
+    {
       const data = parsePlacesMd(text), gd = data.guide;
       const locked = !!gd.locked;
       const nk = k => data.places.filter(p => (p.kind || 'spot') === k).length;
@@ -125,9 +156,7 @@
       document.getElementById('pfmeta-' + g.slug).innerHTML = meta.map(esc).join('<span class="dot" aria-hidden="true">•</span>');
       document.getElementById('pfdeck-' + g.slug).textContent = gd.deck || '';
       drawMap(g.slug, data, locked);
-    }).catch(() => {
-      document.getElementById('pfmeta-' + g.slug).textContent = '';
-    });
+    }
   }
 
   // A small, still map of the guide's pins (or a blurred one for a protected guide)

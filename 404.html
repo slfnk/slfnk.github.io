@@ -3,8 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<!-- GitHub Pages shows this page for any address without a folder.
-     It serves guides that invited authors keep in the database (data-source="db"),
+<!-- GitHub Pages shows this page for any address without a folder. It serves
+     what invited authors keep in the database:
+       /by/<handle>/          their profile
+       /by/<handle>/<guide>/  one of their guides
      and says "nothing here" for anything else. -->
 <title>GUIIDES</title>
 <meta name="robots" content="noindex">
@@ -14,14 +16,29 @@
 <link rel="preconnect" href="https://cdnjs.cloudflare.com">
 <link rel="preconnect" href="https://a.basemaps.cartocdn.com" crossorigin>
 <link rel="preconnect" href="https://ajomufckopuxwzphlgja.supabase.co" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;0,8..60,700;1,8..60,400&family=DM+Sans:ital,wght@0,400;0,500;0,600;1,400&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;0,8..60,700;1,8..60,400&family=DM+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
-<link rel="stylesheet" href="/app/viewer.css">
 </head>
 <body data-source="db">
-<script src="/app/config.js"></script>
-<script src="/app/parser.js"></script>
-<script src="/app/viewer.js"></script>
+<script>
+(function () {
+  var parts = location.pathname.split('/').filter(Boolean);
+  var ok = function (x) { return /^[a-z0-9]+(-[a-z0-9]+)*$/.test(x || ''); };
+  var isProfile = parts[0] === 'by' && parts.length === 2 && ok(parts[1]);
+  if (isProfile) document.body.dataset.profile = parts[1];
+  var css = document.createElement('link');
+  css.rel = 'stylesheet'; css.href = isProfile ? '/app/profile.css' : '/app/viewer.css';
+  document.head.appendChild(css);
+  // Load in order: settings, the shared parser, then the profile or guide page
+  var files = ['/app/config.js', '/app/parser.js', isProfile ? '/app/profile.js' : '/app/viewer.js'];
+  (function next(i) {
+    if (i >= files.length) return;
+    var s = document.createElement('script');
+    s.src = files[i]; s.onload = function () { next(i + 1); };
+    document.body.appendChild(s);
+  })(0);
+})();
+</script>
 </body>
 </html>

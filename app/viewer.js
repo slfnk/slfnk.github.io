@@ -106,7 +106,10 @@ document.body.insertAdjacentHTML('afterbegin', `
 const GUIDE_SLUG = (function() {
   const d = document.body.dataset.guide;
   if (d && /^[a-z0-9-]+$/.test(d)) return d;
-  return location.pathname.split('/').filter(Boolean)[0] || '';
+  const parts = location.pathname.split('/').filter(Boolean);
+  // Authors' guides live at /by/<handle>/<guide>/ — the whole path names the guide
+  if (document.body.dataset.source === 'db' && parts[0] === 'by' && parts.length === 3) return parts.join('/');
+  return parts[0] || '';
 })();
 // Canonical URL for this guide
 function guideUrl() {
@@ -480,18 +483,19 @@ function loadBanner(choice) {
   img.src = src;
 }
 
-// Guides by invited authors live in the database, not in a folder. GitHub Pages
-// shows /404.html for any address without a folder; that page sets
-// data-source="db" and the guide is looked up by its address.
+// Guides by invited authors live in the database at /by/<handle>/<guide>/.
+// GitHub Pages shows /404.html for any address without a folder; that page
+// sets data-source="db" and the guide is looked up by its address.
 const FROM_DB = document.body.dataset.source === 'db';
 function loadGuideFromDb() {
   const cfg = window.GUIIDES || {};
   const parts = location.pathname.split('/').filter(Boolean);
-  if (parts.length !== 1 || !/^[a-z0-9]+(-[a-z0-9]+)*$/.test(GUIDE_SLUG) || !cfg.supabaseUrl) {
+  const ok = x => /^[a-z0-9]+(-[a-z0-9]+)*$/.test(x || '');
+  if (parts.length !== 3 || parts[0] !== 'by' || !ok(parts[1]) || !ok(parts[2]) || !cfg.supabaseUrl) {
     return Promise.reject(new Error("There's nothing at this address."));
   }
   // The publishable key goes in the apikey header only (it isn't a sign-in token)
-  return fetch(cfg.supabaseUrl + '/rest/v1/guides?select=markdown&slug=eq.' + encodeURIComponent(GUIDE_SLUG),
+  return fetch(cfg.supabaseUrl + '/rest/v1/guides?select=markdown&handle=eq.' + encodeURIComponent(parts[1]) + '&slug=eq.' + encodeURIComponent(parts[2]),
     { headers: { apikey: cfg.supabaseKey }, cache: 'no-cache' })
     .then(r => r.ok ? r.json() : Promise.reject(new Error("This guide couldn't be loaded right now. Try again in a minute.")))
     .then(rows => {
