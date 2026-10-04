@@ -112,7 +112,7 @@
   function loadGuides() {
     const list = document.getElementById('pfList');
     if (FROM_DB) {
-      db('guides?select=slug,title,markdown&published=eq.true&order=created_at.asc&handle=eq.' + encodeURIComponent(HANDLE))
+      db('guides?select=slug,title,markdown&visibility=eq.public&order=created_at.asc&handle=eq.' + encodeURIComponent(HANDLE))
         .then(rows => {
           if (!rows.length) { list.innerHTML = '<li class="pf-empty">No guides published yet.</li>'; return; }
           list.innerHTML = rows.map(g => guideRow(g, '/by/' + HANDLE + '/' + g.slug + '/')).join('');

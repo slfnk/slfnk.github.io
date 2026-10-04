@@ -17,18 +17,16 @@
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { background: var(--bg); color: var(--text); font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif; line-height: 1.6; }
   .wrap { max-width: 680px; margin: 0 auto; padding: 1.25rem 1.5rem 4rem; }
-  .brand { display: inline-block; font-size: 0.72rem; font-weight: 500; letter-spacing: 0.04em; color: var(--brand); text-decoration: none; transition: transform 0.15s; }
-  .brand strong { font-weight: 700; letter-spacing: 0.08em; }
-  .brand:hover { transform: scale(1.06); }
+  .brand { display: table; margin: 0.4rem auto 0; font-size: 13px; letter-spacing: 0.06em; color: var(--brand); text-decoration: none; transition: color 0.15s, transform 0.15s; }
+  .brand strong { letter-spacing: 0.1em; }
+  .brand:hover { color: #F26B6B; transform: scale(1.06); }
+  @media (min-width: 900px) { .brand { font-size: 20px; } }
   h1 { font-family: 'Source Serif 4', Georgia, serif; font-size: clamp(2rem, 6vw, 2.6rem); line-height: 1.15; margin: 2.5rem 0 1rem; }
   .faq-intro p, .faq-answer p { font-family: 'Source Serif 4', Georgia, serif; font-size: 1.05rem; line-height: 1.75; color: var(--text-2); margin-bottom: 0.9rem; }
   .faq-intro { margin-bottom: 1.5rem; }
   .faq-item { border-top: 1px solid var(--border); }
-  .faq-item:last-of-type { border-bottom: 1px solid var(--border); }
-  .faq-item summary { list-style: none; cursor: pointer; padding: 1.1rem 2.2rem 1.1rem 0; position: relative; font-family: 'Source Serif 4', Georgia, serif; font-size: 1.2rem; font-weight: 600; }
-  .faq-item summary::-webkit-details-marker { display: none; }
-  .faq-item summary::after { content: '+'; position: absolute; right: 0.2rem; top: 50%; transform: translateY(-50%); font-family: 'DM Sans', sans-serif; font-size: 1.4rem; font-weight: 400; color: var(--accent); }
-  .faq-item[open] summary::after { content: '–'; }
+  .faq-item:last-of-type { border-bottom: 1px solid var(--border); padding-bottom: 0.4rem; }
+  .faq-item h2 { font-family: 'Source Serif 4', Georgia, serif; font-size: 1.2rem; font-weight: 600; line-height: 1.35; padding: 1.1rem 0 0.4rem; }
   .faq-answer { padding: 0 0 0.8rem; }
   .faq-answer ul, .faq-answer ol, .faq-intro ul, .faq-intro ol { margin: 0 0 0.9rem 1.3rem; font-family: 'Source Serif 4', Georgia, serif; font-size: 1.05rem; line-height: 1.7; color: var(--text-2); }
   .faq-answer h3, .faq-answer h4 { font-family: 'Source Serif 4', Georgia, serif; margin: 0.6rem 0 0.4rem; }

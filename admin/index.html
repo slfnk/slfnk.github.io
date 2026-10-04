@@ -89,6 +89,7 @@
   .gmark { display: block; align-self: center; text-align: center; text-decoration: none; color: #FF8F8F; font-size: 13px; letter-spacing: 0.06em; transition: color 0.15s, transform 0.15s; }
   .gmark strong { letter-spacing: 0.1em; }
   .gmark:hover { color: #F26B6B; transform: scale(1.06); }
+  @media (min-width: 900px) { .gmark, .brand.tent { font-size: 20px; } }
   .welcome .wstep { display: flex; flex-direction: column; align-items: center; gap: 18px; width: 100%; }
   .welcome .wcode { letter-spacing: 0.25em; font-variant-numeric: tabular-nums; }
   .welcome .wlinks { margin: 6px 0 0; font-size: 14px; color: #6B675F; }
@@ -396,6 +397,23 @@
   .gbody { padding: 12px 14px 14px; display: flex; flex-direction: column; gap: 3px; }
   .gtitle { font-family: var(--serif); font-size: 17px; font-weight: 700; line-height: 1.3; }
   .gmeta { font-size: 12px; color: var(--text-3); }
+  .gthumb { display: block; }
+  .gurl { display: flex; align-items: center; gap: 8px; margin-top: 8px; font-size: 12px; color: var(--text-2); }
+  .gurl span { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .gcopy { flex: none; height: 26px; padding: 0 9px; font-size: 12px; }
+  .gvis { position: relative; display: flex; align-items: center; gap: 2px; margin-top: 8px; }
+  .vispill { font-size: 11px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; padding: 3px 8px; border-radius: 999px; background: #EAF6F7; color: var(--brand-dark); }
+  .vispill.vis-unlisted { background: #F3EFE6; color: #7A5B14; }
+  .vispill.vis-private { background: #EFECE6; color: #5C5C5C; }
+  .vismenu { position: absolute; left: 0; top: 30px; z-index: 20; width: 270px; background: #fff; border: 1px solid var(--border); border-radius: 12px; box-shadow: 0 12px 32px rgba(0,0,0,0.12); padding: 6px; display: flex; flex-direction: column; }
+  .vismenu button { height: auto; display: flex; flex-direction: column; align-items: flex-start; gap: 1px; text-align: left; padding: 8px 10px; border: none; border-radius: 8px; background: transparent; }
+  .vismenu button:hover { background: var(--hover); }
+  .vismenu button[aria-checked="true"] { background: #EAF6F7; }
+  .vismenu b { font-size: 13px; } .vismenu span { font-size: 12px; font-weight: 400; color: var(--text-2); }
+  .gacts { display: flex; align-items: center; gap: 8px; margin-top: 12px; }
+  .gacts .primary { height: 32px; padding: 0 16px; }
+  .gview { font-size: 13px; font-weight: 600; color: var(--text-2); text-decoration: none; padding: 6px 8px; border-radius: 8px; }
+  .gview:hover { background: var(--hover); color: var(--text); }
   .gnew { min-height: 250px; border: 2px dashed #CFCAC2; border-radius: 14px; background: transparent; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; color: var(--brand-dark); font-size: 16px; font-weight: 700; height: auto; }
   .gnew:hover { background: #fff; border-color: var(--brand); }
   .gnew .plus { width: 54px; height: 54px; border-radius: 50%; background: var(--brand); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 30px; font-weight: 400; line-height: 1; }
@@ -495,26 +513,24 @@
     <div id="emailLogin" class="wstep">
       <h1 id="lTitle">Come on in</h1>
       <p class="wsub" id="lSub">Enter your email, and we'll send a login code to your inbox</p>
-      <div class="wstep" id="emailStep">
+      <form class="wstep" id="emailStep" novalidate>
         <label class="wline" for="emailInput">
           <span class="wfield"><input id="emailInput" type="email" autocomplete="email" autocapitalize="none" spellcheck="false" placeholder="you@example.com" aria-describedby="emailStatus"></span>
         </label>
         <p class="wstatus" id="emailStatus" aria-live="polite"></p>
         <div class="wact">
-          <button class="wclaim" id="sendCode">Send code <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="M13 6l6 6-6 6"/></svg></button>
-          <span class="wenter">or press <strong>Enter ↵</strong></span>
+          <button type="submit" class="wclaim" id="sendCode">Send code <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="M13 6l6 6-6 6"/></svg></button>
         </div>
-      </div>
-      <div class="wstep hidden" id="codeStep">
+      </form>
+      <form class="wstep hidden" id="codeStep" novalidate>
         <label class="wline" for="codeInput">
           <span class="wfield"><input id="codeInput" class="wcode" inputmode="numeric" autocomplete="one-time-code" maxlength="10" spellcheck="false" placeholder="123456" aria-describedby="emailStatus"></span>
         </label>
         <div class="wact">
-          <button class="wclaim" id="verifyCode">Sign in <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="M13 6l6 6-6 6"/></svg></button>
-          <span class="wenter">or press <strong>Enter ↵</strong></span>
+          <button type="submit" class="wclaim" id="verifyCode">Sign in <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="M13 6l6 6-6 6"/></svg></button>
         </div>
-        <p class="wlinks"><button class="wsignout" id="resendCode">Send a new code</button> · <button class="wsignout" id="changeEmail">Use a different email</button></p>
-      </div>
+        <p class="wlinks"><button type="button" class="wsignout" id="resendCode">Send a new code</button> · <button type="button" class="wsignout" id="changeEmail">Use a different email</button></p>
+      </form>
     </div>
     <details class="tokenbox hidden" id="tokenLogin">
   <summary>Site owner? Sign in with a GitHub token</summary>
@@ -540,6 +556,7 @@
   <main class="wmain">
     <h1 id="wTitle">Looks like you're new around here</h1>
     <p class="wsub">Pick a profile URL to start making guides</p>
+    <form id="wForm" class="wstep" novalidate>
     <label class="wline" for="wHandle">
       <span class="wprefix">guiides.org/by/</span>
       <span class="wfield">
@@ -549,9 +566,9 @@
     </label>
     <p class="wstatus" id="wStatus" aria-live="polite"></p>
     <div class="wact">
-      <button class="wclaim" id="wClaim" disabled>Claim it <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="M13 6l6 6-6 6"/></svg></button>
-      <span class="wenter">or press <strong>Enter ↵</strong></span>
+      <button type="submit" class="wclaim" id="wClaim" disabled>Claim it <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="M13 6l6 6-6 6"/></svg></button>
     </div>
+    </form>
     <p class="wnote">You can't change it later, so pick one you'll keep.</p>
   </main>
   <p class="wfoot">Signed in as <span id="wWho"></span> · <button class="wsignout" id="wSignOut">Sign out</button></p>
@@ -984,10 +1001,10 @@ function dbError(error, fallback) {
 }
 async function dbList() {
   const { data, error } = await supa().from('guides')
-    .select('slug, title, city, published')
+    .select('slug, title, city, visibility')
     .eq('owner', state.user.id).order('created_at', { ascending: true });
   if (error) throw dbError(error, "Couldn't load your guides.");
-  return data.map(r => ({ slug: r.slug, title: r.title || r.slug, city: r.city || '', published: r.published }));
+  return data.map(r => ({ slug: r.slug, title: r.title || r.slug, city: r.city || '', visibility: r.visibility || 'public' }));
 }
 const myHandle = () => (state.myProfile || {}).handle || '';
 // Where a guide lives on the site: authors' guides sit under their handle
@@ -1010,6 +1027,11 @@ async function dbSave(slug, text, version, title) {
   if (error) throw dbError(error, "Couldn't save.");
   if (!data || !data.length) throw new ApiError(409, 'This guide changed since you opened it.');
   return String(data[0].version);
+}
+async function dbSetVisibility(slug, v) {
+  const { data, error } = await supa().from('guides').update({ visibility: v }).eq('handle', myHandle()).eq('slug', slug).select('slug');
+  if (error) throw dbError(error, "Couldn't change who can see it.");
+  if (!data || !data.length) throw new ApiError(404, 'That guide couldn\'t be found.');
 }
 async function dbCreate(slug, text, title, city) {
   const { error } = await supa().from('guides').insert({ slug, markdown: text, title, city });
@@ -1131,14 +1153,12 @@ async function enterAsAuthor(user) {
   }
   catch (e) { showHome({ force: true }); setStatus($('appStatus'), e.message, 'err'); }
 }
-$('sendCode').addEventListener('click', sendCode);
+$('emailStep').addEventListener('submit', e => { e.preventDefault(); sendCode(); });
 $('resendCode').addEventListener('click', sendCode);
-$('emailInput').addEventListener('keydown', e => { if (e.key === 'Enter') sendCode(); });
 $('emailInput').addEventListener('input', () => { lStatus(''); fitToText($('emailInput')); });
 $('codeInput').addEventListener('input', () => fitToText($('codeInput')));
 $('changeEmail').addEventListener('click', showEmailStep);
-$('verifyCode').addEventListener('click', verifyCode);
-$('codeInput').addEventListener('keydown', e => { if (e.key === 'Enter') verifyCode(); });
+$('codeStep').addEventListener('submit', e => { e.preventDefault(); verifyCode(); });
 
 // ============================================================
 // FIRST SIGN-IN — an author picks their address before anything else:
@@ -1216,8 +1236,7 @@ async function claimHandle() {
     setStatus($('appStatus'), 'Your page is live at guiides.org/by/' + v + '/. Next, make your first guide.', 'ok');
   } catch (e) { wOk = ''; wState('err', e.message); }
 }
-$('wHandle').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); claimHandle(); } });
-$('wClaim').addEventListener('click', claimHandle);
+$('wForm').addEventListener('submit', e => { e.preventDefault(); claimHandle(); });
 $('wSignOut').addEventListener('click', () => signOut());
 
 // ============================================================
@@ -1287,7 +1306,7 @@ function showHome({ force = false } = {}) {
   if (!force && isDirty() && !confirm('You have unsaved changes. Leave anyway? (Your draft stays saved on this device.)')) return;
   if (isDb() && !state.myProfile) { showWelcome(); return; } // address first
   state.current = null; state.model = null; state.doc = null; state.prof = null;
-  hideAllViews(); show($('emptyState')); show($('modeSeg'), false);
+  hideAllViews(); show($('emptyState')); show($('modeSeg'), false); show($('homeBtn'), false);
   history.replaceState(null, '', location.pathname);
   $('viewLive').href = SITE + '/';
   $('saveState').dataset.msg = ''; setSaveState(); renderPicker();
@@ -1304,11 +1323,19 @@ function renderHome() {
   const LOCK = '<svg class="i" viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>';
   $('guideGrid').innerHTML =
     '<button class="gnew" data-new><span class="plus">＋</span>New guide<span class="sub">A city, a neighborhood, a whole country</span></button>' +
-    state.guides.map(g => '<a class="gcard" href="#guide=' + esc(g.slug) + '" data-open="' + esc(g.slug) + '">' +
-      '<div class="gthumb" id="gthumb-' + esc(g.slug) + '"><div class="gmap"></div><div class="gbadges">' +
-      (g.published === false ? '<span class="gbadge">Hidden</span>' : '') + '</div></div>' +
-      '<div class="gbody"><div class="gtitle">' + esc(g.title) + '</div>' +
-      '<div class="gmeta" id="gmeta-' + esc(g.slug) + '">' + esc([g.city, '/' + guidePath(g.slug) + '/'].filter(Boolean).join(' · ')) + '</div></div></a>').join('');
+    state.guides.map(g => {
+      const url = liveUrl(g.slug), short = url.replace(/^https:\/\//, '').replace(/\/$/, '');
+      return '<div class="gcard">' +
+        '<a class="gthumb" id="gthumb-' + esc(g.slug) + '" href="#guide=' + esc(g.slug) + '" data-open="' + esc(g.slug) + '" aria-label="Edit ' + esc(g.title) + '"><div class="gmap"></div><div class="gbadges">' +
+        (!isDb() && g.published === false ? '<span class="gbadge">Hidden</span>' : '') + '</div></a>' +
+        '<div class="gbody"><div class="gtitle">' + esc(g.title) + '</div>' +
+        '<div class="gmeta" id="gmeta-' + esc(g.slug) + '">' + esc(g.city || '') + '</div>' +
+        '<div class="gurl"><span title="' + esc(url) + '">' + esc(short) + '</span><button class="gcopy" data-copy="' + esc(url) + '">Copy link</button></div>' +
+        (isDb() ? visRow(g) : '') +
+        '<div class="gacts"><button class="primary" data-open="' + esc(g.slug) + '">Edit</button>' +
+        '<a class="gview" href="' + esc(url) + '" target="_blank" rel="noopener">View live ↗</a></div>' +
+        '</div></div>';
+    }).join('');
   // Fill each card in as its guide loads
   state.guides.forEach(async g => {
     const thumb = document.getElementById('gthumb-' + g.slug);
@@ -1347,8 +1374,53 @@ function renderHome() {
     }
   });
 }
-$('guideGrid').addEventListener('click', e => {
+// Visibility, YouTube-style (authors' guides)
+const VIS = {
+  public: ['Public', 'On your profile. Anyone can find it.'],
+  unlisted: ['Unlisted', 'Anyone with the link. Not on your profile.'],
+  private: ['Private', 'Only you, while you work on it.']
+};
+function visRow(g) {
+  const v = VIS[g.visibility] ? g.visibility : 'public';
+  return '<div class="gvis" data-vis-slug="' + esc(g.slug) + '"><span class="vispill vis-' + v + '">' + VIS[v][0] + '</span>' +
+    '<button class="pencil" data-vis-edit aria-label="Change who can see ' + esc(g.title) + '" aria-expanded="false" title="Change who can see this">' + ICON.pen + '</button>' +
+    '<div class="vismenu hidden" role="menu">' + Object.keys(VIS).map(k =>
+      '<button role="menuitemradio" aria-checked="' + (k === v) + '" data-vis-set="' + k + '"><b>' + VIS[k][0] + '</b><span>' + VIS[k][1] + '</span></button>').join('') + '</div></div>';
+}
+async function setVisibility(slug, v, row) {
+  const pill = row.querySelector('.vispill'), was = pill.textContent;
+  pill.textContent = 'Saving…';
+  try {
+    await dbSetVisibility(slug, v);
+    const g = state.guides.find(x => x.slug === slug); if (g) g.visibility = v;
+    pill.className = 'vispill vis-' + v; pill.textContent = VIS[v][0];
+    row.querySelectorAll('[data-vis-set]').forEach(b => b.setAttribute('aria-checked', b.dataset.visSet === v));
+  } catch (e) { pill.textContent = was; setStatus($('appStatus'), 'Not changed: ' + e.message, 'err'); }
+}
+$('guideGrid').addEventListener('click', async e => {
   if (e.target.closest('[data-new]')) { startNewGuide(); return; }
+  const copy = e.target.closest('[data-copy]');
+  if (copy) {
+    try { await navigator.clipboard.writeText(copy.dataset.copy); } catch (err) {
+      const t = document.createElement('textarea'); t.value = copy.dataset.copy; document.body.appendChild(t); t.select(); document.execCommand('copy'); t.remove();
+    }
+    copy.textContent = 'Copied ✓'; setTimeout(() => { copy.textContent = 'Copy link'; }, 1600);
+    return;
+  }
+  const visEdit = e.target.closest('[data-vis-edit]');
+  if (visEdit) {
+    const menu = visEdit.parentNode.querySelector('.vismenu'), open = menu.classList.contains('hidden');
+    document.querySelectorAll('.vismenu').forEach(m => m.classList.add('hidden'));
+    show(menu, open); visEdit.setAttribute('aria-expanded', open);
+    return;
+  }
+  const visSet = e.target.closest('[data-vis-set]');
+  if (visSet) {
+    const row = visSet.closest('.gvis');
+    show(row.querySelector('.vismenu'), false);
+    setVisibility(row.dataset.visSlug, visSet.dataset.visSet, row);
+    return;
+  }
   const a = e.target.closest('[data-open]');
   if (a) { e.preventDefault(); openGuide(a.dataset.open); }
 });
@@ -1400,6 +1472,10 @@ $('lockBtn').addEventListener('click', () => {
 function setSaveState() {
   const el = $('saveState');
   syncLockBtn();
+  // Home screen: nothing to save or view
+  const onHome = !state.current && !state.prof && !state.doc;
+  show($('saveBtn'), !onHome);
+  if (onHome) { show($('viewLive'), false); el.textContent = ''; return; }
   if (state.current && state.current.isNew && !state.prof && !state.doc) {
     const title = state.model && (M.getMeta(state.model, 'Title') || '').trim();
     $('saveBtn').disabled = !(title && !newSlugProblem(state.current.newSlug));
@@ -1706,6 +1782,7 @@ function hideAllViews() {
   homeMaps.forEach(m => m.remove()); homeMaps = [];
   setStatus($('appStatus'), '');
   ['emptyState', 'newGuideView', 'deleteView', 'unlockView', 'editorView', 'docView', 'profileView'].forEach(id => show($(id), false));
+  show($('homeBtn'));
   show($('modeSeg'), true);
 }
 

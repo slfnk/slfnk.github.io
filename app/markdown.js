@@ -58,7 +58,7 @@
     return out.join('\n');
   }
 
-  // FAQ layout: "# Title", an optional intro, then each "## Question" opens and closes its answer
+  // FAQ layout: "# Title", an optional intro, then each "## Question" with its answer below
   function renderFaq(md) {
     const text = String(md || '').replace(/\r\n?/g, '\n');
     let title = '';
@@ -67,7 +67,7 @@
     let html = title ? '<h1>' + inline(title) + '</h1>' : '';
     if (parts[0].trim()) html += '<div class="faq-intro">' + blocks(parts[0]) + '</div>';
     for (let k = 1; k < parts.length; k += 2) {
-      html += '<details class="faq-item"><summary>' + inline(parts[k].trim()) + '</summary><div class="faq-answer">' + blocks(parts[k + 1] || '') + '</div></details>';
+      html += '<section class="faq-item"><h2>' + inline(parts[k].trim()) + '</h2><div class="faq-answer">' + blocks(parts[k + 1] || '') + '</div></section>';
     }
     return { title, html };
   }

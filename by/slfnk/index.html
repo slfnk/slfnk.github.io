@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<!-- Profile page: only the name lines below differ between profiles -->
+<!-- Profile page: the profile and its guides live in the database (data-source="db") -->
 <title>SL FNK — GUIIDES</title>
 <meta name="description" content="Guides by SL FNK on GUIIDES">
 <meta property="og:type" content="profile">
@@ -20,7 +20,8 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <link rel="stylesheet" href="/app/profile.css">
 </head>
-<body data-profile="slfnk">
+<body data-profile="slfnk" data-source="db">
+<script src="/app/config.js"></script>
 <script src="/app/parser.js"></script>
 <script src="/app/profile.js"></script>
 </body>

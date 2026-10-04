@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<!-- Guide page: only the title/description lines below differ between guides -->
+<!-- Guide page: its text lives in the database (data-source="db"); this page keeps the address and link preview -->
 <title>The Best of Mill Valley, California</title>
 <meta name="description" content="Good bites, better nature, and some curveballs.">
 <meta property="og:type" content="website">
@@ -21,7 +21,8 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <link rel="stylesheet" href="/app/viewer.css">
 </head>
-<body data-guide="by/slfnk/mill-valley">
+<body data-guide="by/slfnk/mill-valley" data-source="db">
+<script src="/app/config.js"></script>
 <script src="/app/parser.js"></script>
 <script src="/app/viewer.js"></script>
 </body>
