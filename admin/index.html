@@ -84,10 +84,15 @@
   .login ol { color: var(--text-2); margin: 0.4rem 0 1rem 1.2rem; }
   .login li { margin-bottom: 0.25rem; }
   /* ---------- first sign-in: pick your address (no editor bar) ---------- */
-  body.welcoming header { display: none; }
+  body.welcoming header, body.bare header { display: none; }
+  /* The salmon ⛺︎ GUIIDES ⛺︎ mark, centered at the top of full-page screens */
+  .gmark { display: block; align-self: center; text-align: center; text-decoration: none; color: #FF8F8F; font-size: 13px; letter-spacing: 0.06em; transition: color 0.15s, transform 0.15s; }
+  .gmark strong { letter-spacing: 0.1em; }
+  .gmark:hover { color: #F26B6B; transform: scale(1.06); }
+  .welcome .wstep { display: flex; flex-direction: column; align-items: center; gap: 18px; width: 100%; }
+  .welcome .wcode { letter-spacing: 0.25em; font-variant-numeric: tabular-nums; }
+  .welcome .wlinks { margin: 6px 0 0; font-size: 14px; color: #6B675F; }
   .welcome { min-height: 100vh; box-sizing: border-box; padding: 28px 40px 32px; display: flex; flex-direction: column; background: var(--bg); }
-  .welcome .wmark { align-self: flex-start; text-decoration: none; color: #FF8F8F; font-size: 13px; letter-spacing: 0.06em; }
-  .welcome .wmark strong { letter-spacing: 0.1em; }
   .welcome .wmain { flex: 1; width: 100%; max-width: 760px; margin: 0 auto; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 18px; }
   .welcome h1 { margin: 0; font-family: var(--serif); font-weight: 700; font-size: 34px; line-height: 1.04; letter-spacing: -0.015em; white-space: nowrap; }
   .welcome .wsub { margin: 0 0 30px; font-size: 19px; color: #5C5C5C; }
@@ -139,11 +144,17 @@
   #profileView.pf-visual #pfGuides { order: 6; text-align: left; }
   #profileView.pf-visual #pfCreateRow, #profileView.pf-visual #pfStatus { order: 7; }
 
-  .login .tokenbox { margin-top: 2.4rem; border-top: 1px solid var(--border); padding-top: 1rem; }
-  .login .tokenbox summary { cursor: pointer; font-size: 13px; font-weight: 600; color: var(--text-2); }
-  .login .tokenbox h2 { font-family: var(--serif); font-size: 1.2rem; margin: 0.9rem 0 0.4rem; }
-  .login #codeInput { font-size: 22px; letter-spacing: 0.25em; font-variant-numeric: tabular-nums; max-width: 260px; }
-  .login #codeStep { margin-top: 1.2rem; }
+  /* Owner token sign-in: only at /admin/#owner (or when a saved token stops working) */
+  .tokenbox { width: 100%; max-width: 520px; margin: 2.4rem auto 0; border-top: 1px solid var(--border); padding-top: 1rem; text-align: left; }
+  .tokenbox summary { cursor: pointer; font-size: 13px; font-weight: 600; color: var(--text-2); }
+  .tokenbox h2 { font-family: var(--serif); font-size: 1.2rem; margin: 0.9rem 0 0.4rem; }
+  .tokenbox p, .tokenbox ol { color: var(--text-2); margin-bottom: 0.6rem; }
+  .tokenbox ol { margin: 0.4rem 0 1rem 1.2rem; }
+  .tokenbox li { margin-bottom: 0.25rem; }
+  /* Editor bar: the same salmon mark, in place of the old logo */
+  .brand.tent { gap: 0; color: #FF8F8F; font-size: 13px; letter-spacing: 0.06em; }
+  .brand.tent strong { letter-spacing: 0.1em; margin: 0 0.35em; }
+  .brand.tent:hover { color: #F26B6B; }
   .row { display: flex; gap: 0.5rem; align-items: center; margin-top: 0.6rem; }
   .row label { display: flex; gap: 0.35rem; align-items: center; font-weight: 500; }
   .row input[type=checkbox] { width: auto; }
@@ -424,7 +435,7 @@
 <body>
 
 <header>
-  <a class="brand" href="/"><svg width="16" height="16" viewBox="0 0 64 64" aria-hidden="true"><path fill="#038f9e" fill-rule="evenodd" d="M32 5 L61 58 L3 58 Z M32 27 L42.5 58 L21.5 58 Z"/></svg><strong>GUIIDES</strong><span>editor</span></a>
+  <a class="brand tent" href="/">⛺︎<strong>GUIIDES</strong>⛺︎</a>
   <div id="topControls" class="hidden" style="display:flex;align-items:center;gap:10px;flex:1 1 auto;min-width:0">
     <button id="homeBtn" class="ghost" title="All guides"><svg class="i" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>All guides</button>
     <label class="sr" for="guidePicker">Guide</label>
@@ -451,20 +462,34 @@
 </header>
 
 <!-- ============ LOGIN ============ -->
-<section class="login hidden" id="loginView">
-  <div id="emailLogin">
-    <h1>Sign in to GUIIDES</h1>
-    <p>Enter the email address you were invited with, and we'll send you a sign-in code.</p>
-    <label class="f" for="emailInput">Email</label>
-    <input id="emailInput" type="email" autocomplete="email" spellcheck="false" placeholder="you@example.com">
-    <div class="row"><button class="primary" id="sendCode">Send code</button><span class="status" id="emailStatus"></span></div>
-    <div id="codeStep" class="hidden">
-      <label class="f" for="codeInput">Code from the email</label>
-      <input id="codeInput" inputmode="numeric" autocomplete="one-time-code" maxlength="10" spellcheck="false" placeholder="123456">
-      <div class="row"><button class="primary" id="verifyCode">Sign in</button><button class="ghost" id="resendCode">Send a new code</button></div>
+<section class="welcome hidden" id="loginView" aria-labelledby="lTitle">
+  <a class="gmark" href="/">⛺︎ <strong>GUIIDES</strong> ⛺︎</a>
+  <main class="wmain">
+    <div id="emailLogin" class="wstep">
+      <h1 id="lTitle">Come on in</h1>
+      <p class="wsub" id="lSub">Enter your email, and we'll send a login code to your inbox</p>
+      <div class="wstep" id="emailStep">
+        <label class="wline" for="emailInput">
+          <span class="wfield"><input id="emailInput" type="email" autocomplete="email" autocapitalize="none" spellcheck="false" placeholder="you@example.com" aria-describedby="emailStatus"></span>
+        </label>
+        <p class="wstatus" id="emailStatus" aria-live="polite"></p>
+        <div class="wact">
+          <button class="wclaim" id="sendCode">Send code <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="M13 6l6 6-6 6"/></svg></button>
+          <span class="wenter">or press <strong>Enter ↵</strong></span>
+        </div>
+      </div>
+      <div class="wstep hidden" id="codeStep">
+        <label class="wline" for="codeInput">
+          <span class="wfield"><input id="codeInput" class="wcode" inputmode="numeric" autocomplete="one-time-code" maxlength="10" spellcheck="false" placeholder="123456" aria-describedby="emailStatus"></span>
+        </label>
+        <div class="wact">
+          <button class="wclaim" id="verifyCode">Sign in <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="M13 6l6 6-6 6"/></svg></button>
+          <span class="wenter">or press <strong>Enter ↵</strong></span>
+        </div>
+        <p class="wlinks"><button class="wsignout" id="resendCode">Send a new code</button> · <button class="wsignout" id="changeEmail">Use a different email</button></p>
+      </div>
     </div>
-  </div>
-  <details class="tokenbox" id="tokenLogin">
+    <details class="tokenbox hidden" id="tokenLogin">
   <summary>Site owner? Sign in with a GitHub token</summary>
   <h2>Sign in with a GitHub token</h2>
   <p>The editor saves straight to your site's GitHub repo. It needs a token that can only touch that one repo.</p>
@@ -480,10 +505,11 @@
   <div class="row"><label><input type="checkbox" id="rememberToken" checked> Remember on this device</label></div>
   <div class="row"><button class="primary" id="signIn">Sign in</button><span class="status" id="loginStatus"></span></div>
   </details>
+  </main>
 </section>
 
 <section class="welcome hidden" id="welcomeView" aria-labelledby="wTitle">
-  <a class="wmark" href="/">⛺︎ <strong>GUIIDES</strong> ⛺︎</a>
+  <a class="gmark" href="/">⛺︎ <strong>GUIIDES</strong> ⛺︎</a>
   <main class="wmain">
     <h1 id="wTitle">Looks like you're new around here</h1>
     <p class="wsub">Pick a profile URL to start making guides</p>
@@ -1003,6 +1029,32 @@ async function handleTaken(handle) {
 
 // ---- email sign-in: a one-time code, no password
 let pendingEmail = '';
+function showLogin({ owner = false } = {}) {
+  document.body.classList.add('bare');
+  show($('loginView'));
+  show($('tokenLogin'), owner); if (owner) $('tokenLogin').open = true;
+  setTimeout(refitAll, 0);
+}
+function leaveLogin() { document.body.classList.remove('bare'); show($('loginView'), false); }
+function lStatus(msg, kind) {
+  $('emailStatus').textContent = msg || '';
+  $('emailStatus').className = 'wstatus' + (kind === 'ok' || kind === 'err' ? ' ' + kind : '');
+}
+// Step 2 of sign-in: the code. The status line moves with the step that's showing.
+function showCodeStep(email) {
+  show($('emailStep'), false); show($('codeStep'));
+  $('codeStep').insertBefore($('emailStatus'), $('codeStep').querySelector('.wact'));
+  $('lTitle').textContent = 'Check your inbox';
+  $('lSub').textContent = 'We sent a login code to ' + email + '. If it isn\'t there in a minute, check spam.';
+  $('codeInput').value = ''; fitToText($('codeInput')); $('codeInput').focus();
+}
+function showEmailStep() {
+  show($('codeStep'), false); show($('emailStep'));
+  $('emailStep').insertBefore($('emailStatus'), $('emailStep').querySelector('.wact'));
+  $('lTitle').textContent = 'Come on in';
+  $('lSub').textContent = "Enter your email, and we'll send a login code to your inbox";
+  lStatus(''); fitToText($('emailInput')); $('emailInput').focus();
+}
 function authProblem(error) {
   const m = (error && error.message) || '';
   if (/signups? not allowed|not allowed for otp|user not found/i.test(m)) return "That email isn't on the invite list yet. Ask the site owner to add you.";
@@ -1012,34 +1064,35 @@ function authProblem(error) {
 }
 async function sendCode() {
   const email = $('emailInput').value.trim().toLowerCase();
-  if (!/^\S+@\S+\.\S+$/.test(email)) { setStatus($('emailStatus'), 'Enter your email address.', 'err'); return; }
+  if (!/^\S+@\S+\.\S+$/.test(email)) { lStatus('Enter your email address.', 'err'); return; }
   const s = supa();
-  if (!s) { setStatus($('emailStatus'), "Email sign-in didn't load. Check your connection and reload the page.", 'err'); return; }
+  if (!s) { lStatus("Email sign-in didn't load. Check your connection and reload the page.", 'err'); return; }
   $('sendCode').disabled = true; $('resendCode').disabled = true;
-  setStatus($('emailStatus'), 'Sending…', 'busy');
+  lStatus('Sending…', 'busy');
   const { error } = await s.auth.signInWithOtp({ email, options: { shouldCreateUser: false, emailRedirectTo: SITE + '/admin/' } });
   $('sendCode').disabled = false; $('resendCode').disabled = false;
-  if (error) { setStatus($('emailStatus'), authProblem(error), 'err'); return; }
+  if (error) { lStatus(authProblem(error), 'err'); return; }
+  const resent = pendingEmail === email && !$('codeStep').classList.contains('hidden');
   pendingEmail = email;
-  setStatus($('emailStatus'), 'Sent. Check your inbox (and spam) for the code.', 'ok');
-  show($('codeStep')); $('codeInput').value = ''; $('codeInput').focus();
+  if (resent) { lStatus('New code sent.', 'ok'); $('codeInput').value = ''; fitToText($('codeInput')); $('codeInput').focus(); }
+  else { showCodeStep(email); lStatus(''); }
 }
 async function verifyCode() {
   const code = $('codeInput').value.replace(/\D/g, '');
-  if (code.length < 6) { setStatus($('emailStatus'), 'Enter the code from the email.', 'err'); return; }
+  if (code.length < 6) { lStatus('Enter the code from the email.', 'err'); return; }
   $('verifyCode').disabled = true;
-  setStatus($('emailStatus'), 'Checking…', 'busy');
+  lStatus('Checking…', 'busy');
   const { data, error } = await supa().auth.verifyOtp({ email: pendingEmail, token: code, type: 'email' });
   $('verifyCode').disabled = false;
-  if (error || !data || !data.session) { setStatus($('emailStatus'), authProblem(error), 'err'); return; }
-  setStatus($('emailStatus'), '');
+  if (error || !data || !data.session) { lStatus(authProblem(error), 'err'); return; }
+  lStatus('');
   await enterAsAuthor(data.session.user);
 }
 async function enterAsAuthor(user) {
   state.backend = 'db';
   state.user = { id: user.id, email: user.email };
   $('whoText').textContent = user.email;
-  show($('loginView'), false); show($('topControls')); show($('appView'));
+  leaveLogin(); show($('topControls')); show($('appView'));
   try {
     const mine = await dbMyProfile();
     state.myProfile = mine ? { handle: mine.handle, name: mine.name } : null;
@@ -1050,7 +1103,9 @@ async function enterAsAuthor(user) {
 $('sendCode').addEventListener('click', sendCode);
 $('resendCode').addEventListener('click', sendCode);
 $('emailInput').addEventListener('keydown', e => { if (e.key === 'Enter') sendCode(); });
-$('emailInput').addEventListener('input', () => setStatus($('emailStatus'), ''));
+$('emailInput').addEventListener('input', () => { lStatus(''); fitToText($('emailInput')); });
+$('codeInput').addEventListener('input', () => fitToText($('codeInput')));
+$('changeEmail').addEventListener('click', showEmailStep);
 $('verifyCode').addEventListener('click', verifyCode);
 $('codeInput').addEventListener('keydown', e => { if (e.key === 'Enter') verifyCode(); });
 
@@ -1075,14 +1130,19 @@ function leaveWelcome() {
 }
 // The field grows with what's typed, so the address reads as one centered line
 let fitCtx = null;
-function fitWelcome() {
-  const el = $('wHandle'), cs = getComputedStyle(el);
+// Size an input to its text (or placeholder), so a centered line stays centered
+function fitToText(el) {
+  if (!el || !el.offsetParent) return;
+  const cs = getComputedStyle(el);
   fitCtx = fitCtx || document.createElement('canvas').getContext('2d');
   fitCtx.font = cs.fontStyle + ' ' + cs.fontWeight + ' ' + cs.fontSize + ' ' + cs.fontFamily;
-  el.style.width = Math.ceil(fitCtx.measureText(el.value || el.placeholder).width + 4) + 'px';
+  const spacing = parseFloat(cs.letterSpacing) || 0, text = el.value || el.placeholder;
+  el.style.width = Math.ceil(fitCtx.measureText(text).width + spacing * text.length + 4) + 'px';
 }
-if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { if (!$('welcomeView').classList.contains('hidden')) fitWelcome(); });
-window.addEventListener('resize', () => { if (!$('welcomeView').classList.contains('hidden')) fitWelcome(); });
+function fitWelcome() { fitToText($('wHandle')); }
+function refitAll() { ['wHandle', 'emailInput', 'codeInput'].forEach(id => fitToText($(id))); }
+if (document.fonts && document.fonts.ready) document.fonts.ready.then(refitAll);
+window.addEventListener('resize', refitAll);
 function wState(kind, msg) {
   $('wStatus').textContent = msg || '';
   $('wStatus').className = 'wstatus' + (kind ? ' ' + kind : '');
@@ -1139,7 +1199,7 @@ async function signIn(t, remember) {
   if (res.status === 404) throw new ApiError(404, "This token can't see " + REPO.owner + '/' + REPO.name + '. Make sure you picked that repository under "Repository access".');
   (remember ? localStorage : sessionStorage).setItem('gg-token', t);
   $('whoText').textContent = REPO.owner + '/' + REPO.name;
-  show($('loginView'), false);
+  leaveLogin();
   show($('topControls'));
   show($('appView'));
   await loadGuideIndex();
@@ -3226,23 +3286,23 @@ $('repoName1').textContent = REPO.owner + '/' + REPO.name;
 window.addEventListener('resize', () => layoutStrip());
 (async function start() {
   const saved = localStorage.getItem('gg-token') || sessionStorage.getItem('gg-token');
+  const owner = /(^|[#&])owner\b/.test(location.hash); // guiides.org/admin/#owner shows the token box
   if (saved) {
     try { await signIn(saved, !!localStorage.getItem('gg-token')); }
-    catch (e) { token = null; show($('loginView')); $('tokenLogin').open = true; setStatus($('loginStatus'), e.message, 'err'); }
+    catch (e) { token = null; showLogin({ owner: true }); setStatus($('loginStatus'), e.message, 'err'); }
     return;
   }
   const s = supa();
   if (!s) {
     // The email sign-in library didn't load (offline, or blocked): token sign-in still works
-    show($('emailLogin'), false); $('tokenLogin').open = true;
-    show($('loginView')); $('tokenInput').focus();
+    show($('emailLogin'), false); showLogin({ owner: true }); $('tokenInput').focus();
     return;
   }
   try {
     const { data } = await s.auth.getSession(); // also picks up a sign-in link clicked in the email
     if (data && data.session) { await enterAsAuthor(data.session.user); return; }
   } catch (e) {}
-  show($('loginView')); $('emailInput').focus();
+  showLogin({ owner }); $('emailInput').focus();
 })();
 </script>
 </body>

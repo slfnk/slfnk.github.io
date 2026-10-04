@@ -51,7 +51,7 @@
 
   document.body.insertAdjacentHTML('afterbegin',
     '<div class="pf-wrap">' +
-    '<div class="pf-top"><a href="/" class="pf-brand">⛺︎ made with <strong>GUIIDES</strong> ⛺︎</a></div>' +
+    '<div class="pf-top"><a href="/" class="pf-brand">⛺︎ <strong>GUIIDES</strong> ⛺︎</a></div>' +
     '<main id="pf"><p class="pf-msg">Loading…</p></main>' +
     '</div>');
   const main = document.getElementById('pf');

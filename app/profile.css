@@ -27,10 +27,10 @@ a { color: inherit; }
 :focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
 
 .pf-wrap { max-width: 700px; margin: 0 auto; padding: 0.5rem 2.5rem 5rem; }
-.pf-top { display: flex; align-items: center; justify-content: space-between; padding: 0.5rem 0; }
-.pf-brand { font-size: 0.62rem; font-weight: 500; letter-spacing: 0.04em; color: var(--brand); text-decoration: none; display: inline-block; transition: transform 0.15s; }
-.pf-brand strong { font-weight: 700; letter-spacing: 0.08em; }
-.pf-brand:hover { transform: scale(1.06); }
+.pf-top { display: flex; align-items: center; justify-content: center; padding: 0.9rem 0 0.5rem; }
+.pf-brand { font-size: 13px; letter-spacing: 0.06em; color: var(--brand); text-decoration: none; display: inline-block; transition: color 0.15s, transform 0.15s; }
+.pf-brand strong { letter-spacing: 0.1em; }
+.pf-brand:hover { color: #F26B6B; transform: scale(1.06); }
 
 /* ---- who ---- */
 .pf-head { text-align: center; padding: 3.25rem 0 0; }
