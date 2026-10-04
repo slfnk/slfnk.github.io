@@ -373,6 +373,18 @@
   }
   /* Short intros: no button, just the divider line under the intro */
   .intro-toggle-wrap.no-fold { padding-bottom: 0.5rem; }
+  .intro-toggle-wrap.no-intro { display: none; }
+  .intro-body.empty { padding: 0; }
+  /* "Edit" by the gear, for the signed-in author */
+  .topbar-edit { font-family: var(--sans); font-size: 0.62rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-3); text-decoration: none; padding: 0.25rem 0.45rem; border-radius: 4px; align-self: center; transition: color 0.15s; }
+  .topbar-edit:hover { color: var(--progress); }
+  .topbar-edit[hidden] { display: none; }
+  /* Accent in settings: preset swatches plus any color */
+  .settings-row.settings-color { flex-wrap: wrap; gap: 6px; }
+  .settings-swatches { display: flex; align-items: center; gap: 5px; flex-wrap: wrap; }
+  .settings-swatch { width: 18px; height: 18px; padding: 0; border-radius: 50%; border: 2px solid #fff; box-shadow: 0 0 0 1px rgba(0,0,0,0.18); cursor: pointer; }
+  .settings-swatch.on { box-shadow: 0 0 0 2px var(--text); }
+  .settings-colorpick { width: 26px; height: 22px; padding: 0; border: none; background: none; cursor: pointer; }
   .intro-toggle-wrap.no-fold .intro-toggle { display: none; }
 
   /* =================== FILTER BAR =================== */

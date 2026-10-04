@@ -22,6 +22,7 @@ document.body.insertAdjacentHTML('afterbegin', `
           </svg>
           <span class="copied-tip" id="pageCopiedTip">Copied!</span>
         </button>
+        <a class="topbar-edit" id="editGuideLink" href="/admin/" hidden>Edit</a>
         <div class="settings-wrap">
           <button class="topbar-icon settings-btn" id="settingsBtn" title="Settings">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -145,24 +146,17 @@ const settingsConfig = [
     }
   },
   {
-    key: 'accent', label: 'Accent', type: 'cycle',
-    options: ['Teal', 'Coral', 'Gold', 'Indigo', 'Rose', 'Slate', 'Jade'],
-    _colors: ['#038f9e', '#D95B43', '#C4A035', '#4A6FA5', '#C96B8B', '#6B8291', '#2AAA8A'],
+    key: 'accent', label: 'Accent', type: 'color',
+    presets: ['#038f9e', '#D95B43', '#C4A035', '#4A6FA5', '#8B5DAD', '#C96B8B', '#6B8291', '#2AAA8A'],
+    names: ['Teal', 'Coral', 'Gold', 'Indigo', 'Plum', 'Rose', 'Slate', 'Jade'],
     get: function() {
-      const cur = getComputedStyle(document.documentElement).getPropertyValue('--progress').trim();
-      let idx = this._colors.indexOf(cur);
-      if (idx < 0) {
-        // Try matching via canvas hex conversion for rgb() values
-        const ctx = document.createElement('canvas').getContext('2d');
-        ctx.fillStyle = cur;
-        const norm = ctx.fillStyle; // always returns #rrggbb
-        idx = this._colors.findIndex(c => { ctx.fillStyle = c; return ctx.fillStyle === norm; });
-      }
-      return idx >= 0 ? idx : 0; // default Teal
+      const ctx = document.createElement('canvas').getContext('2d');
+      ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--progress').trim() || '#038f9e';
+      return ctx.fillStyle; // always #rrggbb
     },
-    set: function(idx) {
-      document.documentElement.style.setProperty('--progress', this._colors[idx]);
-      try { localStorage.setItem('vg-accent', idx); } catch(e) {}
+    set: function(hex) {
+      document.documentElement.style.setProperty('--progress', hex);
+      try { localStorage.setItem('vg-accent', hex); } catch(e) {}
     }
   },
   { key: '_d0', type: 'divider' },
@@ -281,6 +275,25 @@ function cycleSetting(key, dir) {
     }
     const row = document.createElement('div');
     row.className = 'settings-row';
+    if (cfg.type === 'color') {
+      row.classList.add('settings-color');
+      row.innerHTML = '<span class="settings-label">' + cfg.label + '</span>' +
+        '<div class="settings-swatches">' + cfg.presets.map((c, i) =>
+          '<button class="settings-swatch" data-color="' + c + '" title="' + cfg.names[i] + '" aria-label="' + cfg.label + ': ' + cfg.names[i] + '" style="background:' + c + '"></button>').join('') +
+        '<input type="color" class="settings-colorpick" id="ss-' + cfg.key + '" value="' + cfg.get() + '" aria-label="Pick any ' + cfg.label.toLowerCase() + ' color" title="Any color"></div>';
+      pop.appendChild(row);
+      const mark = hex => row.querySelectorAll('.settings-swatch').forEach(b => b.classList.toggle('on', b.dataset.color.toLowerCase() === hex.toLowerCase()));
+      cfg._mark = mark;
+      setTimeout(() => {
+        mark(cfg.get());
+        row.addEventListener('click', e => {
+          const sw = e.target.closest('.settings-swatch'); if (!sw) return;
+          e.stopPropagation(); cfg.set(sw.dataset.color); document.getElementById('ss-' + cfg.key).value = sw.dataset.color; mark(sw.dataset.color);
+        });
+        document.getElementById('ss-' + cfg.key).addEventListener('input', e => { cfg.set(e.target.value); mark(e.target.value); });
+      }, 0);
+      return;
+    }
     if (cfg.type === 'slider') {
       const curVal = cfg.get();
       row.innerHTML =
@@ -319,6 +332,7 @@ function cycleSetting(key, dir) {
   function openSettings(triggerBtn) {
     settingsConfig.forEach(cfg => {
       if (cfg.type === 'divider') return;
+      if (cfg.type === 'color') { const h = cfg.get(), pick = document.getElementById('ss-' + cfg.key); if (pick) pick.value = h; if (cfg._mark) cfg._mark(h); return; }
       const val = document.getElementById('sv-' + cfg.key);
       if (!val) return;
       if (cfg.type === 'slider') {
@@ -386,7 +400,11 @@ function introLineCount(body) {
 }
 function updateIntroFold() {
   const body = document.getElementById('introBody'), wrap = document.getElementById('introToggleWrap');
-  if (!body || !wrap || !body.getClientRects().length || !body.querySelector('p')) return; // hidden or empty
+  if (!body || !wrap) return;
+  if (!body.querySelector('p')) { // no intro written: nothing to fold
+    body.classList.remove('collapsed'); body.classList.add('empty'); wrap.classList.add('no-intro'); introLong = false; return;
+  }
+  if (!body.getClientRects().length) return; // hidden for now; checked again when shown
   const long = introLineCount(body) > INTRO_MAX_LINES;
   if (long === introLong) return;
   introLong = long;
@@ -439,8 +457,9 @@ try {
   const savedAccent = localStorage.getItem('vg-accent');
   if (savedAccent !== null) {
     const accentColors = ['#038f9e', '#D95B43', '#C4A035', '#4A6FA5', '#C96B8B', '#6B8291', '#2AAA8A'];
-    const ai = parseInt(savedAccent);
-    if (ai >= 0 && ai < accentColors.length) document.documentElement.style.setProperty('--progress', accentColors[ai]);
+    // Saved as a color now; older saves were a number into the list above
+    const pick = /^#[0-9a-fA-F]{3,8}$/.test(savedAccent) ? savedAccent : accentColors[parseInt(savedAccent)];
+    if (pick) document.documentElement.style.setProperty('--progress', pick);
   }
 } catch(e) {}
 
@@ -503,6 +522,33 @@ function loadGuideFromDb() {
       throw new Error("There's no guide at guiides.org/" + GUIDE_SLUG + '/.');
     });
 }
+
+// Signed in and viewing your own guide? A small "Edit" link appears by the gear.
+// Uses the editor's saved sign-in on this browser; nothing shows for anyone else.
+(function offerEdit() {
+  if (!FROM_DB) return;
+  const parts = location.pathname.split('/').filter(Boolean);
+  if (parts.length !== 3 || parts[0] !== 'by') return;
+  const cfg = window.GUIIDES || {};
+  let sess = null;
+  try {
+    const ref = String(cfg.supabaseUrl || '').replace(/^https:\/\//, '').split('.')[0];
+    sess = JSON.parse(localStorage.getItem('sb-' + ref + '-auth-token') || 'null');
+  } catch (e) {}
+  const tok = sess && sess.access_token, uid = sess && sess.user && sess.user.id;
+  if (!tok || !uid) return;
+  fetch(cfg.supabaseUrl + '/rest/v1/guides?select=slug&handle=eq.' + encodeURIComponent(parts[1]) +
+    '&slug=eq.' + encodeURIComponent(parts[2]) + '&owner=eq.' + encodeURIComponent(uid),
+    { headers: { apikey: cfg.supabaseKey, Authorization: 'Bearer ' + tok } })
+    .then(r => r.ok ? r.json() : [])
+    .then(rows => {
+      if (!rows || !rows.length) return;
+      const a = document.getElementById('editGuideLink');
+      a.href = '/admin/#guide=' + encodeURIComponent(parts[2]);
+      a.hidden = false;
+    })
+    .catch(() => {});
+})();
 
 function loadGuideText() {
   if (FROM_DB) return loadGuideFromDb();
@@ -676,8 +722,8 @@ const updatedBits = [guide.updated ? 'Updated ' + guide.updated : ''].concat(gui
 introSection.innerHTML =
   '<p class="updated-inline">' + updatedBits.join('<span class="meta-dot" aria-hidden="true">•</span>') + '</p>' +
   '<h1>' + guide.title + '</h1>' +
-  '<p class="deck">' + guide.deck + '</p>' +
-  '<p class="byline">By <strong>' + bylineHtml(guide) + '</strong></p>' +
+  (guide.deck ? '<p class="deck">' + guide.deck + '</p>' : '') + // no subtitle: leave it out
+  (guide.byline ? '<p class="byline">By <strong>' + bylineHtml(guide) + '</strong></p>' : '') + // no author: no byline
   '<div class="guide-banner" id="guideBanner" role="presentation"></div>';
 
 document.title = guide.title;

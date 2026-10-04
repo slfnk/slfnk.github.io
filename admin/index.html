@@ -944,9 +944,11 @@ function checkGuide(text) {
   return out;
 }
 
+// The bar under the editor's top bar only appears when something needs fixing
+// (routine counts like "97 spots on the map" are left out for now)
 function renderChecks(result) {
-  $('checks').innerHTML = result.stats.map(s => '<span class="' + s.kind + '">' + esc(s.text) + '</span>').join('') +
-    (result.ok ? '' : '<span class="err">Can\'t save until the problems below are fixed</span>');
+  $('checks').innerHTML = result.ok ? '' : '<span class="err">Can\'t save until the problems below are fixed</span>';
+  show($('checks'), !result.ok);
   $('issues').innerHTML = result.issues.map(i => '<li>' + esc(i) + '</li>').join('');
 }
 
@@ -2422,7 +2424,7 @@ function renderVisual() {
     countBits().map(x => '<span style="display:inline-block;font-size:0.55em;vertical-align:0.3em;margin:0 0.75rem 0 0.65rem;letter-spacing:0">•</span>' + x).join('') + '</div>' +
     '<textarea class="ie title" data-meta="Title" rows="1" placeholder="Guide title" aria-label="Guide title">' + val(M.getMeta(m, 'Title')) + '</textarea>' +
     '<input class="ie subtitle" data-meta="Subtitle" value="' + val(M.getMeta(m, 'Subtitle')) + '" placeholder="Add an italic subtitle…" aria-label="Subtitle">' +
-    renderByline(m) + renderNewAddress() + renderBannerRow() + renderAccentRow() +
+    renderByline(m) + renderNewAddress() + renderBannerRow() +
     '<div style="width:100%">' +
     '<textarea class="ie intro" data-intro rows="4" placeholder="Write an intro that sets the scene… (blank line = new paragraph)" aria-label="Intro">' + val(m.intro.join('\n\n')) + '</textarea></div>' +
     '</div>';

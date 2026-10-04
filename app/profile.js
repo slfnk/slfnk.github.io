@@ -19,8 +19,9 @@
   let dark = false;
   try {
     dark = localStorage.getItem('vg-dark') === '1';
-    const a = parseInt(localStorage.getItem('vg-accent'), 10);
-    if (a >= 0 && a < ACCENTS.length) document.documentElement.style.setProperty('--accent', ACCENTS[a]);
+    const saved = localStorage.getItem('vg-accent') || '';
+    const a = /^#[0-9a-fA-F]{3,8}$/.test(saved) ? saved : ACCENTS[parseInt(saved, 10)];
+    if (a) document.documentElement.style.setProperty('--accent', a);
   } catch (e) {}
   document.documentElement.classList.toggle('dark', dark);
 
