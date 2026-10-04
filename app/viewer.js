@@ -105,7 +105,7 @@ document.body.insertAdjacentHTML('afterbegin', `
 // ============================================
 const GUIDE_SLUG = (function() {
   const d = document.body.dataset.guide;
-  if (d && /^[a-z0-9-]+$/.test(d)) return d;
+  if (d && /^[a-z0-9-]+(\/[a-z0-9-]+)*$/.test(d)) return d; // e.g. "by/slfnk/san-miguel"
   const parts = location.pathname.split('/').filter(Boolean);
   // Authors' guides live at /by/<handle>/<guide>/ — the whole path names the guide
   if (document.body.dataset.source === 'db' && parts[0] === 'by' && parts.length === 3) return parts.join('/');
@@ -527,7 +527,7 @@ function showGuideNotFound(err) {
       if (!idx || !idx.guides) return;
       document.getElementById('guideList').innerHTML = 'Available guides: ' +
         idx.guides.filter(g => g.published !== false).map(g =>
-          '<a href="/' + g.slug + '/"><strong>' + g.title + '</strong></a>'
+          '<a href="/' + (g.path || g.slug) + '/"><strong>' + g.title + '</strong></a>'
         ).join(' &middot; ');
     })
     .catch(() => {});

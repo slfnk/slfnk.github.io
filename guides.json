@@ -4,21 +4,24 @@
       "slug": "san-miguel",
       "title": "Vibe Guide to San Miguel De Allende",
       "city": "San Miguel de Allende",
-      "published": true
+      "published": true,
+      "path": "by/slfnk/san-miguel"
     },
     {
       "slug": "sf-chinatown",
       "title": "Chinatown Picks from On Waverly Staff",
       "city": "San Francisco",
       "published": true,
-      "profile": "slfnk"
+      "profile": "slfnk",
+      "path": "by/slfnk/sf-chinatown"
     },
     {
       "slug": "mill-valley",
       "title": "The Best of Mill Valley, California",
       "city": "Mill Valley",
       "published": true,
-      "profile": "slfnk"
+      "profile": "slfnk",
+      "path": "by/slfnk/mill-valley"
     }
   ]
 }

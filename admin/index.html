@@ -991,7 +991,11 @@ async function dbList() {
 }
 const myHandle = () => (state.myProfile || {}).handle || '';
 // Where a guide lives on the site: authors' guides sit under their handle
-function guidePath(slug) { return isDb() ? 'by/' + myHandle() + '/' + slug : slug; }
+// The site owner's guides live under /by/slfnk/ too ("path" in guides.json);
+// older entries without a path are still at the top level.
+const OWNER_HANDLE = 'slfnk';
+function ghDir(slug) { const g = state.guides.find(x => x.slug === slug); return (g && g.path) || slug; }
+function guidePath(slug) { return isDb() ? 'by/' + myHandle() + '/' + slug : ghDir(slug); }
 function liveUrl(slug) { return SITE + '/' + guidePath(slug) + '/'; }
 async function dbLoad(slug) {
   const { data, error } = await supa().from('guides').select('markdown, version').eq('handle', myHandle()).eq('slug', slug).maybeSingle();
@@ -1017,9 +1021,9 @@ async function dbDelete(slug) {
   if (!data || !data.length) throw new ApiError(404, 'That guide was already gone.');
 }
 // Guide text, from wherever this sign-in keeps it
-function loadGuideFile(slug) { return isDb() ? dbLoad(slug) : getFile(slug + '/places.md'); }
+function loadGuideFile(slug) { return isDb() ? dbLoad(slug) : getFile(ghDir(slug) + '/places.md'); }
 function saveGuideFile(slug, text, sha, message, title) {
-  return isDb() ? dbSave(slug, text, sha, title) : putFile(slug + '/places.md', text, sha, message);
+  return isDb() ? dbSave(slug, text, sha, title) : putFile(ghDir(slug) + '/places.md', text, sha, message);
 }
 // ---- profiles: one per author, at guiides.org/by/<handle>/
 const PROFILE_COLS = 'handle, name, location, photo, bio, links';
@@ -1293,10 +1297,10 @@ $('homeBtn').addEventListener('click', () => showHome());
 
 function renderHome() {
   homeMaps.forEach(m => m.remove()); homeMaps = [];
-  document.querySelectorAll('.home-pages').forEach(el => show(el, !isDb() || el.contains($('profileCards'))));
+  document.querySelectorAll('.home-pages').forEach(el => show(el, el.contains($('profileCards'))));
   const PERSON = '<svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/></svg>';
   $('profileCards').innerHTML = state.profiles.map(p => '<a class="pcard" href="#profile=' + esc(p.handle) + '" data-open-profile="' + esc(p.handle) + '">' + PERSON + esc(p.name) + ' <span class="hint">guiides.org/by/' + esc(p.handle) + '/</span></a>').join('') +
-    (isDb() ? '' : '<button class="pcard" data-new-profile style="height:auto;border-style:dashed;color:var(--brand-dark)">＋ New profile</button>');
+    '';
   const LOCK = '<svg class="i" viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>';
   $('guideGrid').innerHTML =
     '<button class="gnew" data-new><span class="plus">＋</span>New guide<span class="sub">A city, a neighborhood, a whole country</span></button>' +
@@ -1304,14 +1308,14 @@ function renderHome() {
       '<div class="gthumb" id="gthumb-' + esc(g.slug) + '"><div class="gmap"></div><div class="gbadges">' +
       (g.published === false ? '<span class="gbadge">Hidden</span>' : '') + '</div></div>' +
       '<div class="gbody"><div class="gtitle">' + esc(g.title) + '</div>' +
-      '<div class="gmeta" id="gmeta-' + esc(g.slug) + '">' + esc([g.city, '/' + g.slug + '/'].filter(Boolean).join(' · ')) + '</div></div></a>').join('');
+      '<div class="gmeta" id="gmeta-' + esc(g.slug) + '">' + esc([g.city, '/' + guidePath(g.slug) + '/'].filter(Boolean).join(' · ')) + '</div></div></a>').join('');
   // Fill each card in as its guide loads
   state.guides.forEach(async g => {
     const thumb = document.getElementById('gthumb-' + g.slug);
     try {
       const f = await loadGuideFile(g.slug);
       if (!thumb || !thumb.isConnected) return;
-      if (!f) { document.getElementById('gmeta-' + g.slug).textContent = isDb() ? 'This guide is missing' : 'No places.md found for /' + g.slug + '/'; return; }
+      if (!f) { document.getElementById('gmeta-' + g.slug).textContent = isDb() ? 'This guide is missing' : 'No places.md found for /' + guidePath(g.slug) + '/'; return; }
       const data = parsePlacesMd(f.text), gd = data.guide;
       const locked = !!gd.locked;
       const offColor = HEX.test(gd.pinColor || '') ? gd.pinColor : DEFAULT_PIN;
@@ -1461,7 +1465,7 @@ async function openGuide(slug, { force = false } = {}) {
   flashSaveState('Loading…', 'clean');
   try {
     const f = await loadGuideFile(slug);
-    if (!f) throw new ApiError(404, isDb() ? 'That guide is gone, or isn\'t yours.' : 'No file at /' + slug + '/places.md');
+    if (!f) throw new ApiError(404, isDb() ? 'That guide is gone, or isn\'t yours.' : 'No file at /' + ghDir(slug) + '/places.md');
     // Password-protected: decrypt before anything else sees the file
     let password = null;
     const lockedLine = (f.text.match(/^Locked:\s*(.+)$/m) || [])[1];
@@ -1573,9 +1577,10 @@ document.addEventListener('keydown', e => { if ((e.metaKey || e.ctrlKey) && e.ke
 async function syncGuideMeta(slug, guide) {
   let changed = false;
   const title = guide.title || slug, subtitle = guide.deck || '';
-  const page = await getFile(slug + '/index.html');
-  const want = guidePageHtml(slug, title, subtitle);
-  if (page && page.text !== want) { await putFile(slug + '/index.html', want, page.sha, 'Sync ' + slug + ' page title (editor)'); changed = true; }
+  const dir = ghDir(slug);
+  const page = await getFile(dir + '/index.html');
+  const want = guidePageHtml(dir, title, subtitle);
+  if (page && page.text !== want) { await putFile(dir + '/index.html', want, page.sha, 'Sync ' + slug + ' page title (editor)'); changed = true; }
   const entry = state.guides.find(g => g.slug === slug);
   const prof = guide.profile || '';
   if (entry && (entry.title !== title || (entry.profile || '') !== prof)) {
@@ -1664,6 +1669,7 @@ $('delGo').addEventListener('click', async () => {
       $('delGo').disabled = false;
       return;
     }
+    const delDir = ghDir(slug); // remember the folder before the list forgets it
     // 1. Take it off the guide list first, so it disappears from listings even if a later step fails
     step('Removing it from the guide list…');
     const f = await getFile('guides.json');
@@ -1674,7 +1680,7 @@ $('delGo').addEventListener('click', async () => {
       state.guides = idx.guides;
     }
     // 2. Delete every file in the folder (and one level of subfolders, e.g. images/)
-    const items = await listDir(slug);
+    const items = await listDir(delDir);
     const files = [];
     for (const it of items) {
       if (it.type === 'file') files.push(it);
@@ -2235,7 +2241,7 @@ function renderByline(m) {
 function renderNewAddress() {
   const cur = state.current;
   if (!cur || !cur.isNew) return '';
-  const prefix = 'guiides.org/' + (isDb() ? 'by/' + myHandle() + '/' : '');
+  const prefix = 'guiides.org/by/' + (isDb() ? myHandle() : OWNER_HANDLE) + '/';
   return '<div class="newaddr"><span class="pre">' + esc(prefix) + '</span><input data-new-slug value="' + val(cur.newSlug) + '" placeholder="your-guide" aria-label="Web address for this guide" spellcheck="false" autocomplete="off">' +
     '<span class="newaddr-note" id="newAddrNote">' + newAddrNote() + '</span></div>';
 }
@@ -3307,8 +3313,9 @@ $('pfCreate').addEventListener('click', async () => {
 // A new guide opens straight in the visual editor. Nothing is created until the
 // first Save; the web address follows the title until then (or until edited).
 function blankGuideMd() {
-  const who = isDb() ? ((state.myProfile && (state.myProfile.name || state.myProfile.handle)) || '') : '';
-  return 'Title: \nSubtitle: \nAuthor: ' + who + '\n' + (isDb() ? 'Profile: ' + myHandle() + '\n' : '') +
+  const mine = isDb() ? state.myProfile : state.profiles.find(p => p.handle === OWNER_HANDLE);
+  const who = mine ? (mine.name || mine.handle) : '';
+  return 'Title: \nSubtitle: \nAuthor: ' + who + '\n' + 'Profile: ' + (isDb() ? myHandle() : OWNER_HANDLE) + '\n' +
     'Updated: ' + monthYear() + '\nCategories: off\nPin Color: #038f9e\n\n## Intro\n\n## Categories\n\n===\n';
 }
 function slugify(t) {
@@ -3319,7 +3326,6 @@ function slugify(t) {
 function newSlugProblem(slug) {
   if (!slug) return 'Give your guide a title, or type an address.';
   if (!/^[a-z0-9]+(-[a-z0-9]+)*$/.test(slug) || slug.length < 2) return 'Use lowercase letters, numbers and dashes.';
-  if (!isDb() && RESERVED.includes(slug)) return '"' + slug + '" is used by the site itself.';
   if (state.guides.some(g => g.slug === slug)) return 'You already have a guide at that address.';
   return '';
 }
@@ -3373,13 +3379,15 @@ async function createFromEditor() {
       sha = '1';
       state.guides = await dbList();
     } else {
-      if (await getFile(slug + '/index.html') || await getFile(slug + '/places.md')) throw new ApiError(409, 'Something already exists at /' + slug + '/. Change the address and save again.');
-      sha = await putFile(slug + '/places.md', fileText, null, 'Create ' + slug + ' guide (editor)');
-      await putFile(slug + '/index.html', guidePageHtml(slug, title, M.getMeta(state.model, 'Subtitle') || ''), null, 'Create ' + slug + ' guide page (editor)');
+      const dir = 'by/' + OWNER_HANDLE + '/' + slug;
+      if (await getFile(dir + '/index.html') || await getFile(dir + '/places.md')) throw new ApiError(409, 'Something already exists at /' + dir + '/. Change the address and save again.');
+      sha = await putFile(dir + '/places.md', fileText, null, 'Create ' + slug + ' guide (editor)');
+      await putFile(dir + '/index.html', guidePageHtml(dir, title, M.getMeta(state.model, 'Subtitle') || ''), null, 'Create ' + slug + ' guide page (editor)');
       const f = await getFile('guides.json');
       const idx = f ? JSON.parse(f.text) : { guides: [] };
       idx.guides = idx.guides || [];
-      idx.guides.push({ slug, title, city: '', published: true });
+      const prof = (M.getMeta(state.model, 'Profile') || '').trim();
+      idx.guides.push(Object.assign({ slug, path: dir, title, city: '', published: true }, prof ? { profile: prof } : {}));
       state.guidesSha = await putFile('guides.json', JSON.stringify(idx, null, 2) + '\n', f ? f.sha : null, 'Add ' + slug + ' to guide list (editor)');
       state.guides = idx.guides;
     }

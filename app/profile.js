@@ -126,7 +126,7 @@
       .then(all => {
         const mine = all.filter(g => g.profile === HANDLE && g.published !== false);
         if (!mine.length) { list.innerHTML = '<li class="pf-empty">No guides published yet.</li>'; return; }
-        list.innerHTML = mine.map(g => guideRow(g, '/' + g.slug + '/')).join('');
+        list.innerHTML = mine.map(g => guideRow(g, '/' + (g.path || g.slug) + '/')).join('');
         mine.forEach(fillGuide);
       })
       .catch(() => { list.innerHTML = '<li class="pf-empty">The guide list couldn\'t be loaded. Try again in a moment.</li>'; });
@@ -141,7 +141,7 @@
       '</a></li>';
   }
   function fillGuide(g) {
-    get('/' + g.slug + '/places.md').then(text => fillFromText(g, text)).catch(() => {
+    get('/' + (g.path || g.slug) + '/places.md').then(text => fillFromText(g, text)).catch(() => {
       document.getElementById('pfmeta-' + g.slug).textContent = '';
     });
   }
