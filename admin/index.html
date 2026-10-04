@@ -83,6 +83,62 @@
   .login p { color: var(--text-2); margin-bottom: 0.6rem; }
   .login ol { color: var(--text-2); margin: 0.4rem 0 1rem 1.2rem; }
   .login li { margin-bottom: 0.25rem; }
+  /* ---------- first sign-in: pick your address (no editor bar) ---------- */
+  body.welcoming header { display: none; }
+  .welcome { min-height: 100vh; box-sizing: border-box; padding: 28px 40px 32px; display: flex; flex-direction: column; background: var(--bg); }
+  .welcome .wmark { align-self: flex-start; text-decoration: none; color: #FF8F8F; font-size: 13px; letter-spacing: 0.06em; }
+  .welcome .wmark strong { letter-spacing: 0.1em; }
+  .welcome .wmain { flex: 1; width: 100%; max-width: 760px; margin: 0 auto; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 18px; }
+  .welcome h1 { margin: 0; font-family: var(--serif); font-weight: 700; font-size: 34px; line-height: 1.04; letter-spacing: -0.015em; white-space: nowrap; }
+  .welcome .wsub { margin: 0 0 30px; font-size: 19px; color: #5C5C5C; }
+  .welcome .wline { display: flex; align-items: baseline; justify-content: center; max-width: 100%; font-family: var(--serif); font-size: clamp(1.7rem, 3.4vw, 2.6rem); line-height: 1.25; cursor: text; }
+  .welcome .wprefix { color: #8A857D; white-space: nowrap; }
+  .welcome .wfield { display: flex; align-items: baseline; gap: 12px; min-width: 0; border-bottom: 2px dashed #C9C4BB; padding-bottom: 6px; }
+  .welcome .wfield input { width: 9ch; max-width: 56vw; min-width: 0; height: auto; border: none; border-radius: 0; background: transparent; padding: 0; font: inherit; color: var(--text); box-shadow: none; }
+  .welcome .wfield input::placeholder { color: #8F8A82; }
+  .welcome .wfield input:focus { outline: none; box-shadow: none; }
+  .welcome .wline:focus-within .wfield { border-bottom-color: #8F8A82; }
+  .welcome .wcheck { flex: none; align-self: center; width: 30px; height: 30px; color: #1E7A46; }
+  .welcome .wstatus { margin: 0; min-height: 22px; font-size: 15px; color: #6B675F; }
+  .welcome .wstatus.ok { color: #1E7A46; font-weight: 600; }
+  .welcome .wstatus.err { color: #A33A28; font-weight: 600; }
+  .welcome .wact { display: flex; align-items: center; justify-content: center; gap: 16px; flex-wrap: wrap; margin-top: 14px; }
+  .welcome .wclaim { display: inline-flex; align-items: center; gap: 10px; height: 52px; padding: 0 22px; border: none; border-radius: 10px; background: #1A1A1A; color: #fff; font-size: 17px; font-weight: 600; }
+  .welcome .wclaim:hover:not(:disabled) { background: #000; }
+  .welcome .wclaim:disabled { opacity: 0.3; cursor: default; }
+  .welcome .wclaim svg { width: 18px; height: 18px; }
+  .welcome .wenter, .welcome .wnote { font-size: 14px; color: #6B675F; }
+  .welcome .wnote { margin: 6px 0 0; }
+  .welcome .wfoot { margin: 0; font-size: 13px; color: #6B675F; text-align: center; }
+  .welcome .wsignout { height: auto; padding: 0; border: none; background: none; font: inherit; color: #5C5C5C; text-decoration: underline; cursor: pointer; }
+  .welcome .wsignout:hover { color: var(--text); }
+  @media (max-width: 640px) {
+    .welcome { padding: 22px 22px 26px; }
+    .welcome h1 { white-space: normal; }
+    .welcome .wsub { font-size: 17px; margin-bottom: 18px; }
+    .welcome .wline { flex-wrap: wrap; font-size: 26px; }
+    .welcome .wprefix { width: 100%; }
+    .welcome .wfield input { max-width: 80vw; }
+  }
+
+  /* ---------- an author's profile, edited in place (like the top of a guide) ---------- */
+  #profileView.pf-visual .panel { display: flex; flex-direction: column; align-items: stretch; text-align: center; max-width: 680px; }
+  #profileView.pf-visual #pfHeading { display: none; }
+  #profileView.pf-visual .pfl { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+  #profileView.pf-visual #pfRow2 { display: contents; }
+  #profileView.pf-visual #pfName, #profileView.pf-visual #pfLocation, #profileView.pf-visual #pfBio {
+    border: 1px dashed transparent; background: transparent; box-shadow: none; border-radius: 6px; }
+  #profileView.pf-visual #pfName:hover, #profileView.pf-visual #pfLocation:hover, #profileView.pf-visual #pfBio:hover,
+  #profileView.pf-visual #pfName:focus, #profileView.pf-visual #pfLocation:focus, #profileView.pf-visual #pfBio:focus { border-color: #CFCAC2; outline: none; }
+  #profileView.pf-visual #pfName { margin-top: 18px; height: auto; padding: 4px 8px; font-family: var(--serif); font-size: 40px; font-weight: 700; line-height: 1.1; text-align: center; letter-spacing: -0.01em; }
+  #profileView.pf-visual #pfLocation { height: auto; padding: 4px 8px; font-family: var(--serif); font-style: italic; font-size: 18px; color: var(--text-2); text-align: center; }
+  #profileView.pf-visual .pf-bannerprev { width: 62%; max-width: 300px; aspect-ratio: 1600 / 119; margin: 14px auto 6px; background-size: cover; background-position: center; }
+  #profileView.pf-visual #pfBio { min-height: 120px; padding: 8px 10px; font-size: 16px; line-height: 1.75; text-align: left; color: var(--text-2); }
+  #profileView.pf-visual #pfLinks .linkrow { text-align: left; }
+  #profileView.pf-visual #pfPhotoBox { order: 5; margin-top: 18px; text-align: left; }
+  #profileView.pf-visual #pfGuides { order: 6; text-align: left; }
+  #profileView.pf-visual #pfCreateRow, #profileView.pf-visual #pfStatus { order: 7; }
+
   .login .tokenbox { margin-top: 2.4rem; border-top: 1px solid var(--border); padding-top: 1rem; }
   .login .tokenbox summary { cursor: pointer; font-size: 13px; font-weight: 600; color: var(--text-2); }
   .login .tokenbox h2 { font-family: var(--serif); font-size: 1.2rem; margin: 0.9rem 0 0.4rem; }
@@ -426,6 +482,28 @@
   </details>
 </section>
 
+<section class="welcome hidden" id="welcomeView" aria-labelledby="wTitle">
+  <a class="wmark" href="/">⛺︎ <strong>GUIIDES</strong> ⛺︎</a>
+  <main class="wmain">
+    <h1 id="wTitle">Looks like you're new around here</h1>
+    <p class="wsub">Pick a profile URL to start making guides</p>
+    <label class="wline" for="wHandle">
+      <span class="wprefix">guiides.org/by/</span>
+      <span class="wfield">
+        <input id="wHandle" placeholder="your-name" autocomplete="off" autocapitalize="none" spellcheck="false" maxlength="48" aria-describedby="wStatus">
+        <svg class="wcheck hidden" id="wCheck" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M7.5 12.5l3 3 6-6.5"/></svg>
+      </span>
+    </label>
+    <p class="wstatus" id="wStatus" aria-live="polite"></p>
+    <div class="wact">
+      <button class="wclaim" id="wClaim" disabled>Claim it <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="M13 6l6 6-6 6"/></svg></button>
+      <span class="wenter">or press <strong>Enter ↵</strong></span>
+    </div>
+    <p class="wnote">You can't change it later, so pick one you'll keep.</p>
+  </main>
+  <p class="wfoot">Signed in as <span id="wWho"></span> · <button class="wsignout" id="wSignOut">Sign out</button></p>
+</section>
+
 <!-- ============ APP ============ -->
 <div id="appView" class="hidden">
   <div id="emptyState">
@@ -515,13 +593,14 @@
         <input id="pfHandle" placeholder="slfnk" spellcheck="false">
         <div class="hint">Lowercase letters, numbers and dashes. This can't be changed later.</div>
       </div>
-      <label class="f" for="pfName">Name</label>
+      <label class="f pfl" for="pfName">Name</label>
       <input id="pfName" placeholder="Name as it appears on your guides">
-      <div class="grid2">
-        <div><label class="f" for="pfLocation">Based in <span class="hint">(optional)</span></label><input id="pfLocation" placeholder="A city, a country, two places…"></div>
-        <div><label class="f" for="pfPhoto">Photo <span class="hint">(optional link to an image)</span></label><input id="pfPhoto" placeholder="https://…" spellcheck="false"></div>
+      <div class="grid2" id="pfRow2">
+        <div><label class="f pfl" for="pfLocation">Based in <span class="hint">(optional)</span></label><input id="pfLocation" placeholder="A city, a country, two places…"></div>
+        <div id="pfPhotoBox"><label class="f" for="pfPhoto">Photo <span class="hint">(optional link to an image)</span></label><input id="pfPhoto" placeholder="https://…" spellcheck="false"></div>
       </div>
-      <label class="f" for="pfBio">Bio <span class="hint">(blank line = new paragraph)</span></label>
+      <div class="pf-bannerprev bshape hidden" id="pfBannerPrev" aria-hidden="true"></div>
+      <label class="f pfl" for="pfBio">Bio <span class="hint">(blank line = new paragraph)</span></label>
       <textarea id="pfBio" class="pf-bio" placeholder="Who you are and what you look for in a place."></textarea>
       <label class="f">Links <span class="hint">(Instagram, a website, a newsletter…)</span></label>
       <div class="pf-links" id="pfLinks"></div>
@@ -976,6 +1055,81 @@ $('verifyCode').addEventListener('click', verifyCode);
 $('codeInput').addEventListener('keydown', e => { if (e.key === 'Enter') verifyCode(); });
 
 // ============================================================
+// FIRST SIGN-IN — an author picks their address before anything else:
+// one big line, checked as they type, no editor bar.
+// ============================================================
+const HANDLE_RESERVED = ['admin', 'app', 'api', 'by', 'faq', 'about', 'help', 'login', 'settings', 'explore',
+  'new', 'edit', 'me', 'guiides', 'official', 'support', 'staff', 'team']; // matches the database's list
+let wTimer = null, wSeq = 0, wOk = '';
+function showWelcome() {
+  hideAllViews(); show($('appView'), false); show($('topControls'), false);
+  document.body.classList.add('welcoming'); show($('welcomeView'));
+  $('wWho').textContent = state.user ? state.user.email : '';
+  history.replaceState(null, '', location.pathname);
+  $('wHandle').value = ''; wOk = ''; wState('', ''); fitWelcome();
+  setTimeout(() => $('wHandle').focus(), 0);
+}
+function leaveWelcome() {
+  document.body.classList.remove('welcoming'); show($('welcomeView'), false);
+  show($('topControls')); show($('appView'));
+}
+// The field grows with what's typed, so the address reads as one centered line
+let fitCtx = null;
+function fitWelcome() {
+  const el = $('wHandle'), cs = getComputedStyle(el);
+  fitCtx = fitCtx || document.createElement('canvas').getContext('2d');
+  fitCtx.font = cs.fontStyle + ' ' + cs.fontWeight + ' ' + cs.fontSize + ' ' + cs.fontFamily;
+  el.style.width = Math.ceil(fitCtx.measureText(el.value || el.placeholder).width + 4) + 'px';
+}
+if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { if (!$('welcomeView').classList.contains('hidden')) fitWelcome(); });
+window.addEventListener('resize', () => { if (!$('welcomeView').classList.contains('hidden')) fitWelcome(); });
+function wState(kind, msg) {
+  $('wStatus').textContent = msg || '';
+  $('wStatus').className = 'wstatus' + (kind ? ' ' + kind : '');
+  show($('wCheck'), kind === 'ok');
+  $('wClaim').disabled = kind !== 'ok';
+}
+$('wHandle').addEventListener('input', () => {
+  const el = $('wHandle');
+  // Fix what can be fixed quietly: capitals, spaces, accents (José → jose)
+  const fixed = el.value.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, '-');
+  if (fixed !== el.value) el.value = fixed;
+  fitWelcome();
+  const v = el.value, seq = ++wSeq;
+  wOk = ''; clearTimeout(wTimer);
+  if (!v) return wState('', '');
+  if (/[^a-z0-9-]/.test(v)) return wState('err', 'Use lowercase letters, numbers and dashes only.');
+  if (v.length > 40) return wState('err', 'Keep it to 40 characters or fewer.');
+  if (v.length < 2 || /^-|-$|--/.test(v)) return wState('', ''); // still typing
+  if (HANDLE_RESERVED.includes(v)) return wState('err', "That one's reserved. Try another.");
+  wState('busy', '');
+  wTimer = setTimeout(async () => {
+    let taken;
+    try { taken = await handleTaken(v); }
+    catch (e) { if (seq === wSeq) wState('err', "Couldn't check right now. Try again in a moment."); return; }
+    if (seq !== wSeq) return; // they kept typing
+    if (taken) wState('err', 'Taken. Try another.');
+    else { wOk = v; wState('ok', "Available. It's yours if you want it."); }
+  }, 350);
+});
+async function claimHandle() {
+  const v = $('wHandle').value;
+  if (!wOk || wOk !== v || $('wClaim').disabled) return;
+  $('wClaim').disabled = true;
+  wState('busy', 'Making your page…');
+  try {
+    await dbCreateProfile(v, { name: '', location: '', photo: '', links: [], bio: '' });
+    state.myProfile = { handle: v, name: '' };
+    leaveWelcome();
+    await loadGuideIndex();
+    setStatus($('appStatus'), 'Your page is live at guiides.org/by/' + v + '/. Next, make your first guide.', 'ok');
+  } catch (e) { wOk = ''; wState('err', e.message); }
+}
+$('wHandle').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); claimHandle(); } });
+$('wClaim').addEventListener('click', claimHandle);
+$('wSignOut').addEventListener('click', () => signOut());
+
+// ============================================================
 // SIGN IN
 // ============================================================
 async function signIn(t, remember) {
@@ -1012,7 +1166,7 @@ $('signOut').addEventListener('click', signOut);
 // ============================================================
 async function loadGuideIndex() {
   if (isDb()) {
-    if (!state.myProfile) { state.guides = []; state.profiles = []; openProfile(null, { force: true }); return; }
+    if (!state.myProfile) { state.guides = []; state.profiles = []; showWelcome(); return; }
     state.guides = await dbList();
     state.profiles = [{ handle: state.myProfile.handle, name: state.myProfile.name || state.myProfile.handle }];
     renderPicker();
@@ -1040,7 +1194,7 @@ async function loadGuideIndex() {
 let homeMaps = [];
 function showHome({ force = false } = {}) {
   if (!force && isDirty() && !confirm('You have unsaved changes. Leave anyway? (Your draft stays saved on this device.)')) return;
-  if (isDb() && !state.myProfile) { openProfile(null, { force: true }); return; } // address first
+  if (isDb() && !state.myProfile) { showWelcome(); return; } // address first
   state.current = null; state.model = null; state.doc = null; state.prof = null;
   hideAllViews(); show($('emptyState')); show($('modeSeg'), false);
   history.replaceState(null, '', location.pathname);
@@ -2864,11 +3018,19 @@ async function openProfile(handle, { force = false } = {}) {
     show($('pfIntro'), firstTime);
     show($('pfHandleRow'), !handle); show($('pfCreateRow'), !handle);
     show($('pfCancel'), !firstTime);
+    const visual = isDb() && !!handle;
+    $('profileView').classList.toggle('pf-visual', visual);
+    show($('pfBannerPrev'), visual);
+    if (visual) $('pfBannerPrev').style.backgroundImage = 'url(/banners/banner_' + bannerPreview + '.webp)';
+    $('pfName').placeholder = visual ? 'Your name' : 'Name as it appears on your guides';
+    $('pfLocation').placeholder = visual ? 'Where you\'re based (optional)' : 'A city, a country, two places…';
+    $('pfBio').placeholder = visual ? 'A few lines about you, and what you look for in a place. (Blank line = new paragraph.)' : 'Who you are and what you look for in a place.';
     $('pfHandle').placeholder = isDb() ? 'your-name' : 'slfnk';
     $('pfCreate').textContent = firstTime ? 'Create my page' : 'Create profile';
     $('pfHandle').value = ''; $('pfAddr').textContent = handle || '…';
     $('pfName').value = p.name; $('pfLocation').value = p.location; $('pfPhoto').value = p.photo;
     $('pfBio').value = p.bio.join('\n\n');
+    setTimeout(() => autosize($('pfBio')), 0);
     $('pfLinks').innerHTML = p.links.map(profLinkRow).join('');
     state.prof.baseline = serializeProfile(profFromForm());
     renderProfileGuides();
@@ -2894,6 +3056,7 @@ $('pfLinks').addEventListener('input', e => {
   const lbl = e.target.parentNode.querySelector('.lbl'); if (lbl) lbl.textContent = v ? linkLabel(v) : 'New';
 });
 $('profileView').addEventListener('input', e => {
+  if (e.target.id === 'pfBio' && $('profileView').classList.contains('pf-visual')) autosize(e.target);
   if (e.target.id === 'pfHandle') {
     const v = e.target.value.toLowerCase().replace(/[^a-z0-9-]+/g, '-').replace(/^-+/, '');
     if (v !== e.target.value) e.target.value = v;
@@ -2986,7 +3149,7 @@ function startNewGuide() {
   hideAllViews(); show($('newGuideView'));
   setStatus($('ngStatus'), ''); setSaveState();
   $('ngPrefix').textContent = 'guiides.org/' + (isDb() ? 'by/' + myHandle() + '/' : '');
-  if (isDb() && !$('ngAuthor').value) $('ngAuthor').value = (state.myProfile && state.myProfile.name) || '';
+  if (isDb() && !$('ngAuthor').value) $('ngAuthor').value = (state.myProfile && (state.myProfile.name || state.myProfile.handle)) || '';
   $('ngSlug').focus();
 }
 $('ngCancel').addEventListener('click', () => showHome({ force: true }));
@@ -3017,7 +3180,7 @@ $('ngCreate').addEventListener('click', async () => {
     try {
       step('Creating your guide…');
       // The byline links to the author's page from the start
-      const text = starterPlacesMd({ title, subtitle, author: author || (state.myProfile && state.myProfile.name) || 'Anonymous', center: [c[0], c[1]], cats: $('ngCats').checked })
+      const text = starterPlacesMd({ title, subtitle, author: author || (state.myProfile && (state.myProfile.name || state.myProfile.handle)) || 'Anonymous', center: [c[0], c[1]], cats: $('ngCats').checked })
         .replace(/^(Author:.*)$/m, '$1\nProfile: ' + myHandle());
       await dbCreate(slug, text, title, city);
       state.guides = await dbList(); renderPicker();
