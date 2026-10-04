@@ -613,6 +613,10 @@ loadGuideText()
 function init(data) {
 
 const guide = data.guide;
+// The author's accent color, unless this reader picked their own in settings
+try {
+  if (guide.accent && localStorage.getItem('vg-accent') === null) document.documentElement.style.setProperty('--progress', guide.accent);
+} catch (e) {}
 const CATEGORIES = {};
 Object.entries(data.categories).forEach(([k, v]) => {
   CATEGORIES[k] = { color: v.color, label: k };
@@ -624,7 +628,8 @@ const DEFAULT_PIN = /^#[0-9a-fA-F]{3,8}$/.test(guide.pinColor || '') ? guide.pin
 function spotColor(p) {
   // No categories: each spot can pick its own pin color ("- Color:"), else the guide's Pin Color.
   // With categories on, the category color always wins, so a group's pins can't drift.
-  if (CATS_OFF || p.kind) return p.color || DEFAULT_PIN; // areas/routes always use their own color
+  if (p.kind) return p.color || DEFAULT_PIN; // areas and routes keep their own color
+  if (CATS_OFF) return DEFAULT_PIN;          // no categories: every pin uses the guide's pin color
   return catColor(p.category);
 }
 const places = data.places;

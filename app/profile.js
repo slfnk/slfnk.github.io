@@ -165,7 +165,7 @@
     const box = document.getElementById('pfm-' + slug);
     const gd = data.guide;
     const offColor = /^#[0-9a-fA-F]{3,8}$/.test(gd.pinColor || '') ? gd.pinColor : '#038f9e';
-    const color = p => gd.categoriesOff || p.kind ? (p.color || offColor) : ((data.categories[p.category] || {}).color || '#888888');
+    const color = p => p.kind ? (p.color || offColor) : gd.categoriesOff ? offColor : ((data.categories[p.category] || {}).color || '#888888');
     const m = L.map(box.querySelector('.m'), {
       zoomControl: false, attributionControl: false, dragging: false, scrollWheelZoom: false, doubleClickZoom: false,
       boxZoom: false, keyboard: false, touchZoom: false, tap: false, zoomSnap: 0.25, fadeAnimation: false

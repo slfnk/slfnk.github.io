@@ -24,6 +24,7 @@ function parsePlacesMd(text) {
         else if (key === 'Author Link') guide.authorLink = val;
         else if (key === 'Profile') { if (/^[a-z0-9-]+$/.test(val)) guide.profile = val; }
         else if (key === 'Banner') guide.banner = val.toLowerCase();
+        else if (key === 'Accent') { if (/^#[0-9a-fA-F]{3,8}$/.test(val)) guide.accent = val; }
         else if (key === 'Categories') guide.categoriesOff = /^(off|no|none|false)$/i.test(val);
         else if (key === 'Category Intros') guide.introsOff = /^(off|no|none|false)$/i.test(val);
         else if (key === 'Pin Color') guide.pinColor = val;
@@ -253,7 +254,7 @@ function parseProfileMd(text) {
 //   Locked: v1.<salt>.<iv>.<ciphertext>
 // The site is public, so the encryption is what actually keeps it private.
 // ============================================================
-const LOCK_PUBLIC_KEYS = ['Guide', 'Title', 'Subtitle', 'Author', 'Author Link', 'Profile', 'Banner', 'Updated', 'Center'];
+const LOCK_PUBLIC_KEYS = ['Guide', 'Title', 'Subtitle', 'Author', 'Author Link', 'Profile', 'Banner', 'Accent', 'Updated', 'Center'];
 const LOCK_ITERATIONS = 200000;
 
 function lockB64(bytes) {
