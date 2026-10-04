@@ -154,7 +154,9 @@
   /* Editor bar: the same salmon mark, in place of the old logo */
   .brand.tent { gap: 0; color: #FF8F8F; font-size: 13px; letter-spacing: 0.06em;
     position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); z-index: 2; }
-  @media (max-width: 860px) { header .brand.tent { display: none; } }
+  #topControls { position: relative; z-index: 3; }  /* controls always above the centered mark */
+  #saveState { max-width: 240px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  @media (max-width: 1120px) { header .brand.tent { display: none; } }
   .brand.tent strong { letter-spacing: 0.1em; margin: 0 0.35em; }
   .brand.tent:hover { color: #F26B6B; }
   .row { display: flex; gap: 0.5rem; align-items: center; margin-top: 0.6rem; }
@@ -281,6 +283,24 @@
   .newaddr input:focus { outline: none; border-bottom-color: var(--text-3); }
   .newaddr-note { flex-basis: 100%; text-align: center; font-size: 12px; margin-top: 2px; }
   .newaddr-note .good { color: #1E7A46; } .newaddr-note .bad { color: #A33A28; }
+  /* simpler guide header: show the thing, a pencil opens its settings */
+  .textbar { display: none !important; }  /* link buttons, off for now */
+  .pencil { width: 28px; height: 28px; padding: 0; border: none; background: transparent; color: var(--text-3); border-radius: 6px; display: inline-flex; align-items: center; justify-content: center; flex: none; }
+  .pencil:hover { background: var(--hover); color: var(--text); }
+  .pencil svg { width: 14px; height: 14px; }
+  .ghead .byline { justify-content: center; }
+  .ghead .byline input.author { width: auto; field-sizing: content; min-width: 5ch; max-width: 260px; text-align: center; }
+  .bylinepanel { display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 8px; font-size: 12px; color: var(--text-2); background: #fff; border: 1px solid var(--border); border-radius: 10px; padding: 8px 10px; }
+  .bylinepanel select.profpick { width: auto; height: 30px; font-size: 12px; margin-left: 6px; border-color: var(--field); }
+  .bylinepanel .ghost { height: 28px; font-size: 12px; }
+  .bannerrow { display: flex; align-items: center; justify-content: center; gap: 4px; width: 100%; }
+  .bannerrow .bprev { margin: 0; }
+  .lockpanel { background: #fff; border: 1px solid var(--border); border-radius: 12px; padding: 10px 12px; margin-bottom: 14px; }
+  .lockpanel .lockrow { justify-content: flex-start; }
+  #lockBtn { display: inline-flex; align-items: center; gap: 6px; height: 34px; font-size: 13px; color: var(--text-2); }
+  #lockBtn svg { width: 14px; height: 14px; }
+  #lockBtn.on { color: var(--brand-dark); }
+  #lockBtn[aria-pressed="true"] { background: #EFECE6; }
   .bshape { -webkit-clip-path: polygon(0 50%, 14.6% 0, 84.6% 0, 100% 50%, 84.6% 100%, 14.6% 100%); clip-path: polygon(0 50%, 14.6% 0, 84.6% 0, 100% 50%, 84.6% 100%, 14.6% 100%); }
   .bprev { display: block; width: 62%; max-width: 300px; aspect-ratio: 1600 / 119; height: auto; padding: 0; border: none; border-radius: 0; background-size: cover; background-position: center; margin: 4px auto 0; }
   .bprev.none { background: repeating-linear-gradient(90deg, #E6E2DB 0 6px, transparent 6px 10px); }
@@ -451,6 +471,7 @@
       <button data-mode="text">Markdown</button>
     </div>
     <div class="grow"></div>
+    <button id="lockBtn" class="ghost hidden" aria-pressed="false" title="Password protection"></button>
     <span id="saveState"></span>
     <a id="viewLive" href="#" target="_blank" rel="noopener" style="text-decoration:none"><button>View live ↗</button></a>
     <button class="primary" id="saveBtn" disabled>Save</button>
@@ -1355,8 +1376,26 @@ $('guidePicker').addEventListener('change', () => {
 // ============================================================
 // OPEN / SAVE
 // ============================================================
+// Top-bar lock: shows whether the open guide is password-protected, and opens its settings
+function syncLockBtn() {
+  const open = !!state.current && !state.prof && !state.doc && !$('editorView').classList.contains('hidden');
+  show($('lockBtn'), open);
+  if (!open) return;
+  const on = !!state.current.password;
+  $('lockBtn').innerHTML = LOCK_ICON + '<span>' + (on ? 'Protected' : 'Public') + '</span>';
+  $('lockBtn').classList.toggle('on', on);
+  $('lockBtn').setAttribute('aria-pressed', V.lockPanel ? 'true' : 'false');
+  $('lockBtn').title = on ? 'Password protection is on. Click to change it.' : 'Anyone with the link can read this guide. Click to add a password.';
+}
+$('lockBtn').addEventListener('click', () => {
+  if (state.mode !== 'visual') setMode('visual');
+  V.lockPanel = !V.lockPanel; if (!V.lockPanel) V.lockForm = false;
+  renderVisual(); syncLockBtn();
+  if (V.lockPanel) $('vlist').scrollTop = 0;
+});
 function setSaveState() {
   const el = $('saveState');
+  syncLockBtn();
   if (state.current && state.current.isNew && !state.prof && !state.doc) {
     const title = state.model && (M.getMeta(state.model, 'Title') || '').trim();
     $('saveBtn').disabled = !(title && !newSlugProblem(state.current.newSlug));
@@ -1382,6 +1421,7 @@ function setSaveState() {
   $('saveBtn').disabled = !d || !(state.lastCheck && state.lastCheck.ok);
 }
 function flashSaveState(msg, kind) {
+  $('saveState').title = msg || '';
   const el = $('saveState');
   el.dataset.msg = msg; el.textContent = msg; el.className = kind || 'clean';
 }
@@ -1439,7 +1479,7 @@ async function openGuide(slug, { force = false } = {}) {
       originalSpots: check.parsed ? check.parsed.places.length : 0,
       password, lockDirty: false
     };
-    Object.assign(V, { selectedId: null, expandedId: null, toast: null, catPanel: false, catNotes: {}, hexDrafts: {}, moveTargets: {}, showAuthorLink: false, lockForm: false, bannerPanel: false, drawId: null, drawHist: [] });
+    Object.assign(V, { selectedId: null, expandedId: null, toast: null, catPanel: false, catNotes: {}, hexDrafts: {}, moveTargets: {}, showAuthorLink: false, lockForm: false, bannerPanel: false, drawId: null, drawHist: [], bylineOpen: false, pinEdit: false, lockPanel: false });
     $('editor').value = f.text;
     $('viewLive').href = liveUrl(slug);
     history.replaceState(null, '', '#guide=' + slug);
@@ -2156,17 +2196,18 @@ const bannerPreview = 1 + Math.floor(Math.random() * BANNER_COUNT); // stands in
 
 function renderBannerRow() {
   const c = bannerChoice(M.getMeta(state.model, 'Banner'));
-  const label = c === 'random' ? 'Banner shuffles on each visit' : c === 'none' ? 'No banner' : 'Banner ' + c;
-  let h = '<button class="bprev bshape' + (c === 'none' ? ' none' : '') + '" data-act="banner-open" aria-label="Change banner" title="Change banner"' +
-    (c === 'none' ? '' : ' style="background-image:url(' + bannerUrl(c === 'random' ? bannerPreview : c) + ')"') + '></button>' +
-    '<div class="bmeta">' + label + '<button data-act="banner-open">' + (V.bannerPanel ? 'Done' : 'Change') + '</button></div>';
+  const label = c === 'random' ? 'Banner: a different one each visit' : c === 'none' ? 'No banner' : 'Banner ' + c;
+  let h = '<div class="bannerrow"><div class="bprev bshape' + (c === 'none' ? ' none' : '') + '" role="img" aria-label="' + label + '"' +
+    (c === 'none' ? '' : ' style="background-image:url(' + bannerUrl(c === 'random' ? bannerPreview : c) + ')"') + '></div>' +
+    '<button class="pencil" data-act="banner-open" aria-label="Change banner" title="Change banner">' + ICON.pen + '</button></div>';
   if (V.bannerPanel) {
     h += '<div class="bpanel"><div class="bgrid">' +
       '<button class="btile word' + (c === 'random' ? ' on' : '') + '" data-act="banner-pick" data-v="random">' + ICON.shuffle + 'Shuffle</button>' +
       '<button class="btile word' + (c === 'none' ? ' on' : '') + '" data-act="banner-pick" data-v="none">None</button>' +
       Array.from({ length: BANNER_COUNT }, (_, i) => i + 1).map(n =>
         '<button class="btile' + (c === n ? ' on' : '') + '" data-act="banner-pick" data-v="' + n + '" aria-label="Banner ' + n + '" style="background-image:url(' + bannerUrl(n) + ')"><span class="n">' + n + '</span></button>').join('') +
-      '</div><div class="hint">Shuffle shows a different one of these each time someone opens the guide.</div></div>';
+      '</div><div class="hint">Shuffle shows a different one of these each time someone opens the guide.</div>' +
+      '<div style="text-align:right"><button class="ghost" data-act="banner-open">Done</button></div></div>';
   }
   return h;
 }
@@ -2174,17 +2215,19 @@ function renderBannerRow() {
 function renderByline(m) {
   const link = M.getMeta(m, 'Author Link'), prof = (M.getMeta(m, 'Profile') || '').trim();
   const mode = prof ? 'p:' + prof : (link || V.showAuthorLink ? 'web' : '');
-  const known = state.profiles.slice();
-  if (prof && !known.some(p => p.handle === prof)) known.push({ handle: prof, name: '/by/' + prof + '/' });
-  const opt = (v, text) => '<option value="' + val(v) + '"' + (mode === v ? ' selected' : '') + '>' + text + '</option>';
-  let h = '<div class="byline">By <input class="ie author" data-meta="Author" value="' + val(M.getMeta(m, 'Author')) + '" placeholder="Your name" aria-label="Author">' +
-    '<select class="profpick" data-profile-pick aria-label="Where the name links to">' +
-    opt('', 'No link') + known.map(p => opt('p:' + p.handle, '→ ' + val(p.name) + '’s profile')).join('') + opt('web', '→ A website…') + '</select>';
-  if (mode === 'web') {
-    h += '<input class="ie authorlink" data-meta="Author Link" value="' + val(link) + '" placeholder="https://… website, Instagram, X" aria-label="Link for your name" spellcheck="false">';
+  const goes = prof ? 'Links to guiides.org/by/' + prof + '/' : link ? 'Links to ' + link : 'Not linked';
+  let h = '<div class="byline">By <input class="ie author" data-meta="Author" value="' + val(M.getMeta(m, 'Author')) + '" placeholder="Your name" aria-label="Author" size="' + Math.max(6, (M.getMeta(m, 'Author') || '').length + 1) + '">' +
+    '<button class="pencil" data-act="byline-edit" aria-label="Where your name links" title="' + val(goes) + '">' + ICON.pen + '</button></div>';
+  if (V.bylineOpen || mode === 'web' && !link) {
+    const known = state.profiles.slice();
+    if (prof && !known.some(p => p.handle === prof)) known.push({ handle: prof, name: '/by/' + prof + '/' });
+    const opt = (v, text) => '<option value="' + val(v) + '"' + (mode === v ? ' selected' : '') + '>' + text + '</option>';
+    h += '<div class="bylinepanel"><label>Your name links to <select class="profpick" data-profile-pick>' +
+      opt('', 'Nothing') + known.map(p => opt('p:' + p.handle, val(p.name) + '’s profile')).join('') + opt('web', 'A website…') + '</select></label>';
+    if (mode === 'web') h += '<input class="ie authorlink" data-meta="Author Link" value="' + val(link) + '" placeholder="https://… website, Instagram, X" aria-label="Link for your name" spellcheck="false">';
+    h += '<button class="ghost" data-act="byline-edit">Done</button></div>';
+    if (mode === 'web' && link && !/^https?:\/\/\S+$/i.test(link.trim())) h += '<div class="field-note">Links need to start with https://</div>';
   }
-  h += '</div>';
-  if (mode === 'web' && link && !/^https?:\/\/\S+$/i.test(link.trim())) h += '<div class="field-note">Links need to start with https://</div>';
   return h;
 }
 
@@ -2220,6 +2263,7 @@ function renderVisual() {
   let h = '';
 
   if (V.drawId && V.drawId !== V.selectedId) V.drawId = null;
+  if (V.lockPanel) h += '<div class="lockpanel">' + renderLockRow() + '</div>';
   // ---- guide header (same order as the live page)
   h += '<div class="ghead">' +
     '<div class="updated-ro" title="Updated is set automatically each time you save">Updated ' + val(M.getMeta(m, 'Updated') || monthYear()) +
@@ -2227,8 +2271,7 @@ function renderVisual() {
     '<textarea class="ie title" data-meta="Title" rows="1" placeholder="Guide title" aria-label="Guide title">' + val(M.getMeta(m, 'Title')) + '</textarea>' +
     '<input class="ie subtitle" data-meta="Subtitle" value="' + val(M.getMeta(m, 'Subtitle')) + '" placeholder="Add an italic subtitle…" aria-label="Subtitle">' +
     renderByline(m) + renderNewAddress() + renderBannerRow() +
-    '<div style="width:100%"><div class="textbar"><button data-act="insert-link" data-target="[data-intro]">' + ICON.link + 'Link</button></div>' +
-    renderLockRow() +
+    '<div style="width:100%">' +
     '<textarea class="ie intro" data-intro rows="4" placeholder="Write an intro that sets the scene… (blank line = new paragraph)" aria-label="Intro">' + val(m.intro.join('\n\n')) + '</textarea></div>' +
     '</div>';
 
@@ -2236,9 +2279,14 @@ function renderVisual() {
   if (catsOff()) {
     const dp = defaultPin();
     h += '<div class="catbar"><div class="seg small"><button data-act="cats-on">Categories</button><button class="on" disabled style="opacity:1">No categories</button></div>' +
-      '<span class="grow"></span><span class="pincolor"><span class="hint">Guide pin color</span>' +
-      '<input type="color" data-pin-default value="' + val(toHex6(dp)) + '" aria-label="Guide pin color">' +
-      '<input class="hex" data-pin-default-hex value="' + val(dp.toUpperCase()) + '" aria-label="Guide pin color hex" spellcheck="false"></span></div>' +
+      '<span class="grow"></span><span class="pincolor"><span class="hint">Pin color</span>' +
+      (V.pinEdit
+        ? '<input type="color" data-pin-default value="' + val(toHex6(dp)) + '" aria-label="Guide pin color">' +
+          '<input class="hex" data-pin-default-hex value="' + val(dp.toUpperCase()) + '" aria-label="Guide pin color hex" spellcheck="false">' +
+          '<button class="ghost" data-act="pin-edit" style="height:28px;font-size:12px">Done</button>'
+        : '<span class="pindot" style="width:18px;height:18px;background:' + val(dp) + '"></span>' +
+          '<button class="pencil" data-act="pin-edit" aria-label="Change pin color" title="Change pin color">' + ICON.pen + '</button>') +
+      '</span></div>' +
       '<div class="explain">A plain list: no tags or filters on the guide. Each spot can pick its own pin color; the rest use the guide color.</div>';
   } else {
     h += '<div class="catbar"><div class="seg small"><button class="on" disabled style="opacity:1">Categories</button><button data-act="cats-off">No categories</button></div>' + catList().map(c => '<span class="catchip"><span class="dot" style="background:' + val(c.color) + '"></span>' + val(c.name) + '</span>').join('') +
@@ -2478,6 +2526,8 @@ $('vlist').addEventListener('click', e => {
       break;
     }
     case 'banner-open': V.bannerPanel = !V.bannerPanel; renderVisual(); return;
+    case 'byline-edit': V.bylineOpen = !V.bylineOpen; renderVisual(); return;
+    case 'pin-edit': V.pinEdit = !V.pinEdit; renderVisual(); return;
     case 'add-shape': {
       const sh = newShape(btn.dataset.kind);
       renderVisual(); afterEdit();
@@ -2566,7 +2616,7 @@ $('vlist').addEventListener('click', e => {
       break;
     }
     case 'lock-form': V.lockForm = true; renderVisual(); { const i1 = $('lockPw1'); if (i1) i1.focus(); } return;
-    case 'lock-cancel': V.lockForm = false; renderVisual(); return;
+    case 'lock-cancel': V.lockForm = false; V.lockPanel = false; renderVisual(); syncLockBtn(); return;
     case 'lock-set': {
       const a = $('lockPw1').value, b = $('lockPw2').value;
       if (a.length < 4) { $('lockNote').textContent = 'Use at least 4 characters.'; return; }
@@ -3258,7 +3308,7 @@ $('pfCreate').addEventListener('click', async () => {
 // first Save; the web address follows the title until then (or until edited).
 function blankGuideMd() {
   const who = isDb() ? ((state.myProfile && (state.myProfile.name || state.myProfile.handle)) || '') : '';
-  return 'Title: \nSubtitle: \nAuthor: ' + (who || 'Your name') + '\n' + (isDb() ? 'Profile: ' + myHandle() + '\n' : '') +
+  return 'Title: \nSubtitle: \nAuthor: ' + who + '\n' + (isDb() ? 'Profile: ' + myHandle() + '\n' : '') +
     'Updated: ' + monthYear() + '\nCategories: off\nPin Color: #038f9e\n\n## Intro\n\n## Categories\n\n===\n';
 }
 function slugify(t) {
@@ -3280,7 +3330,7 @@ function startNewGuide() {
   state.model = loadModel(blankGuideMd());
   state.current = { slug: '', isNew: true, newSlug: '', slugTouched: false, sha: null, original: '',
     baseline: M.serializeGuideModel(state.model), originalSpots: 0, password: null, lockDirty: false };
-  Object.assign(V, { selectedId: null, expandedId: null, toast: null, catPanel: false, catNotes: {}, hexDrafts: {}, moveTargets: {}, showAuthorLink: false, lockForm: false, bannerPanel: false, drawId: null, drawHist: [] });
+  Object.assign(V, { selectedId: null, expandedId: null, toast: null, catPanel: false, catNotes: {}, hexDrafts: {}, moveTargets: {}, showAuthorLink: false, lockForm: false, bannerPanel: false, drawId: null, drawHist: [], bylineOpen: false, pinEdit: false, lockPanel: false });
   $('editor').value = currentText();
   history.replaceState(null, '', '#new');
   $('saveState').dataset.msg = '';
