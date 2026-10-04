@@ -157,7 +157,8 @@
     position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); z-index: 2; }
   #topControls { position: relative; z-index: 3; }  /* controls always above the centered mark */
   #saveState { max-width: 240px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  @media (max-width: 1120px) { header .brand.tent { display: none; } }
+  /* Narrow windows: hide the mark only when editor buttons need the room */
+  @media (max-width: 1120px) { body:not(.on-home) header .brand.tent { display: none; } }
   .brand.tent strong { letter-spacing: 0.1em; margin: 0 0.35em; }
   .brand.tent { transition: color 0.15s, transform 0.15s; }
   .brand.tent:hover { color: #F26B6B; transform: translate(-50%, -50%) scale(1.06); }
@@ -1480,6 +1481,7 @@ function setSaveState() {
   syncLockBtn();
   // Home screen: nothing to save or view
   const onHome = !state.current && !state.prof && !state.doc;
+  document.body.classList.toggle('on-home', onHome);
   show($('saveBtn'), !onHome);
   if (onHome) { show($('viewLive'), false); el.textContent = ''; return; }
   if (state.current && state.current.isNew && !state.prof && !state.doc) {
