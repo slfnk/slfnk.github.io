@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="robots" content="noindex, nofollow">
-<title>GUIIDES editor</title>
+<title>GUIIDES</title>
 <link rel="icon" type="image/png" href="/favicon-96x96.png" sizes="96x96">
 <link rel="icon" type="image/svg+xml" href="/favicon.svg">
 <link rel="shortcut icon" href="/favicon.ico">
@@ -643,7 +643,7 @@
   <div id="unlockView" class="hidden">
     <div class="panel">
       <h2>This guide is password protected</h2>
-      <p class="hint" style="margin-top:6px">Enter its password to edit it. It stays unlocked in this browser tab.</p>
+      <p class="hint" style="margin-top:6px" id="unlockHint">Enter its password to edit it. It stays unlocked in this browser tab.</p>
       <label class="f" for="unlockPw">Password</label>
       <input id="unlockPw" type="password" autocomplete="off">
       <div class="row" style="margin-top:1rem"><button class="primary" id="unlockGo">Unlock</button></div>
@@ -1131,7 +1131,7 @@ function setAvatar(who) {
 let pendingEmail = '';
 function showLogin({ owner = false } = {}) {
   document.body.classList.add('bare');
-  show($('loginView'));
+  show($('loginView')); setTabTitle();
   show($('tokenLogin'), owner); if (owner) $('tokenLogin').open = true;
   setTimeout(refitAll, 0);
 }
@@ -1217,7 +1217,7 @@ const HANDLE_RESERVED = ['admin', 'app', 'api', 'by', 'faq', 'about', 'help', 'l
 let wTimer = null, wSeq = 0, wOk = '';
 function showWelcome() {
   hideAllViews(); show($('appView'), false); show($('topControls'), false);
-  document.body.classList.add('welcoming'); show($('welcomeView'));
+  document.body.classList.add('welcoming'); show($('welcomeView')); setTabTitle();
   $('wWho').textContent = state.user ? state.user.email : '';
   history.replaceState(null, '', location.pathname);
   $('wHandle').value = ''; wOk = ''; wState('', ''); fitWelcome();
@@ -1520,9 +1520,26 @@ $('lockBtn').addEventListener('click', () => {
   renderVisual(); syncLockBtn();
   if (V.lockPanel) $('vlist').scrollTop = 0;
 });
+// The browser tab says what you're looking at: the guide's title while editing
+// (● in front when there are unsaved changes), or the screen's name
+function setTabTitle() {
+  let t;
+  if (!$('loginView').classList.contains('hidden')) t = 'Sign in';
+  else if (!$('welcomeView').classList.contains('hidden')) t = 'Pick your address';
+  else if (!$('unlockView').classList.contains('hidden')) t = 'Unlock guide';
+  else if (state.prof) t = 'Your profile';
+  else if (state.current) {
+    const title = state.mode === 'text'
+      ? (($('editor').value.match(/^Title:[ \t]*(.*)$/m) || [])[1] || '').trim()
+      : (state.model ? (M.getMeta(state.model, 'Title') || '').trim() : '');
+    t = (isDirty() ? '● ' : '') + (title || (state.current.isNew ? 'New guide' : state.current.slug));
+  } else t = 'Your guides';
+  document.title = t + ' · GUIIDES';
+}
 function setSaveState() {
   const el = $('saveState');
   syncLockBtn();
+  setTabTitle();
   // Home screen: nothing to save or view
   const onHome = !state.current && !state.prof && !state.doc;
   document.body.classList.toggle('on-home', onHome);
@@ -1856,7 +1873,10 @@ function askPassword(slug, lockedLine) {
     const tryPw = async pw => { try { await unlockGuideText(lockedLine, pw); return true; } catch (e) { return false; } };
     (async () => {
       if (remembered && await tryPw(remembered)) { resolve(remembered); return; }
-      hideAllViews(); show($('unlockView'));
+      hideAllViews(); show($('unlockView')); setTabTitle();
+      $('unlockHint').textContent = isDb()
+        ? "Enter its password once. The editor remembers it in your account (only you can see it), so you won't be asked again."
+        : 'Enter its password to edit it. It stays unlocked in this browser tab.';
       $('unlockPw').value = ''; setStatus($('unlockStatus'), ''); $('unlockPw').focus();
       const go = async () => {
         const pw = $('unlockPw').value;
