@@ -15,6 +15,7 @@
     --card-alpha: 0.85;
     --pin-size: 16px;
     --banner-width: 35;
+    --photo-h: 40; /* photo slider height, % of width (desktop) */
   }
 
   /* =================== DARK THEME =================== */
@@ -108,7 +109,12 @@
     letter-spacing: 0.08em;
   }
   .guiides-brand:hover { color: #F26B6B; transform: scale(1.06); }
+  /* Updated line: each bit wraps as a whole unit, never mid-phrase */
   .intro-section .updated-inline {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    row-gap: 0.25rem;
     font-size: 0.68rem;
     font-weight: 600;
     letter-spacing: 0.13em;
@@ -116,13 +122,21 @@
     color: var(--progress);
     margin-bottom: 0.6rem;
   }
-  .intro-section .updated-inline .meta-dot {
+  .intro-section .meta-item { white-space: nowrap; }
+  .intro-section .meta-item + .meta-item::before {
+    content: '•';
     display: inline-block;
     font-size: 0.5em;
     vertical-align: 0.3em;
     margin: 0 0.75rem 0 0.65rem; /* the text's letter-spacing adds a hair on the left */
     letter-spacing: 0;
     opacity: 0.8;
+  }
+  @media (max-width: 768px) {
+    /* Phones: "Updated …" on its own line, the counts centered below it */
+    .intro-section .updated-inline { letter-spacing: 0.1em; }
+    .intro-section .meta-updated { flex-basis: 100%; }
+    .intro-section .meta-updated + .meta-item::before { display: none; }
   }
   /* =================== SETTINGS GEAR =================== */
   .settings-wrap { position: relative; }
@@ -264,6 +278,91 @@
     text-underline-offset: 3px;
   }
   .intro-section .byline-link:hover { color: var(--progress); }
+
+  /* =================== PHOTO SLIDER =================== */
+  .guide-photos {
+    position: relative;
+    margin: 0.9rem 0 1.3rem;
+    border-radius: 3px;
+    overflow: hidden;
+    background: var(--hover);
+  }
+  .photo-track {
+    display: flex;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: none;
+    aspect-ratio: 100 / var(--photo-h);
+    outline: none;
+  }
+  .photo-track::-webkit-scrollbar { display: none; }
+  .photo-track:focus-visible { box-shadow: inset 0 0 0 2px var(--progress); }
+  .photo-slide {
+    flex: 0 0 100%;
+    scroll-snap-align: start;
+    scroll-snap-stop: always;
+  }
+  .photo-slide img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    opacity: 0;
+    transition: opacity 0.4s ease-out;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+  .photo-slide img.loaded { opacity: 1; }
+  .photo-count {
+    position: absolute;
+    right: 0.6rem;
+    bottom: 0.6rem;
+    font-size: 0.65rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    font-variant-numeric: tabular-nums;
+    color: #fff;
+    background: rgba(20, 20, 20, 0.5);
+    -webkit-backdrop-filter: blur(8px);
+    backdrop-filter: blur(8px);
+    padding: 0.15rem 0.5rem;
+    border-radius: 999px;
+    pointer-events: none;
+  }
+  .photo-arrow {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: none;
+    background: rgba(255, 255, 255, 0.88);
+    color: #1A1A1A;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 1px 6px rgba(0, 0, 0, 0.2);
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+  .photo-arrow svg { width: 16px; height: 16px; }
+  .photo-prev { left: 0.6rem; }
+  .photo-next { right: 0.6rem; }
+  .guide-photos:hover .photo-arrow,
+  .photo-arrow:focus-visible { opacity: 1; }
+  .photo-arrow:focus-visible { outline: 2px solid var(--progress); outline-offset: 2px; }
+  .guide-photos.single .photo-arrow,
+  .guide-photos.single .photo-count { display: none; }
+  @media (hover: none) {
+    .photo-arrow { display: none; } /* touch screens swipe */
+  }
+  @media (max-width: 768px) {
+    /* Same setting, taller crop on phones: 40 → about 3:2 */
+    .photo-track { aspect-ratio: 100 / min(calc(var(--photo-h) * 1.65), 80); }
+    .guide-photos { margin: 0.75rem 0 1.1rem; }
+  }
 
   /* =================== BANNER DIVIDER =================== */
   /* Files are plain rectangles; the pointed shape comes from clip-path */
