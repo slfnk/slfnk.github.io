@@ -250,6 +250,15 @@ const settingsConfig = [
       document.documentElement.style.setProperty('--banner-width', val);
       try { localStorage.setItem('vg-bannerwidth', val); } catch(e) {}
     }
+  },
+  {
+    // Photo slider height as a % of its width on desktop; phones get a taller crop of the same setting
+    key: 'photoheight', label: 'Photo Height', type: 'slider', min: 25, max: 70, step: 5, unit: '%',
+    get: () => parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--photo-h')) || 40,
+    set: (val) => {
+      document.documentElement.style.setProperty('--photo-h', val);
+      try { localStorage.setItem('vg-photoh', val); } catch(e) {}
+    }
   }
 ];
 
@@ -452,6 +461,8 @@ try {
   if (savedOpacity !== null) document.documentElement.style.setProperty('--card-alpha', parseInt(savedOpacity) / 100);
   const savedBannerWidth = localStorage.getItem('vg-bannerwidth');
   if (savedBannerWidth !== null) document.documentElement.style.setProperty('--banner-width', savedBannerWidth);
+  const savedPhotoH = localStorage.getItem('vg-photoh');
+  if (savedPhotoH !== null) document.documentElement.style.setProperty('--photo-h', savedPhotoH);
   const savedPinSize = localStorage.getItem('vg-pinsize');
   if (savedPinSize !== null) document.documentElement.style.setProperty('--pin-size', savedPinSize + 'px');
   const savedAccent = localStorage.getItem('vg-accent');
@@ -699,6 +710,76 @@ function renderBreak(sb, cat) {
 }
 
 // ============================================
+// PHOTO SLIDER (header "Photos:" line)
+// ============================================
+// One photo at a time between the Updated line and the title.
+// Swipe on phones, arrows on desktop, arrow keys when focused.
+function renderPhotos(urls) {
+  const box = document.getElementById('guidePhotos');
+  if (!box || !urls.length) return;
+  const smooth = !(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);
+  const title = (guide.title || 'Guide').replace(/<[^>]*>/g, '');
+
+  const track = document.createElement('div');
+  track.className = 'photo-track';
+  track.tabIndex = 0;
+  track.setAttribute('aria-label', title + ' photos');
+  box.appendChild(track);
+
+  const counter = document.createElement('span');
+  counter.className = 'photo-count';
+  counter.setAttribute('aria-live', 'polite');
+  const prev = document.createElement('button');
+  prev.className = 'photo-arrow photo-prev';
+  prev.setAttribute('aria-label', 'Previous photo');
+  prev.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg>';
+  const next = document.createElement('button');
+  next.className = 'photo-arrow photo-next';
+  next.setAttribute('aria-label', 'Next photo');
+  next.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"/></svg>';
+  box.append(prev, next, counter);
+
+  urls.forEach((u, i) => {
+    const slide = document.createElement('div');
+    slide.className = 'photo-slide';
+    const img = document.createElement('img');
+    img.alt = title + ', photo ' + (i + 1);
+    img.decoding = 'async';
+    img.draggable = false;
+    if (i > 0) img.loading = 'lazy';
+    img.onload = () => img.classList.add('loaded');
+    img.onerror = () => { slide.remove(); sync(); }; // a broken link drops out instead of showing a hole
+    img.src = u;
+    slide.appendChild(img);
+    track.appendChild(slide);
+  });
+
+  const count = () => track.children.length;
+  const current = () => Math.round(track.scrollLeft / Math.max(1, track.clientWidth));
+  function sync() {
+    const n = count();
+    if (!n) { box.remove(); return; }
+    box.classList.toggle('single', n === 1);
+    counter.textContent = (Math.min(current(), n - 1) + 1) + ' / ' + n;
+  }
+  function go(i) {
+    const n = count();
+    if (!n) return;
+    i = (i + n) % n; // wrap around at either end
+    track.scrollTo({ left: i * track.clientWidth, behavior: smooth ? 'smooth' : 'auto' });
+  }
+  prev.addEventListener('click', () => go(current() - 1));
+  next.addEventListener('click', () => go(current() + 1));
+  track.addEventListener('keydown', e => {
+    if (e.key === 'ArrowLeft') { e.preventDefault(); go(current() - 1); }
+    else if (e.key === 'ArrowRight') { e.preventDefault(); go(current() + 1); }
+  });
+  let t;
+  track.addEventListener('scroll', () => { clearTimeout(t); t = setTimeout(sync, 60); }, { passive: true });
+  sync();
+}
+
+// ============================================
 // RENDER INTRO
 // ============================================
 // Guide branding handled in HTML
@@ -719,8 +800,13 @@ const nOf = k => places.filter(p => (p.kind || 'spot') === k).length;
 const plural = (n, w) => n ? n + ' ' + w + (n === 1 ? '' : 's') : '';
 const updatedBits = [guide.updated ? 'Updated ' + guide.updated : ''].concat(guide._locked ? [] :
   [plural(nOf('spot'), 'spot') || (places.length ? '' : '0 spots'), plural(nOf('area'), 'area'), plural(nOf('route'), 'route')]).filter(Boolean);
+// Each bit is its own unit so a line never breaks inside "1 route"; the dots are drawn in CSS
+const metaHtml = updatedBits.map((b, i) =>
+  '<span class="meta-item' + (i === 0 && guide.updated ? ' meta-updated' : '') + '">' + b + '</span>').join('');
+const guidePhotos = guide._locked ? [] : (guide.photos || []);
 introSection.innerHTML =
-  '<p class="updated-inline">' + updatedBits.join('<span class="meta-dot" aria-hidden="true">•</span>') + '</p>' +
+  (metaHtml ? '<p class="updated-inline">' + metaHtml + '</p>' : '') +
+  (guidePhotos.length ? '<div class="guide-photos" id="guidePhotos"></div>' : '') +
   '<h1>' + guide.title + '</h1>' +
   (guide.deck ? '<p class="deck">' + guide.deck + '</p>' : '') + // no subtitle: leave it out
   (guide.byline ? '<p class="byline">By <strong>' + bylineHtml(guide) + '</strong></p>' : '') + // no author: no byline
@@ -728,6 +814,7 @@ introSection.innerHTML =
 
 document.title = guide.title;
 loadBanner(guide.banner);
+renderPhotos(guidePhotos);
 
 // Links in write-ups: [text](https://…) or a bare https:// address; always open in a new tab
 function richText(s) {
