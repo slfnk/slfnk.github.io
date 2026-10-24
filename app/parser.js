@@ -24,6 +24,8 @@ function parsePlacesMd(text) {
         else if (key === 'Author Link') guide.authorLink = val;
         else if (key === 'Profile') { if (/^[a-z0-9-]+$/.test(val)) guide.profile = val; }
         else if (key === 'Banner') guide.banner = val.toLowerCase();
+        // Photos: https://… | https://… (any spacing; | or spaces between). Shown as a slider above the title
+        else if (key === 'Photos') guide.photos = (val.match(/(?:https?:\/\/|\/)[^\s|]+/g) || []).map(u => u.replace(/,+$/, ''));
         else if (key === 'Accent') { if (/^#[0-9a-fA-F]{3,8}$/.test(val)) guide.accent = val; }
         else if (key === 'Categories') guide.categoriesOff = /^(off|no|none|false)$/i.test(val);
         else if (key === 'Category Intros') guide.introsOff = /^(off|no|none|false)$/i.test(val);
