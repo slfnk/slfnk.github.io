@@ -252,6 +252,15 @@ const settingsConfig = [
     }
   },
   {
+    // Photo slider width as a % of the column, centered; height follows the shape
+    key: 'photowidth', label: 'Photo Width', type: 'slider', min: 40, max: 100, step: 5, unit: '%',
+    get: () => parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--photo-w')) || 100,
+    set: (val) => {
+      document.documentElement.style.setProperty('--photo-w', val);
+      try { localStorage.setItem('vg-photow', val); } catch(e) {}
+    }
+  },
+  {
     // Photo slider height as a % of its width on desktop; phones get a taller crop of the same setting
     key: 'photoheight', label: 'Photo Height', type: 'slider', min: 25, max: 70, step: 5, unit: '%',
     get: () => parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--photo-h')) || 40,
@@ -461,6 +470,8 @@ try {
   if (savedOpacity !== null) document.documentElement.style.setProperty('--card-alpha', parseInt(savedOpacity) / 100);
   const savedBannerWidth = localStorage.getItem('vg-bannerwidth');
   if (savedBannerWidth !== null) document.documentElement.style.setProperty('--banner-width', savedBannerWidth);
+  const savedPhotoW = localStorage.getItem('vg-photow');
+  if (savedPhotoW !== null) document.documentElement.style.setProperty('--photo-w', savedPhotoW);
   const savedPhotoH = localStorage.getItem('vg-photoh');
   if (savedPhotoH !== null) document.documentElement.style.setProperty('--photo-h', savedPhotoH);
   const savedPinSize = localStorage.getItem('vg-pinsize');
