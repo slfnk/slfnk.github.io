@@ -261,9 +261,9 @@ const settingsConfig = [
     }
   },
   {
-    // Photo slider height as a % of its own width (desktop; phones use a fixed 3:2)
+    // Photo slider height as a % of its own width (same shape on phones, which are always full width)
     key: 'photoheight', label: 'Photo Height', type: 'slider', min: 25, max: 90, step: 5, unit: '%',
-    get: () => parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--photo-h')) || 65,
+    get: () => parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--photo-h')) || 40,
     set: (val) => {
       document.documentElement.style.setProperty('--photo-h', val);
       try { localStorage.setItem('vg-photoh', val); } catch(e) {}
