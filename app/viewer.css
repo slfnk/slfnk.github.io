@@ -15,7 +15,8 @@
     --card-alpha: 0.85;
     --pin-size: 16px;
     --banner-width: 35;
-    --photo-h: 40; /* photo slider height, % of width (desktop) */
+    --photo-h: 65; /* photo slider height, % of its width (desktop) */
+    --photo-w: 65; /* photo slider width, % of the column (desktop) */
   }
 
   /* =================== DARK THEME =================== */
@@ -282,7 +283,8 @@
   /* =================== PHOTO SLIDER =================== */
   .guide-photos {
     position: relative;
-    margin: 0.9rem 0 1.3rem;
+    width: calc(var(--photo-w) * 1%);
+    margin: 0.9rem auto 1.3rem;
     border-radius: 3px;
     overflow: hidden;
     background: var(--hover);
@@ -359,9 +361,9 @@
     .photo-arrow { display: none; } /* touch screens swipe */
   }
   @media (max-width: 768px) {
-    /* Same setting, taller crop on phones: 40 → about 3:2 */
-    .photo-track { aspect-ratio: 100 / min(calc(var(--photo-h) * 1.65), 80); }
-    .guide-photos { margin: 0.75rem 0 1.1rem; }
+    /* Phones: full width, fixed 3:2 (the sliders tune desktop only) */
+    .photo-track { aspect-ratio: 3 / 2; }
+    .guide-photos { width: 100%; margin: 0.75rem auto 1.1rem; }
   }
 
   /* =================== BANNER DIVIDER =================== */
