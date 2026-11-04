@@ -15,7 +15,7 @@
     --card-alpha: 0.85;
     --pin-size: 16px;
     --banner-width: 35;
-    --photo-h: 65; /* photo slider height, % of its width (desktop) */
+    --photo-h: 40; /* photo slider height, % of its width (desktop and phones) */
     --photo-w: 65; /* photo slider width, % of the column (desktop) */
   }
 
@@ -361,8 +361,7 @@
     .photo-arrow { display: none; } /* touch screens swipe */
   }
   @media (max-width: 768px) {
-    /* Phones: full width, fixed 3:2 (the sliders tune desktop only) */
-    .photo-track { aspect-ratio: 3 / 2; }
+    /* Phones: full width, same shape as desktop (Photo Height applies here too) */
     .guide-photos { width: 100%; margin: 0.75rem auto 1.1rem; }
   }
 
