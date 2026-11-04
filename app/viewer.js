@@ -252,18 +252,18 @@ const settingsConfig = [
     }
   },
   {
-    // Photo slider width as a % of the column, centered; height follows the shape
+    // Photo slider width as a % of the column, centered (desktop; phones are always full width)
     key: 'photowidth', label: 'Photo Width', type: 'slider', min: 40, max: 100, step: 5, unit: '%',
-    get: () => parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--photo-w')) || 100,
+    get: () => parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--photo-w')) || 65,
     set: (val) => {
       document.documentElement.style.setProperty('--photo-w', val);
       try { localStorage.setItem('vg-photow', val); } catch(e) {}
     }
   },
   {
-    // Photo slider height as a % of its width on desktop; phones get a taller crop of the same setting
-    key: 'photoheight', label: 'Photo Height', type: 'slider', min: 25, max: 70, step: 5, unit: '%',
-    get: () => parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--photo-h')) || 40,
+    // Photo slider height as a % of its own width (desktop; phones use a fixed 3:2)
+    key: 'photoheight', label: 'Photo Height', type: 'slider', min: 25, max: 90, step: 5, unit: '%',
+    get: () => parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--photo-h')) || 65,
     set: (val) => {
       document.documentElement.style.setProperty('--photo-h', val);
       try { localStorage.setItem('vg-photoh', val); } catch(e) {}
@@ -1073,13 +1073,12 @@ places.forEach((p, i) => {
   if (p.kind) entry.dataset.kind = p.kind;
 
   const price = p.price ? '<span class="entry-price">[' + p.price + ']</span>' : '';
+  // Real photo if there is one; areas and routes show their drawn shape; plain spots show nothing
   const thumbHtml = p.image
     ? '<div class="entry-thumb-wrap"><img class="entry-thumb" src="' + p.image + '" alt="' + p.name + '" loading="lazy"/></div>'
-    : (p.showThumb !== false
-      ? (p.kind && shapeDrawable(p.kind, p.shape)
-        ? '<div class="entry-thumb-wrap"><div class="entry-thumb-placeholder entry-thumb-shape">' + shapeSvg(p.kind, p.shape, col, 140, 70) + '</div></div>'
-        : '<div class="entry-thumb-wrap"><div class="entry-thumb-placeholder"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg></div></div>'
-      ) : '');
+    : (p.showThumb !== false && p.kind && shapeDrawable(p.kind, p.shape)
+      ? '<div class="entry-thumb-wrap"><div class="entry-thumb-placeholder entry-thumb-shape">' + shapeSvg(p.kind, p.shape, col, 140, 70) + '</div></div>'
+      : '');
 
   const isHearted = savedSlugs.has(p.slug);
   entry.innerHTML =
@@ -1236,6 +1235,10 @@ function showShape(index) {
 // SYNC LOGIC
 // ============================================
 let activeIndex = -1;
+// After a click, pin tap, deep link, filter or view switch, the chosen entry stays
+// active until the reader scrolls on their own (wheel, trackpad, touch, keys, scrollbar).
+// Programmatic smooth scrolls never fire those events, so they can't steal the highlight.
+let listPinned = false;
 let lockSource = null;
 let lockTimer = null;
 
@@ -1284,7 +1287,7 @@ function setActive(index, source) {
 
   // Scroll list on marker click
   if (source === 'map') {
-    acquireLock('map', 1200);
+    listPinned = true;
     const el = document.getElementById('entry-' + places[index].slug);
     if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
   }
@@ -1307,21 +1310,64 @@ function setActive(index, source) {
 const colLeft = document.getElementById('colLeft');
 const progressFill = document.getElementById('progressFill');
 
-const observer = new IntersectionObserver(entries => {
-  if (lockSource === 'map' || lockSource === 'carousel' || lockSource === 'view-switch') return;
-  let best = null;
-  entries.forEach(e => {
-    if (e.isIntersecting && e.intersectionRatio >= 0.45) {
-      if (!best || e.intersectionRatio > best.intersectionRatio) best = e;
-    }
-  });
-  if (best) {
-    const idx = parseInt(best.target.dataset.index);
-    if (!isNaN(idx) && idx !== activeIndex) setActive(idx, 'scroll');
+// SCROLL SPY — the entry crossing the middle of the visible list is the active one.
+// Desktop scrolls the left column; phones scroll the whole page. The band starts below
+// the sticky filter bar once it's stuck. Near the very end the probe line slides down to
+// the bottom edge so the last entries (which can never reach the middle) still activate.
+const filterBarEl = document.getElementById('filterBar');
+function listScroller() {
+  return colLeft.scrollHeight > colLeft.clientHeight + 1 && getComputedStyle(colLeft).overflowY !== 'visible' ? colLeft : null;
+}
+function spyPick() {
+  const sc = listScroller();
+  const r = sc ? sc.getBoundingClientRect() : { top: 0, bottom: window.innerHeight };
+  let top = r.top, bottom = r.bottom;
+  if (filterBarEl && filterBarEl.offsetParent) {
+    const fb = filterBarEl.getBoundingClientRect();
+    if (fb.top <= top + 4) top = fb.bottom; // stuck at the top of the list
   }
-}, { root: colLeft, threshold: [0.45, 0.6, 0.8] });
+  const half = (bottom - top) / 2;
+  let probe = top + half;
+  const remaining = sc
+    ? sc.scrollHeight - sc.clientHeight - sc.scrollTop
+    : document.documentElement.scrollHeight - window.innerHeight - window.scrollY;
+  if (remaining < half) probe += half - Math.max(0, remaining) - 1;
 
-document.querySelectorAll('.entry').forEach(el => observer.observe(el));
+  let best = -1, bestDist = Infinity;
+  document.querySelectorAll('.entry:not(.hidden)').forEach(el => {
+    const b = el.getBoundingClientRect();
+    const d = probe < b.top ? b.top - probe : (probe > b.bottom ? probe - b.bottom : 0);
+    if (d < bestDist) { bestDist = d; best = parseInt(el.dataset.index); }
+  });
+  // Probe sitting in a section break or the gap between entries: take the nearest one,
+  // but not while it's still up in the intro, far from any listing
+  return bestDist <= 140 ? best : -1;
+}
+let spyFrame = 0;
+function onListScroll() {
+  if (listPinned || spyFrame) return;
+  spyFrame = requestAnimationFrame(() => {
+    spyFrame = 0;
+    if (listPinned || document.body.classList.contains('view-map')) return;
+    const idx = spyPick();
+    if (idx >= 0 && idx !== activeIndex) setActive(idx, 'scroll');
+  });
+}
+colLeft.addEventListener('scroll', onListScroll, { passive: true });
+window.addEventListener('scroll', onListScroll, { passive: true });
+
+// The reader taking over scrolling releases the pin
+function releasePin() {
+  if (!listPinned) return;
+  listPinned = false;
+  onListScroll();
+}
+window.addEventListener('wheel', releasePin, { passive: true });
+window.addEventListener('touchmove', releasePin, { passive: true });
+window.addEventListener('keydown', e => {
+  if (['ArrowUp', 'ArrowDown', 'PageUp', 'PageDown', 'Home', 'End', ' '].includes(e.key)) releasePin();
+});
+colLeft.addEventListener('mousedown', e => { if (e.target === colLeft) releasePin(); }); // scrollbar drag
 
 // Progress bar
 colLeft.addEventListener('scroll', () => {
@@ -1386,12 +1432,9 @@ function updateFilter() {
     sb.style.display = show ? '' : 'none';
   });
 
-  // Re-observe only visible entries
-  observer.disconnect();
-  document.querySelectorAll('.entry:not(.hidden)').forEach(el => observer.observe(el));
-
   // Scroll behavior — skip on initial load (page starts at top)
   if (!filterInitialized) return;
+  listPinned = true; // the filter picks the active entry; the reader's next scroll takes over
 
   const visibleEntries = document.querySelectorAll('.entry:not(.hidden)');
 
@@ -1516,6 +1559,7 @@ window.setView = function(mode) {
     if (mode === 'list' && activeIndex >= 0) {
       const savedIdx = activeIndex;
       acquireLock('view-switch', 600);
+      listPinned = true;
       activeIndex = savedIdx;
       const el = document.getElementById('entry-' + places[savedIdx].slug);
       if (el) {
